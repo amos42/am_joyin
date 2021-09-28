@@ -1,0 +1,13 @@
+
+#!/bin/sh
+
+sudo modprobe -r am_joyin
+
+sudo dkms remove -m am_joyin -v 0.1.0 --all
+
+sudo dkms build -m am_joyin -v 0.1.0
+
+cat /var/lib/dkms/am_joyin/0.1.0/build/make.log
+
+sudo dkms install -m am_joyin -v 0.1.0
+

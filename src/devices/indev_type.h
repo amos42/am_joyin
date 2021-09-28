@@ -1,0 +1,139 @@
+﻿#ifndef __INDEV_TYPE_H_
+#define __INDEV_TYPE_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+#ifndef BOOL
+typedef int BOOL;
+#endif
+
+#ifndef TRUE
+#define TRUE (1)
+#endif
+#ifndef FALSE
+#define FALSE (0)
+#endif
+
+#ifndef NULL
+    #ifdef __cplusplus
+        #define NULL 0
+    #else
+        #define NULL ((void *)0)
+    #endif
+#endif
+
+
+#define MAX_INPUT_BUTTON_COUNT                (16)
+
+#define MAX_INPUT_DEFAULT_BUTTONSET_COUNT     (1)
+#define MAX_INPUT_USERDEF_BUTTONSET_COUNT     (2)
+#define MAX_INPUT_BUTTONSET_COUNT             (MAX_INPUT_DEFAULT_BUTTONSET_COUNT + MAX_INPUT_USERDEF_BUTTONSET_COUNT)
+
+#define MAX_INPUT_ENDPOINT_COUNT              (4)
+
+#define MAX_INPUT_DEVICE_TYPE_DESC_COUNT      (10)
+#define MAX_INPUT_DEVICE_COUNT                (4)
+
+
+#define DEFAULT_INPUT_BUTTON_COUNT            (14)
+#define DEFAULT_INPUT_BUTTONS { \
+                                {ABS_Y,     -1, 1}, \
+                                {ABS_X,     -1, 1}, \
+                                {BTN_START,  0, 1}, \
+                                {BTN_SELECT, 0, 1}, \
+                                {BTN_A,      0, 1}, \
+                                {BTN_B,      0, 1}, \
+                                {BTN_X,      0, 1}, \
+                                {BTN_Y,      0, 1}, \
+                                {BTN_TL,     0, 1}, \
+                                {BTN_TR,     0, 1}, \
+                                {BTN_MODE,   0, 1}, \
+                                {BTN_TL2,    0, 1}, \
+                                {BTN_TR2,    0, 1}, \
+                                {BTN_Z,      0, 1} \
+                            }
+
+// 개별 버튼 설정
+typedef struct tag_input_button_data {
+    int button_code;     // 버튼 코드. linux/input.h 참조
+    int min_value;      // 버튼의 최소값. 일반 버튼은 0
+    int max_value;      // 버튼의 최대값. 일반 버튼은 1
+} input_button_data_t;
+
+// 버튼셋 설정
+typedef struct tag_input_buttonset_data {
+    input_button_data_t button_data[MAX_INPUT_BUTTON_COUNT];
+    int button_count;
+} input_buttonset_data_t;
+
+// endpoint 설정. 기본적으로 /dev/input/js# 파일에 대응
+typedef struct tag_input_endpoint_data {
+    int endpoint_id;
+
+    input_buttonset_data_t* target_buttonset;
+    int button_count;
+    
+    BOOL is_opened;
+    struct input_dev* indev;
+
+    int current_button_state[MAX_INPUT_BUTTON_COUNT];
+    int report_button_state[MAX_INPUT_BUTTON_COUNT];
+} input_endpoint_data_t;
+
+typedef struct tag_input_device_type_desc input_device_type_desc_t;
+
+// 각 장치 설정
+typedef struct tag_input_device_data {
+    BOOL is_opend;
+
+    // 장치 타입
+    input_device_type_desc_t *device_type_desc;
+
+    // 대상 endpoint들
+    input_endpoint_data_t* target_endpoints[MAX_INPUT_ENDPOINT_COUNT];
+    int target_endpoint_count;
+
+    // 장치 설정 스트링
+    char device_config_str[256];
+
+    // 장치 데이터
+    void* data;
+} input_device_data_t;
+
+// 장치 타입 정보 설정
+typedef struct tag_input_device_type_desc {
+    char device_type[16];
+
+    int (*init_input_dev)(input_device_data_t* device_data, char* device_config_str, char* endpoint_config_str[]);
+    void (*start_input_dev)(input_device_data_t* device_data);
+    void (*check_input_dev)(input_device_data_t* device_data);
+    void (*stop_input_dev)(input_device_data_t* device_data);
+} input_device_type_desc_t;
+
+
+extern const input_button_data_t default_buttonset[DEFAULT_INPUT_BUTTON_COUNT];
+
+// extern input_buttonset_data_t buttonset_list[MAX_INPUT_BUTTONSET_COUNT];
+// extern int input_buttonset_count;
+
+// extern input_endpoint_data_t endpoint_list[MAX_INPUT_ENDPOINT_COUNT];
+// extern int input_endpoint_count;
+
+// extern input_device_type_desc_t device_type_desc_list[MAX_INPUT_DEVICE_TYPE_DESC_COUNT];
+// extern int input_device_type_desc_count;
+
+// extern input_device_data_t device_list[MAX_INPUT_DEVICE_COUNT];
+// extern int input_device_count;
+
+
+int find_input_button_data(input_endpoint_data_t* endpoint, int button_code, input_button_data_t* button_data);
+
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

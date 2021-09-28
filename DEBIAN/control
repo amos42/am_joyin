@@ -1,0 +1,9 @@
+Package: am-joyin-dkms
+Version: $MKVERSION
+Architecture: all
+Maintainer: Ju, Gyeong-min <amos42@gmail.com>
+Installed-Size: 74
+Depends: dkms (>= 1.95)
+Section: misc
+Priority: optional
+Description: am_joyin driver in DKMS format.
