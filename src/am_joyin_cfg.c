@@ -111,16 +111,14 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
 
         idx = 0;
         while (pText != NULL && idx < MAX_INPUT_BUTTON_COUNT) {
-            char *ptr, *keycode_p, *minvalue_p, *maxvalue_p;
+            char *block_p, *keycode_p, *minvalue_p, *maxvalue_p;
             int key_code, min_value, max_value;
 
-            ptr = strsep(&pText, "}");
+            strsep(&pText, "{");
+            block_p = strsep(&pText, "}");
+            minvalue_p = strsep(&block_p, ",");
+            maxvalue_p = strsep(&block_p, ",");
             strsep(&pText, ",");
-
-            strsep(&ptr, "{");
-            keycode_p = strsep(&ptr, ",");
-            minvalue_p = strsep(&ptr, ",");
-            maxvalue_p = strsep(&ptr, ",");
 
             key_code = simple_strtol(keycode_p, NULL, 0);
             min_value = simple_strtol(minvalue_p, NULL, 0);

@@ -89,7 +89,7 @@ static const device_mux_index_table_t default_input_mux_config = {
 // endpoint_count_str : endpoint1_keycode(default | custom), code_type(code | index), n * {keycode1, value1}
 int init_input_device_for_mux(input_device_data_t *device_data, char* device_config_str, char* endpoint_config_str[])
 {
-    int i, j, idx;
+    int i, j;
     int code_mode;
     device_mux_index_table_t *src, *des;
     char szText[512];
@@ -150,35 +150,32 @@ int init_input_device_for_mux(input_device_data_t *device_data, char* device_con
             char* keycode_p = strsep(&pText, ";");
             code_mode = simple_strtol(keycode_p, NULL, 10);
 
-            idx = 0;
+            button_count = 0;
             src = &user_data->button_cfg[i];
-            while (pText != NULL && idx < MAX_INPUT_BUTTON_COUNT) {
-                char *ptr, *button_p, *value_p;
+            while (pText != NULL && button_count < MAX_INPUT_BUTTON_COUNT) {
+                char *block_p, *button_p, *value_p;
                 int button, value;
 
-                ptr = strsep(&pText, "}");
+                strsep(&pText, "{");
+                block_p = strsep(&pText, "}");
+                button_p = strsep(&block_p, ",");
+                value_p = strsep(&block_p, ",");
                 strsep(&pText, ",");
-
-                strsep(&ptr, "{");
-                button_p = strsep(&ptr, ",");
-                value_p = strsep(&ptr, ",");
 
                 button = simple_strtol(button_p, NULL, 0);
                 value = simple_strtol(value_p, NULL, 0);
 
                 // 키 설정 추가
-                src->buttondef[idx].button = button;
-                src->buttondef[idx].value = value;
-                idx++;
+                src->buttondef[button_count].button = button;
+                src->buttondef[button_count].value = value;
+                button_count++;
             }
-
-            button_count = idx;
         } else {
             continue;
         }
 
         if (code_mode == 0) {
-            if (button_count > ep->button_count) button_count = ep->button_count;
+            // if (button_count > ep->button_count) button_count = ep->button_count;
             for (j = 0; j < button_count; j++) {
                 int k;
                 int code = src->buttondef[j].button;
@@ -189,6 +186,13 @@ int init_input_device_for_mux(input_device_data_t *device_data, char* device_con
                         break;
                     }
                 }
+            }
+            des->button_count = button_count;
+        } else if (code_mode == 1) {
+            // if (button_count > ep->button_count) button_count = ep->button_count;
+            for (j = 0; j < button_count; j++) {
+                des->buttondef[j].button = src->buttondef[j].button;
+                des->buttondef[j].value = src->buttondef[j].value;
             }
             des->button_count = button_count;
         }
