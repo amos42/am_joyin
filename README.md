@@ -59,7 +59,7 @@ sudo modprobe am_joyin device1="mcp23017;0x20;0,default,default"
 **Multiplexer(=MUX) 입력**
 
 ```shell
-sudo modprobe am_joyin device1="mux;26,19,13,6,,5,default;0,default,default"
+sudo modprobe am_joyin device1="mux;5,{26,19,13,6},default,1;0,default,default"
 ```
 
 
