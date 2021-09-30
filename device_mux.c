@@ -4,8 +4,7 @@
 #include <linux/slab.h>
 #include <linux/delay.h>
 #include <linux/uaccess.h>
-#include "../util/gpio_util.h"
-#include "mux.h"
+#include "gpio_util.h"
 
 //#define GPIO_GET(i)   GPIO_READ(i)
 //#define GPIO_GET_VALUE(i)   getGpio(i)

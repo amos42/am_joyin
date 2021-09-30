@@ -5,7 +5,8 @@
 #include <linux/kernel.h>
 #include <linux/mutex.h>
 
-#include "devices/indev_type.h"
+#include "indev_type.h"
+
 
 typedef struct tag_am_joyin_data {
     int used;

@@ -38,22 +38,18 @@ MODULE_LICENSE("GPL");
 
 
 
-//#include "util/gpio_util.h"
-#include "util/gpio_util.c"
-//#include "util/i2c_util.h"
-#include "util/i2c_util.c"
+//#include "gpio_util.h"
+#include "gpio_util.c"
+//#include "i2c_util.h"
+#include "i2c_util.c"
 
-//#include "devices/indev_type.h"
-#include "devices/indev_type.c"
+//#include "indev_type.h"
+#include "indev_type.c"
 
-// //#include "devices/gpio_rpi2.h"
-#include "devices/gpio_rpi2.c"
-// //#include "devices/74hc165.h"
-#include "devices/74hc165.c"
-// //#include "devices/mcp23017.h"
-#include "devices/mcp23017.c"
-// //#include "devices/mux.h"
-#include "devices/mux.c"
+#include "device_gpio_rpi2.c"
+#include "device_74hc165.c"
+#include "device_mcp23017.c"
+#include "device_mux.c"
 
 
 

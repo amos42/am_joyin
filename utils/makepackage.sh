@@ -16,14 +16,15 @@ cp -r DEBIAN "$rootdir"
 mkdir -p "$srcdir"
 cp dkms.conf "$srcdir"
 cp Makefile "$srcdir"
-#cp src/* "$srcdir"
-cp -r src "$srcdir"
+cp *.c "$srcdir"
+cp *.h "$srcdir"
 
 mkdir -p "$sharedir"
 cp LICENSE "$sharedir"
 cp README.md "$sharedir"
 
-sed -i "s/\$MKVERSION/${version}/g" $srcdir/* $rootdir/DEBIAN/control $rootdir/DEBIAN/prerm
+#sed -i "s/\$MKVERSION/${version}/g" $srcdir/src/* $rootdir/DEBIAN/control $rootdir/DEBIAN/prerm
+sed -i "s/\$MKVERSION/${version}/g" $srcdir/Makefile $srcdir/dkms.conf $rootdir/DEBIAN/control $rootdir/DEBIAN/prerm
 
 echo "building dpkg"
 

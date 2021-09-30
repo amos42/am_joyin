@@ -2,8 +2,7 @@
 #include <linux/module.h>
 #include <linux/input.h>
 #include <linux/slab.h>
-#include "../util/gpio_util.h"
-#include "gpio_rpi2.h"
+#include "gpio_util.h"
 
 //#define GPIO_GET(i)   GPIO_READ(i)
 //#define GPIO_GET_VALUE(i)   gpio_get_value(i)

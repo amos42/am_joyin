@@ -2,7 +2,7 @@
 #include <linux/module.h>
 
 
-#include "devices/indev_type.h"
+#include "indev_type.h"
 #include "am_joyin.h"
 
 /*
@@ -116,6 +116,7 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
 
             strsep(&pText, "{");
             block_p = strsep(&pText, "}");
+            keycode_p = strsep(&block_p, ",");
             minvalue_p = strsep(&block_p, ",");
             maxvalue_p = strsep(&block_p, ",");
             strsep(&pText, ",");

@@ -1,4 +1,4 @@
-obj-m := src/am_joyin.o
+obj-m := am_joyin.o
 #am_joyin-objs := src/gpio_util.o
 #am_joyin-objs += src/gpio_rpi2.o src/74hc165.o
 KVERSION := `uname -r`
