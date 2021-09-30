@@ -14,22 +14,22 @@
 //#define DEFAULT_MUX_BUTTON_COUNT  (16)
 
 // static const device_mux_index_item_t default_mux_button_config[DEFAULT_MUX_BUTTON_COUNT] = {
-//     {ABS_Y,     -1},
-//     {ABS_Y,      1},
-//     {ABS_X,     -1},
-//     {ABS_X,      1}, 
-//     {BTN_START,  1},
-//     {BTN_SELECT, 1},
-//     {BTN_A,      1},
-//     {BTN_B,      1},
-//     {BTN_X,      1},
-//     {BTN_Y,      1},
-//     {BTN_TL,     1},
-//     {BTN_TR,     1},
-//     {BTN_MODE,   1},
-//     {BTN_TL2,    1},
-//     {BTN_TR2,    1},
-//     {BTN_Z,      1}
+        // {ABS_Y,      -1},
+        // {ABS_Y,       1},
+        // {ABS_X,      -1},
+        // {ABS_X,       1}, 
+        // {BTN_START,   1},
+        // {BTN_SELECT,  1},
+        // {BTN_A,       1},
+        // {BTN_B,       1},
+        // {BTN_X,       1},
+        // {BTN_Y,       1},
+        // {BTN_TL,      1},
+        // {BTN_TR,      1},
+        // {BTN_MODE,    1},
+        // {BTN_TL2,     1},
+        // {BTN_TR2,     1},
+        // {BTN_TRIGGER, 1}
 // };
 
 #define MAX_MUX_ADDR_REG_COUNT (6)
@@ -64,22 +64,22 @@ typedef struct tag_device_mux_data {
 
 static const device_mux_index_table_t default_input_mux_config = {
     {
-        {ABS_Y,     -1},
-        {ABS_Y,      1},
-        {ABS_X,     -1},
-        {ABS_X,      1}, 
-        {BTN_START,  1},
-        {BTN_SELECT, 1},
-        {BTN_A,      1},
-        {BTN_B,      1},
-        {BTN_X,      1},
-        {BTN_Y,      1},
-        {BTN_TL,     1},
-        {BTN_TR,     1},
-        {BTN_MODE,   1},
-        {BTN_TL2,    1},
-        {BTN_TR2,    1},
-        {BTN_Z,      1}
+        {ABS_Y,      -1},
+        {ABS_Y,       1},
+        {ABS_X,      -1},
+        {ABS_X,       1}, 
+        {BTN_START,   1},
+        {BTN_SELECT,  1},
+        {BTN_A,       1},
+        {BTN_B,       1},
+        {BTN_X,       1},
+        {BTN_Y,       1},
+        {BTN_TL,      1},
+        {BTN_TR,      1},
+        {BTN_MODE,    1},
+        {BTN_TL2,     1},
+        {BTN_TR2,     1},
+        {BTN_TRIGGER, 1}
     }, 
     INPUT_MUX_DEFAULT_KEYCODE_TABLE_ITEM_COUNT
 };

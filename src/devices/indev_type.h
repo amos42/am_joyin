@@ -40,20 +40,20 @@ typedef int BOOL;
 
 #define DEFAULT_INPUT_BUTTON_COUNT            (14)
 #define DEFAULT_INPUT_BUTTONS { \
-                                {ABS_Y,     -1, 1}, \
-                                {ABS_X,     -1, 1}, \
-                                {BTN_START,  0, 1}, \
-                                {BTN_SELECT, 0, 1}, \
-                                {BTN_A,      0, 1}, \
-                                {BTN_B,      0, 1}, \
-                                {BTN_X,      0, 1}, \
-                                {BTN_Y,      0, 1}, \
-                                {BTN_TL,     0, 1}, \
-                                {BTN_TR,     0, 1}, \
-                                {BTN_MODE,   0, 1}, \
-                                {BTN_TL2,    0, 1}, \
-                                {BTN_TR2,    0, 1}, \
-                                {BTN_Z,      0, 1} \
+                                {ABS_Y,      -1, 1}, \
+                                {ABS_X,      -1, 1}, \
+                                {BTN_START,   0, 1}, \
+                                {BTN_SELECT,  0, 1}, \
+                                {BTN_A,       0, 1}, \
+                                {BTN_B,       0, 1}, \
+                                {BTN_X,       0, 1}, \
+                                {BTN_Y,       0, 1}, \
+                                {BTN_TL,      0, 1}, \
+                                {BTN_TR,      0, 1}, \
+                                {BTN_MODE,    0, 1}, \
+                                {BTN_TL2,     0, 1}, \
+                                {BTN_TR2,     0, 1}, \
+                                {BTN_TRIGGER, 0, 1} \
                             }
 
 // 개별 버튼 설정

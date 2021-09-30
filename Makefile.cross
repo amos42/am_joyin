@@ -1,5 +1,5 @@
 ifneq (${KERNELRELEASE},)
-	obj-m  = am_joyin.o
+	obj-m  = src/am_joyin.o
 else
 	KERNELDIR        ?= /lib/modules/$(shell uname -r)/build
 	MODULE_DIR       ?= $(shell pwd)

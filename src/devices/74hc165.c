@@ -16,22 +16,22 @@ static const int default_74hc165_gpio_maps[3] = {16, 20, 21};
 //#define DEFAULT_74HC165_BUTTON_COUNT  (16)
 
 // static const device_74hc165_index_item_t default_74hc165_button_config[DEFAULT_74HC165_BUTTON_COUNT] = {
-//     {ABS_Y,     -1},
-//     {ABS_Y,      1},
-//     {ABS_X,     -1},
-//     {ABS_X,      1}, 
-//     {BTN_START,  1},
-//     {BTN_SELECT, 1},
-//     {BTN_A,      1},
-//     {BTN_B,      1},
-//     {BTN_X,      1},
-//     {BTN_Y,      1},
-//     {BTN_TL,     1},
-//     {BTN_TR,     1},
-//     {BTN_MODE,   1},
-//     {BTN_TL2,    1},
-//     {BTN_TR2,    1},
-//     {BTN_Z,      1}
+//     {ABS_Y,      -1},
+//     {ABS_Y,       1},
+//     {ABS_X,      -1},
+//     {ABS_X,       1}, 
+//     {BTN_START,   1},
+//     {BTN_SELECT,  1},
+//     {BTN_A,       1},
+//     {BTN_B,       1},
+//     {BTN_X,       1},
+//     {BTN_Y,       1},
+//     {BTN_TL,      1},
+//     {BTN_TR,      1},
+//     {BTN_MODE,    1},
+//     {BTN_TL2,     1},
+//     {BTN_TR2,     1},
+//     {BTN_TRIGGER, 1}
 // };
 
 typedef struct tag_device_74hc165_config {
@@ -64,22 +64,22 @@ typedef struct tag_device_74hc165_data {
 
 static const device_74hc165_index_table_t default_input_74hc165_config = {
     {
-        {ABS_Y,     -1},
-        {ABS_Y,      1},
-        {ABS_X,     -1},
-        {ABS_X,      1}, 
-        {BTN_START,  1},
-        {BTN_SELECT, 1},
-        {BTN_A,      1},
-        {BTN_B,      1},
-        {BTN_X,      1},
-        {BTN_Y,      1},
-        {BTN_TL,     1},
-        {BTN_TR,     1},
-        {BTN_MODE,   1},
-        {BTN_TL2,    1},
-        {BTN_TR2,    1},
-        {BTN_Z,      1}
+        {ABS_Y,      -1},
+        {ABS_Y,       1},
+        {ABS_X,      -1},
+        {ABS_X,       1}, 
+        {BTN_START,   1},
+        {BTN_SELECT,  1},
+        {BTN_A,       1},
+        {BTN_B,       1},
+        {BTN_X,       1},
+        {BTN_Y,       1},
+        {BTN_TL,      1},
+        {BTN_TR,      1},
+        {BTN_MODE,    1},
+        {BTN_TL2,     1},
+        {BTN_TR2,     1},
+        {BTN_TRIGGER, 1}
     }, 
     INPUT_74HC165_DEFAULT_KEYCODE_TABLE_ITEM_COUNT
 };

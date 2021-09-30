@@ -24,29 +24,6 @@
 #define MPC23017_GPIOB_READ             (0x13)
 
 
-static const int default_mcp23017_gpio_maps[MAX_ADDR_IO_COUNT] = {16, 20, 21, };
-
-//#define DEFAULT_MCP23017_BUTTON_COUNT  (16)
-
-// static const device_mcp23017_index_item_t default_mcp23017_button_config[DEFAULT_MCP23017_BUTTON_COUNT] = {
-//     {ABS_Y,     -1},
-//     {ABS_Y,      1},
-//     {ABS_X,     -1},
-//     {ABS_X,      1}, 
-//     {BTN_START,  1},
-//     {BTN_SELECT, 1},
-//     {BTN_A,      1},
-//     {BTN_B,      1},
-//     {BTN_X,      1},
-//     {BTN_Y,      1},
-//     {BTN_TL,     1},
-//     {BTN_TR,     1},
-//     {BTN_MODE,   1},
-//     {BTN_TL2,    1},
-//     {BTN_TR2,    1},
-//     {BTN_Z,      1}
-// };
-
 typedef struct tag_device_mcp23017_config {
     int i2c_addr;
     int io_count;
@@ -74,22 +51,22 @@ typedef struct tag_device_mcp23017_data {
 
 static const device_mcp23017_index_table_t default_input_mcp23017_config = {
     {
-        {ABS_Y,     -1},
-        {ABS_Y,      1},
-        {ABS_X,     -1},
-        {ABS_X,      1}, 
-        {BTN_START,  1},
-        {BTN_SELECT, 1},
-        {BTN_A,      1},
-        {BTN_B,      1},
-        {BTN_X,      1},
-        {BTN_Y,      1},
-        {BTN_TL,     1},
-        {BTN_TR,     1},
-        {BTN_MODE,   1},
-        {BTN_TL2,    1},
-        {BTN_TR2,    1},
-        {BTN_Z,      1}
+        {ABS_Y,      -1},
+        {ABS_Y,       1},
+        {ABS_X,      -1},
+        {ABS_X,       1}, 
+        {BTN_START,   1},
+        {BTN_SELECT,  1},
+        {BTN_A,       1},
+        {BTN_B,       1},
+        {BTN_X,       1},
+        {BTN_Y,       1},
+        {BTN_TL,      1},
+        {BTN_TR,      1},
+        {BTN_MODE,    1},
+        {BTN_TL2,     1},
+        {BTN_TR2,     1},
+        {BTN_TRIGGER, 1}
     }, 
     INPUT_MCP23017_DEFAULT_KEYCODE_TABLE_ITEM_COUNT
 };

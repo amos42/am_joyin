@@ -9,6 +9,8 @@
 #define ABS_Y			0x01
 #define ABS_MAX			0x3f
 
+#define BTN_TRIGGER		0x120
+
 #define BTN_GAMEPAD		0x130
 #define BTN_SOUTH		0x130
 #define BTN_A			BTN_SOUTH
@@ -33,20 +35,20 @@
 
 
 // const input_button_data_t default_buttonset[DEFAULT_INPUT_BUTTON_COUNT] = {
-//     {ABS_Y,     -1, 1},
-//     {ABS_X,     -1, 1},
-//     {BTN_START,  0, 1},
-//     {BTN_SELECT, 0, 1},
-//     {BTN_A,      0, 1},
-//     {BTN_B,      0, 1},
-//     {BTN_X,      0, 1},
-//     {BTN_Y,      0, 1},
-//     {BTN_TL,     0, 1},
-//     {BTN_TR,     0, 1},
-//     {BTN_MODE,   0, 1},
-//     {BTN_TL2,    0, 1},
-//     {BTN_TR2,    0, 1},
-//     {BTN_Z,      0, 1}
+//     {ABS_Y,      -1, 1},
+//     {ABS_X,      -1, 1},
+//     {BTN_START,   0, 1},
+//     {BTN_SELECT,  0, 1},
+//     {BTN_A,       0, 1},
+//     {BTN_B,       0, 1},
+//     {BTN_X,       0, 1},
+//     {BTN_Y,       0, 1},
+//     {BTN_TL,      0, 1},
+//     {BTN_TR,      0, 1},
+//     {BTN_MODE,    0, 1},
+//     {BTN_TL2,     0, 1},
+//     {BTN_TR2,     0, 1},
+//     {BTN_TRIGGER, 0, 1}
 // };
 
 const input_button_data_t default_buttonset[DEFAULT_INPUT_BUTTON_COUNT] = DEFAULT_INPUT_BUTTONS;
@@ -70,7 +72,7 @@ const input_button_data_t default_buttonset[DEFAULT_INPUT_BUTTON_COUNT] = DEFAUL
 // //             {BTN_MODE,   0, 1},
 // //             {BTN_TL2,    0, 1},
 // //             {BTN_TR2,    0, 1},
-// //             {BTN_Z,      0, 1}
+// //             {BTN_TRIGGER,      0, 1}
 // //         },
 // //         DEFAULT_INPUT_BUTTON_COUNT
 // //     },    
