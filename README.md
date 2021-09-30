@@ -52,6 +52,9 @@ Amos Joystick Input Driver for Raspbrri-pi Arcade (or another SBC)
 | BTN_TRIGGER | 0x120 | 0      | 1     |
 
 
+```shell
+keyset1_cfg={0x01,-1,1},{0x00,-1,1},{0x13B,0,1},{0x13A,0,1},{0x130,0,1},{0x103,0,1},{0x102,0,1},{0x103,0,1},{0x102,0,1},{0x103,0,1}
+```
 
 **실행 방법**
 
@@ -59,11 +62,77 @@ Amos Joystick Input Driver for Raspbrri-pi Arcade (or another SBC)
 sudo modprobe am_joyin
 ```
 
-**파라미터 포맷**
 
 
 
-**GPIO 입력**
+## 드라이버 설치
+
+### 0. 사전 작업
+
+먼저 사전 작업으로 2가지를 해야 합니다.
+
+> 1. wifi 연결 및 ssh 활성화
+> 2. 만약 mk_arcade_joystick_rpi 드라이버가 설치되어 있다면 제거
+
+레트로파이 설정 메뉴에서 retropie-setup으로 들어가, 드라이버 항목에서 mk_arcade_joystick_rpi 를 제거합니다.
+
+### 1. am_joyin 드라이버 설치
+
+이제 본격적으로 설치 작업을 진행합니다.
+
+1. 라즈베리파이에 ssh로 접속합니다.
+
+2. 다음의 커맨드를 차례로 입력합니다.
+
+```shell
+> git clone https://github.com/amos42/am_joyin.git
+> cd am_joyin
+> ./utils/makepackage.sh 0.1.0 
+> sudo dpkg -i build/am_joyin-0.1.0.deb
+```
+​
+이렇게 하면 일단 드라이버는 설치 됩니다.
+
+### 3. am_joyin 설정
+
+다음으로는 드라이버 설정을 진행해야 합니다.
+
+am_joyin 설정 파일을 엽니다.
+
+```shell
+> sudo nano /etc/modprobe.d/am_joyin.conf
+```
+
+mk_archde_joystick_rpi와 동일한 구성의 GPIO를 사용하고 싶다면 다음 항목을 입력하고 ctrl-x를 눌러 저장하고 빠집니다.
+
+```
+options am_joyin device1="gpio;;0,default"
+```
+
+### 4. 드라이버 부팅시 자동 로딩
+
+이제 이 드라이버를 쓸 수 있게 활성화를 합니다.
+
+드라이버 모듈 설정 파일을 엽니다.
+
+```shell
+> sudo nano /etc/modules-load.d/modules.conf
+```
+
+마지막 라인에 다음 항목을 추가하고 ctrl-x를 눌러 저장하고 빠집니다.
+
+```
+  .
+  .
+  .
+am_joyin
+```
+
+
+## 각 장치별 파라미터 포맷
+
+
+### GPIO 입력
 
 ![GPIO Interface](images/mk_joystick_arcade_GPIOs.png)
 
@@ -87,20 +156,20 @@ sudo modprobe am_joyin device1="gpio;;0,custom,1,{4,0x1,-1},{17,0x1,1},{27,0x0,-
 
 
 
-**74HC165 입력**
+### 74HC165 입력
 
 ```shell
 sudo modprobe am_joyin device1="74hc165;16,20,21,,1;0,defaultdefault"
 ```
 
-**MCP23017 입력**
+### MCP23017 입력
 
 ```shell
 sudo modprobe am_joyin device1="mcp23017;0x20;0,defaultdefault"
 ```
 
 
-**Multiplexer(=MUX) 입력**
+### Multiplexer(=MUX) 입력
 
 ```shell
 sudo modprobe am_joyin device1="mux;5,{26,19,13,6},default,1;0,default"
