@@ -186,37 +186,19 @@ param1="text1;default,10;test,1,{1,a},{2,b}" param2="text1;;test,,{2,b,0},{3,,0}
 
 이를 해석하면 다음과 같다.
 
-```yaml
-param1:
-  section1:
-    - text1
-  section2:
-    - default
-    - 10
-  section3:
-    - test
-    - 1
-    - block1:
-        - 1
-        - a
-    - block2:
-        - 2
-        - b
-param2:
-  section1:
-    - text1
-  section2: <null>
-  section3:
-    - test
-    - <null>
-    - block1:
-      - 2
-      - b
-      - 0
-    - block2:
-      - 3
-      - <null>
-      - 0
+```json
+{
+  "param1": {
+    "section1": [ "text1" ],
+    "section2": [ "default", 10 ],
+    "section3": [ "test", 1, [1, 0], [2, "b"]]
+  },
+  "param2": {
+    "section1": [ "text1" ],
+    "section2": null,
+    "section3": ["test", null, [2, "b", 0], [3, null, 0]]
+  }
+}
 ```
 
 ### am_joyin의 파라미터들
