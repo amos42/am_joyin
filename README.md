@@ -25,9 +25,9 @@ Amos Joystick Input Driver for Raspbrri-pi Arcade (or another SBC)
 
 **키셋**
 
-커스텀 키에서 사용하는 코드는 input-event-condes.h 파일을 참고하면 된다.
+커스텀 키에서 사용하는 코드는 input-event-codes.h 파일을 참고하면 된다.
 
-[input-event-condes.h](extra/input-event-condes.h)
+[input-event-condes.h](extra/input-event-codes.h)
 
 기본 제공 키셋 (keyset id = 0)
 
