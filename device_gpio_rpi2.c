@@ -45,8 +45,8 @@ static const device_gpio_index_table_t default_input1_gpio_config = {
         {14, BTN_TL,     1},
         {23, BTN_TR,     1},
         {2,  BTN_MODE,   1},
-    }, 
-    INPUT_GPIO_DEFAULT_KEYCODE_TABLE_ITEM_COUNT
+    },
+    0, INPUT_GPIO_DEFAULT_KEYCODE_TABLE_ITEM_COUNT
 };
 
 static const device_gpio_index_table_t default_input2_gpio_config = {
@@ -65,7 +65,7 @@ static const device_gpio_index_table_t default_input2_gpio_config = {
         {8,  BTN_TR,     1},
         {3,  BTN_MODE,   1},
     }, 
-    INPUT_GPIO_DEFAULT_KEYCODE_TABLE_ITEM_COUNT
+    0, INPUT_GPIO_DEFAULT_KEYCODE_TABLE_ITEM_COUNT
 };
 
 

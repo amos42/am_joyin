@@ -68,7 +68,7 @@ static const device_mcp23017_index_table_t default_input_mcp23017_config = {
         {BTN_TR2,     1},
         {BTN_TRIGGER, 1}
     }, 
-    INPUT_MCP23017_DEFAULT_KEYCODE_TABLE_ITEM_COUNT
+    0, INPUT_MCP23017_DEFAULT_KEYCODE_TABLE_ITEM_COUNT
 };
 
 

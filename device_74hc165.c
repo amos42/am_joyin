@@ -81,7 +81,7 @@ static const device_74hc165_index_table_t default_input_74hc165_config = {
         {BTN_TR2,     1},
         {BTN_TRIGGER, 1}
     }, 
-    INPUT_74HC165_DEFAULT_KEYCODE_TABLE_ITEM_COUNT
+    0, INPUT_74HC165_DEFAULT_KEYCODE_TABLE_ITEM_COUNT
 };
 
 

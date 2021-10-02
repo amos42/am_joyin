@@ -79,7 +79,7 @@ void __init prepocess_params(void)
     }
     if (cnt <= 0)
     {
-        am_device_cfg[0] = "gpio;;0,default1";
+        am_device_cfg[0] = "gpio;;0,default1,0";
     }
 }
 
@@ -239,14 +239,14 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
 
                 if (endpoint_idx < a_input->input_endpoint_count) {
                     device->target_endpoints[device->target_endpoint_count] = &a_input->endpoint_list[endpoint_idx];
-                    device->target_endpoint_count++;
                     endpoint_params[device->target_endpoint_count] = endpoint_cfg_p;
+                    device->target_endpoint_count++;
                 }
             }
         } else {
             device->target_endpoints[0] = &a_input->endpoint_list[0];
+            endpoint_params[0] = "0,default";
             device->target_endpoint_count = 1;
-            endpoint_params[0] = "default,default";
         }
 
         if (type_desc->init_input_dev != NULL) {
