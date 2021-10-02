@@ -239,7 +239,7 @@ static void check_input_device_for_gpio(input_device_data_t* device_data)
     
     for (i = 0; i < device_data->target_endpoint_count; i++) {
         input_endpoint_data_t* endpoint = device_data->target_endpoints[i];
-        device_gpio_index_item_t* item = (device_gpio_index_item_t*)table->buttondef;
+        device_gpio_index_item_t* item = &table->buttondef[table->button_start_index];
 
         for (j = 0; j < table->button_count; j++) {
             if (item->gpio != -1) {    // to avoid unused buttons

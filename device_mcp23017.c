@@ -244,7 +244,7 @@ static void check_input_device_for_mcp23017(input_device_data_t *device_data)
     for (i = 0; i < device_data->target_endpoint_count; i++) {
         input_endpoint_data_t* endpoint = device_data->target_endpoints[i];
         device_mcp23017_index_table_t* table = &user_data->button_cfg[i];
-        device_mcp23017_index_item_t* btndef = (device_mcp23017_index_item_t *)table->buttondef;
+        device_mcp23017_index_item_t* btndef = &table->buttondef[table->button_start_index];
 
         cnt = table->button_count;
         if (cnt > io_count) cnt = io_count;
