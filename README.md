@@ -225,7 +225,7 @@ endpoints="default,13;1,11"
 
 **device 설정**
 ```shell
-device1="gpio;;0,default1,12"
+device1="gpio;;0,default1,0,12"
 ```
 
 ## 각 장치별 파라미터 포맷
@@ -237,13 +237,13 @@ device1="gpio;;0,default1,12"
 - 1인용 기본 키 설정
 
 ```shell
-sudo modprobe am_joyin device1="gpio;;0,default1,default"
+sudo modprobe am_joyin device1="gpio;;0,default1,0,default"
 ```
 
 - 2인용 설정
 
 ```shell
-sudo modprobe am_joyin endpoints="default,12;default,12" device1="gpio;;0,default1,12;1,default2,12"
+sudo modprobe am_joyin endpoints="default,12;default,12" device1="gpio;;0,default1,0,12;1,default2,0,12"
 ```
 
 - 커스텀 키 설정
@@ -256,20 +256,20 @@ sudo modprobe am_joyin device1="gpio;;0,custom,1,{4,0x1,-1},{17,0x1,1},{27,0x0,-
 ### 74HC165 입력
 
 ```shell
-sudo modprobe am_joyin device1="74hc165;16,20,21,,1;0,defaultdefault"
+sudo modprobe am_joyin device1="74hc165;16,20,21,,1;0,,default"
 ```
 
 ### MCP23017 입력
 
 ```shell
-sudo modprobe am_joyin device1="mcp23017;0x20;0,defaultdefault"
+sudo modprobe am_joyin device1="mcp23017;0x20;0,,default"
 ```
 
 
 ### Multiplexer(=MUX) 입력
 
 ```shell
-sudo modprobe am_joyin device1="mux;5,{26,19,13,6},default,1;0,default"
+sudo modprobe am_joyin device1="mux;5,{26,19,13,6},default,1;0,,default"
 ```
 
 

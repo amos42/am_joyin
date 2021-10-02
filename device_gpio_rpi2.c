@@ -18,6 +18,7 @@ typedef struct tag_device_gpio_index_item {
 
 typedef struct tag_device_gpio_index_table {
     device_gpio_index_item_t buttondef[MAX_INPUT_BUTTON_COUNT];
+    int button_start_index;
     int button_count;
 } device_gpio_index_table_t;
 
@@ -88,7 +89,7 @@ int init_input_device_for_gpio(input_device_data_t *device_data, char* device_co
     for (i = 0; i < device_data->target_endpoint_count; i++ ) {
         input_endpoint_data_t *ep = device_data->target_endpoints[i];
         char* cfgtype_p;
-        int button_count;
+        int button_start_index, button_count;
 
         if (ep == NULL || endpoint_config_str[i] == NULL) continue;
 
@@ -102,6 +103,12 @@ int init_input_device_for_gpio(input_device_data_t *device_data, char* device_co
 
             temp_p = strsep(&pText, ",");
             if (temp_p == NULL || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {
+                button_start_index = 0;
+            } else {
+                button_start_index = simple_strtol(temp_p, NULL, 10);
+            }
+            temp_p = strsep(&pText, ",");
+            if (temp_p == NULL || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {
                 button_count = src->button_count;
             } else {
                 button_count = simple_strtol(temp_p, NULL, 10);
@@ -112,6 +119,12 @@ int init_input_device_for_gpio(input_device_data_t *device_data, char* device_co
 
             temp_p = strsep(&pText, ",");
             if (temp_p == NULL || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {
+                button_start_index = 0;
+            } else {
+                button_start_index = simple_strtol(temp_p, NULL, 10);
+            }
+            temp_p = strsep(&pText, ",");
+            if (temp_p == NULL || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {
                 button_count = src->button_count;
             } else {
                 button_count = simple_strtol(temp_p, NULL, 10);
@@ -120,6 +133,7 @@ int init_input_device_for_gpio(input_device_data_t *device_data, char* device_co
             char* keycode_p = strsep(&pText, ",");
             code_mode = simple_strtol(keycode_p, NULL, 10);
 
+            button_start_index = 0;
             button_count = 0;
             src = &user_data->items[i];
             while (pText != NULL && button_count < MAX_INPUT_BUTTON_COUNT) {
@@ -161,6 +175,7 @@ int init_input_device_for_gpio(input_device_data_t *device_data, char* device_co
                     }
                 }
             }
+            des->button_start_index = button_start_index;
             des->button_count = button_count;
         } else if (code_mode == 1) {
             int j;
@@ -170,6 +185,7 @@ int init_input_device_for_gpio(input_device_data_t *device_data, char* device_co
                 des->buttondef[j].gpio = src->buttondef[j].gpio;
                 des->buttondef[j].value = src->buttondef[j].value;
             }
+            des->button_start_index = button_start_index;
             des->button_count = button_count;
         }
 
