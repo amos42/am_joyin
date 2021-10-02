@@ -67,7 +67,7 @@ void __init prepocess_params(void)
     // endpoint 생략시, 기본 파라미터 세팅
     if (am_endpoints_cfg == NULL)
     {
-        am_endpoints_cfg = "default,default";
+        am_endpoints_cfg = "default,default,default";
     }
 
     // device 모두 생략시, 기본 파라미터 세팅
@@ -141,15 +141,19 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
     idx = 0;
     while (pText != NULL && idx < MAX_INPUT_ENDPOINT_COUNT) {
         input_buttonset_data_t* btncfg_item;
-        char *ptr, *keycfg_p, *buttoncnt_p;
+        char *ptr, *name_p, *keycfg_p, *buttoncnt_p;
         int keycfg_idx, button_cnt;
 
         ptr = strsep(&pText, ";");
 
+        name_p = strsep(&ptr, ",");
         keycfg_p = strsep(&ptr, ",");
         buttoncnt_p = strsep(&ptr, ",");
 
-        if (strcmp(keycfg_p, "default") == 0) {
+        if (name_p == NULL || strcmp(name_p, "") == 0 || strcmp(name_p, "default") == 0) {
+            name_p = NULL;
+        }
+        if (keycfg_p == NULL || strcmp(keycfg_p, "default") == 0 || strcmp(keycfg_p, "") == 0) {
             keycfg_idx = 0;
         }
         else {
@@ -169,6 +173,11 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
         }
 
         // endpoint 추가
+        if (name_p != NULL) {
+            strncpy(a_input->endpoint_list[idx].endpoint_name, name_p, 31);
+        } else {
+            snprintf(a_input->endpoint_list[idx].endpoint_name, 31, "AmosJoystick_%d", idx + 1);
+        }
         a_input->endpoint_list[idx].endpoint_id = idx;
         a_input->endpoint_list[idx].target_buttonset = btncfg_item;
         a_input->endpoint_list[idx].button_count = button_cnt;
@@ -202,7 +211,10 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
                 break;
             }
         }
-        if (type_desc == NULL) continue;
+        if (type_desc == NULL) {
+            printk(KERN_NOTICE"unknown device \"%s\"", typeid_p);
+            continue;
+        }
 
         device = &a_input->device_list[a_input->input_device_count++];
 
@@ -210,25 +222,31 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
 
         device_params_p = strsep(&pText, ";");
 
-        while(pText != NULL){
-            char* ptr = strsep(&pText, ";");
+        if (pText != NULL) {
+            while (pText != NULL){
+                char* ptr = strsep(&pText, ";");
 
-            char* endpoint_p = strsep(&ptr, ",");
-            char* endpoint_cfg_p = ptr; // strsep(&ptr, ",");
+                char* endpoint_p = strsep(&ptr, ",");
+                char* endpoint_cfg_p = ptr; // strsep(&ptr, ",");
 
-            int endpoint_idx;
-            if (strcmp(endpoint_p, "") == 0) {
-                endpoint_idx = 0;
-            }
-            else {
-                endpoint_idx = simple_strtol(endpoint_p, NULL, 10);
-            }
+                int endpoint_idx;
+                if (strcmp(endpoint_p, "") == 0) {
+                    endpoint_idx = 0;
+                }
+                else {
+                    endpoint_idx = simple_strtol(endpoint_p, NULL, 10);
+                }
 
-            if (endpoint_idx < a_input->input_endpoint_count) {
-                device->target_endpoints[device->target_endpoint_count] = &a_input->endpoint_list[endpoint_idx];
-                endpoint_params[device->target_endpoint_count] = endpoint_cfg_p;
-                device->target_endpoint_count++;
+                if (endpoint_idx < a_input->input_endpoint_count) {
+                    device->target_endpoints[device->target_endpoint_count] = &a_input->endpoint_list[endpoint_idx];
+                    device->target_endpoint_count++;
+                    endpoint_params[device->target_endpoint_count] = endpoint_cfg_p;
+                }
             }
+        } else {
+            device->target_endpoints[0] = &a_input->endpoint_list[0];
+            device->target_endpoint_count = 1;
+            endpoint_params[0] = "default,default";
         }
 
         if (type_desc->init_input_dev != NULL) {

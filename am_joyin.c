@@ -157,7 +157,7 @@ static void startTimer(void)
     if (a_input != NULL) {
         if (a_input->input_endpoint_count > 0 && a_input->input_device_count > 0){
             mod_timer(&a_input->timer, jiffies + DEFAULT_REFRESH_TIME);
-            printk("start dev input timer\n");
+            //printk("start dev input timer\n");
         }
     }
 }
@@ -167,7 +167,7 @@ static void stopTimer(void)
 {
     if (a_input != NULL) {
         del_timer_sync(&a_input->timer);
-        printk("stop dev input timer\n");
+        //printk("stop dev input timer\n");
     }
 }
 
@@ -177,7 +177,7 @@ static int __open_handler(struct input_dev *indev)
     input_endpoint_data_t *endpoint = input_get_drvdata(indev);
     int err;
 
-    printk("amos joystick input endpoint %d open...", a_input->used);
+    //printk("amos joystick input endpoint %d open...", a_input->used);
 
     err = mutex_lock_interruptible(&a_input->mutex);
     if (err)
@@ -189,7 +189,7 @@ static int __open_handler(struct input_dev *indev)
         }
 
         endpoint->is_opened = TRUE;
-        printk("amos joystick input endpoint opend");
+        //printk("amos joystick input endpoint opend");
     }
 
     mutex_unlock(&a_input->mutex);
@@ -202,7 +202,7 @@ static void __close_handler(struct input_dev *indev)
 {
     input_endpoint_data_t *endpoint = input_get_drvdata(indev);
 
-    printk("amos joystick input endpoint %d close...", a_input->used);
+    //printk("amos joystick input endpoint %d close...", a_input->used);
 
     mutex_lock(&a_input->mutex);
 
@@ -212,7 +212,7 @@ static void __close_handler(struct input_dev *indev)
         }
 
         endpoint->is_opened = FALSE;
-        printk("amos joystick input endpoint closed");
+        //printk("amos joystick input endpoint closed");
     }
 
     mutex_unlock(&a_input->mutex);
@@ -225,7 +225,7 @@ static int __endpoint_register(input_endpoint_data_t *endpoint)
 
     if (endpoint->indev == NULL) {
         struct input_dev *indev = input_allocate_device();
-        indev->name = DEVICE_NAME;
+        indev->name = endpoint->endpoint_name;
         indev->phys = "joystick";
         indev->id.bustype = BUS_PARPORT;
         indev->id.vendor = VENDOR_ID;
@@ -328,7 +328,7 @@ static int am_joyin_init(void)
     int i;
     int err;
 
-    printk("init input dev.....\n");
+    //printk("init input dev.....\n");
 
     // 커맨드 라인 파라미터 전처리
     prepocess_params();
@@ -351,12 +351,12 @@ static int am_joyin_init(void)
     // 커맨드 라인 파라미터들을 분석한다.
     parsing_device_config_params(a_input);
 
-    printk("start register input dev...\n");
+    //printk("start register input dev...\n");
 
     for (i = 0; i < a_input->input_device_count; i++) {
         input_device_data_t *dev = &a_input->device_list[i];
 
-        printk("register input dev #%d : %s\n", i, dev->device_type_desc->device_type);
+        printk(KERN_INFO"register input dev #%d : %s\n", i, dev->device_type_desc->device_type);
 
         dev->device_type_desc->start_input_dev(dev);
 
@@ -366,12 +366,20 @@ static int am_joyin_init(void)
         }
     }
 
-    printk("end register input dev.\n");
+    //printk("end register input dev.\n");
 
-    return 0;
+    // 한개라도 endpoint가 등록되어 있다면 정상 종료
+    for (i = 0; i < a_input->input_endpoint_count; i++) {
+        if (a_input->endpoint_list[i].indev != NULL) {
+            return 0;
+        }
+    }
+
+    printk(KERN_ERR"nothing input endpoint\n");
+    err = -ENODEV;
 
 err_free_dev:
-    printk("fail register input dev\n");
+    printk(KERN_ERR"fail register input dev\n");
     cleanup();
     return err;
 }
@@ -380,7 +388,7 @@ err_free_dev:
 static void am_joyin_exit(void)
 {
     cleanup();
-    printk("unregister input dev\n");
+    //printk("unregister input dev\n");
 }
 
 
