@@ -1,5 +1,7 @@
 # am_joyin
 
+---
+
 Amos Joystick Input Driver for Raspbrri-pi Arcade (or another SBC)
 
 이것은 라즈베리파이를 이용하여 아케이드 게임기를 제작할 때 다양한 입력장치를 사용할 수 있도록 기획되고 제작되었다.
@@ -252,8 +254,26 @@ sudo modprobe am_joyin endpoints="default,12;default,12" device1="gpio;;0,defaul
 sudo modprobe am_joyin device1="gpio;;0,custom,1,{4,0x1,-1},{17,0x1,1},{27,0x0,-1},{22,0x0,1},{10,0x13b,1},{9,0x13a,1}"
 ```
 
-
 ### 74HC165 입력
+
+부족한 IO를 확장하기 위해 많이 쓰이는 칩이 TI사의 74HC165이다. shift register를 구현한 칩이며, 시리얼 인터페이스로 동작한다.
+
+![74HC165](images/74hc165.jpg)
+
+![74HC165](images/74hc165_pinouts.png)
+
+74HC165는 8=bit 레지스터이기 때문에, 실제로 사용할 땐 복수개를 사용해야 하는 경우가 많다.
+갯수를 특정하기 힘들어서인지, 이를 모듈화 해 놓은 상품은 그다지 흔히 판매되지 않은 듯 하다.
+떄문에 필요하다면 만능 기판 등을 이용해 직접 입력 보드를 만들어서 사용해야 한다.
+
+![74HC165 Board DIY Board](images/74hc165-board_01.jpg)
+
+이를 PCB로 구현한 모습이다.
+
+![74HC165 Board Board](images/74hc165-board_02.jpg)
+
+해당 보드의 회로도는 https://github.com/amos42/pcbs/tree/master/joystick-input 를 통해 얻을 수 있다.
+
 
 ```shell
 sudo modprobe am_joyin device1="74hc165;16,20,21,,1;0,,default"
@@ -261,17 +281,35 @@ sudo modprobe am_joyin device1="74hc165;16,20,21,,1;0,,default"
 
 ### MCP23017 입력
 
+I2C를 이용해 키 입력을 받고자 한다면 MCP23017 칩을 사용하면 된다. I2C 인터페이스이기에 많은 배선을 필요로 하지 않고, 복수개를 같은 배선에 묶어서 사용할 수 있기 때문에 확장성도 있다.
+16-bit IO가 가능하기 때문에 1p용 입력을 충분히 수용할 수 있다.
+
+![MCP23017 Board Board](images/mcp23017_circuit.png)
+
+MCP23017 모듈은 다음과 같은 형태로 주로 판매되고 있다.
+
+![MCP23017 Board Board](images/mcp23017-board.jpg)
+
+
 ```shell
 sudo modprobe am_joyin device1="mcp23017;0x20;0,,default"
 ```
 
-
 ### Multiplexer(=MUX) 입력
+
+MUX 칩은 입출력 핀수에 따라 다양한 칩들이 존재하며, 다양한 회사에서 만들어 내고 있기 때문에 선택의 폭은 아주 넓다. 단순히 MUX를 구현한 것일 뿐이기 때문에 사용법도 모두 거의 대동소이하다. 즉, 입출력핀 1개와 주소핀 n개, 그리고 2^n 개의 입출력핀이 핵심 인터페이스이다.
+
+이 중 16-bit MUX를 구현한 TI사의 74HC4067가 가장 구하기도 쉽고, 1p 게임기 제작에도 충분한 핀수를 지원한다.
+
+MUX 모듈은 다음과 같은 형태로 주로 판매되고 있다.
+
+![MUX Board Board](images/multiplexer-board.jpg)
 
 ```shell
 sudo modprobe am_joyin device1="mux;5,{26,19,13,6},default,1;0,,default"
 ```
 
+---
 
 > ***NOTE***
 > 이것은 라즈베리파이3B, 라즈베리파이3B+, 라즈베리파이4B에서 테스트 되었다.
