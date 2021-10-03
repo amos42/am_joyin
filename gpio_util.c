@@ -1,3 +1,7 @@
+/********************************************************************************
+ * Copyright (C) 2021 Ju, Gyeong-min
+ ********************************************************************************/
+
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/delay.h>
@@ -13,16 +17,9 @@
 #define BCM2709_PERI_BASE (0x20000000) // abobe RPI 2B v1.2
 #define BCM2711_PERI_BASE (0x7e215000) // abobe RPI 4
 
-
 //#define PERI_BASE	bcm_peri_base
 #define GPIO_BASE           (PERI_BASE + 0x200000) /* GPIO controller */
 
-
-// #ifdef RPI2
-// #define PERI_BASE        0x3F000000
-// #else
-// #define PERI_BASE        0x20000000
-// #endif
 #define PERI_BASE           (peri_base)
 
 
@@ -44,17 +41,16 @@
  * refer to "Chapter 5. General Purpose I/O (GPIO)"
  * in "BCM2711 ARM Peripherals", 2020-02-05
  */
-#define PUD_2711_MASK		0x3
+#define PUD_2711_MASK		    (0x3)
 #define PUD_2711_REG_OFFSET(p)	((p) / 16)
 #define PUD_2711_REG_SHIFT(p)	(((p) % 16) * 2)
-
-#define BCM2711_PULL_UP		0x1
+#define BCM2711_PULL_UP		    (0x1)
 
 /* BCM 2711 has a different mechanism for pin pull-up/down/enable  */
-#define GPIO_PUP_PDN_CNTRL_REG0 57      /* Pin pull-up/down for pins 15:0  */
-#define GPIO_PUP_PDN_CNTRL_REG1 58      /* Pin pull-up/down for pins 31:16 */
-#define GPIO_PUP_PDN_CNTRL_REG2 59      /* Pin pull-up/down for pins 47:32 */
-#define GPIO_PUP_PDN_CNTRL_REG3 60      /* Pin pull-up/down for pins 57:48 */
+#define GPIO_PUP_PDN_CNTRL_REG0 (57)      /* Pin pull-up/down for pins 15:0  */
+#define GPIO_PUP_PDN_CNTRL_REG1 (58)      /* Pin pull-up/down for pins 31:16 */
+#define GPIO_PUP_PDN_CNTRL_REG2 (59)      /* Pin pull-up/down for pins 47:32 */
+#define GPIO_PUP_PDN_CNTRL_REG3 (60)      /* Pin pull-up/down for pins 57:48 */
 
 
 static u32 peri_base;

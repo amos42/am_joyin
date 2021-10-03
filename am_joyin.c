@@ -1,3 +1,7 @@
+/********************************************************************************
+ * Copyright (C) 2021 Ju, Gyeong-min
+ ********************************************************************************/
+
 #ifndef __KERNEL__
 #define __KERNEL__
 #endif
@@ -21,14 +25,11 @@
 #include <linux/slab.h>
 
 
-MODULE_AUTHOR("Amos");
+MODULE_AUTHOR("Amos42");
 MODULE_DESCRIPTION("GPIO and Multiplexer and 74HC165 amd MCP23017 Arcade Joystick Driver");
 MODULE_LICENSE("GPL");
 
-
-
-#define MAX_INPUT_DEVICES_COUNT (4)
-
+/*============================================================*/
 
 #include "am_joyin.h"
 
@@ -36,7 +37,7 @@ MODULE_LICENSE("GPL");
 #include "am_joyin_cfg.c"
 /** parameters (end) **/
 
-
+#include "bcm_gpio.c"
 
 //#include "gpio_util.h"
 #include "gpio_util.c"
@@ -52,7 +53,6 @@ MODULE_LICENSE("GPL");
 #include "device_mux.c"
 
 
-
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,15,0)
 #define HAVE_TIMER_SETUP
 #endif
@@ -61,9 +61,6 @@ MODULE_LICENSE("GPL");
 
 
 static am_joyin_data_t *a_input;
-
-
-#include "bcm_gpio.c"
 
 
 static void initButtonConfig(struct input_dev *indev, input_buttonset_data_t *buttonset_cfg, int button_count)
@@ -353,6 +350,7 @@ static int am_joyin_init(void)
 
     //printk("start register input dev...\n");
 
+    // 설정으로 지정한 모든 장치를 초기화 한다.
     for (i = 0; i < a_input->input_device_count; i++) {
         input_device_data_t *dev = &a_input->device_list[i];
 

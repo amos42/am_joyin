@@ -1,4 +1,8 @@
-﻿#ifndef __INDEV_TYPE_H_
+﻿/********************************************************************************
+ * Copyright (C) 2021 Ju, Gyeong-min
+ ********************************************************************************/
+
+#ifndef __INDEV_TYPE_H_
 #define __INDEV_TYPE_H_
 
 #ifdef __cplusplus
@@ -36,7 +40,6 @@ typedef int BOOL;
 
 #define MAX_INPUT_DEVICE_TYPE_DESC_COUNT      (10)
 #define MAX_INPUT_DEVICE_COUNT                (4)
-
 
 #define DEFAULT_INPUT_BUTTON_COUNT            (14)
 #define DEFAULT_INPUT_BUTTONS { \

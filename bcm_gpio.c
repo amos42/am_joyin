@@ -1,11 +1,3 @@
-#include <linux/kernel.h>
-//#include <linux/module.h>
-#include <linux/of_platform.h>
-
-
-//MODULE_LICENSE("GPL");
-
-
 /**
  * am_bcm_peri_base_probe - Find the peripherals address base for
  * the running Raspberry Pi model. It needs a kernel with runtime Device-Tree
@@ -18,6 +10,11 @@
  *
  * If any error occurs reading the device tree nodes/properties, then return 0.
  */
+
+#include <linux/kernel.h>
+#include <linux/of_platform.h>
+
+
 u32 bcm_peri_base_probe(void) 
 {
     char *path = "/soc";

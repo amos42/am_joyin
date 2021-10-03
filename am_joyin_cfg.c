@@ -1,3 +1,7 @@
+/********************************************************************************
+ * Copyright (C) 2021 Ju, Gyeong-min
+ ********************************************************************************/
+
 #include <linux/kernel.h>
 #include <linux/module.h>
 
@@ -33,10 +37,6 @@ char *strsep(char **stringp, const char *delim)
 */
 
 
-#define MAX_INPUT_INPUT_DESC_COUNT (2)
-#define MAX_INPUT_DEVICES_COUNT (4)
-
-
 #define AM_PARAM_ARRAY_VARIABLE(N, I) static char *N[I] /*__initdata*/;
 #define AM_PARAM_DEFINE(N, V)           \
     module_param_named(N, V, charp, 0); \
@@ -47,13 +47,13 @@ char *strsep(char **stringp, const char *delim)
     module_param_named(N, V, charp, 0);     \
     MODULE_PARM_DESC(N, "Joystick device " #N " button config parameters");
 
-AM_PARAM_ARRAY_VARIABLE(am_buttonset_cfg, MAX_INPUT_INPUT_DESC_COUNT)
+AM_PARAM_ARRAY_VARIABLE(am_buttonset_cfg, MAX_INPUT_BUTTONSET_COUNT)
 AM_PARAM_DEFINE(buttonset1, am_buttonset_cfg[0])
 AM_PARAM_DEFINE(buttonset2, am_buttonset_cfg[1])
 
 AM_PARAM_DEFINE_WITH_VARIABLE(endpoints, am_endpoints_cfg)
 
-AM_PARAM_ARRAY_VARIABLE(am_device_cfg, MAX_INPUT_DEVICES_COUNT)
+AM_PARAM_ARRAY_VARIABLE(am_device_cfg, MAX_INPUT_DEVICE_COUNT)
 AM_PARAM_DEFINE(device1, am_device_cfg[0])
 AM_PARAM_DEFINE(device2, am_device_cfg[1])
 AM_PARAM_DEFINE(device3, am_device_cfg[2])
@@ -72,7 +72,7 @@ void __init prepocess_params(void)
 
     // device 모두 생략시, 기본 파라미터 세팅
     cnt = 0;    
-    for (i = 0; i < MAX_INPUT_DEVICES_COUNT; i++)
+    for (i = 0; i < MAX_INPUT_DEVICE_COUNT; i++)
     {
         if (am_device_cfg[i] != NULL)
             cnt++;
@@ -91,15 +91,15 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
     char* pText;
     int idx;
 
-    // 기본 키 설정 초기화
+    // default buttonset 설정 초기화
     input_buttonset_data_t* target_buttonset = &a_input->buttonset_list[a_input->input_buttonset_count++];
     for (i = 0; i < DEFAULT_INPUT_BUTTON_COUNT; i++) {
         target_buttonset->button_data[i] = default_buttonset[i];
     }
     target_buttonset->button_count = DEFAULT_INPUT_BUTTON_COUNT;
 
-    // key 설정
-    for (i = 0; i < MAX_INPUT_INPUT_DESC_COUNT; i++) {
+    // buttonset 설정
+    for (i = 0; i < MAX_INPUT_BUTTONSET_COUNT; i++) {
         input_buttonset_data_t* target_buttonset;
 
         if (am_buttonset_cfg[i] == NULL) continue;
@@ -199,9 +199,6 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
         pText = szText;
 
         typeid_p = strsep(&pText, ";");
-        // if (typeid_p == NULL || (strcmp(typeid_p, "") == 0)) {
-        //     typeid_p = (char *)"gpio";
-        // }
 
         type_desc = NULL;
         for (j = 0; j < a_input->input_device_type_desc_count; j++) {
@@ -257,10 +254,10 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
 
 /*
 
-keyset1_cfg={0x102,-1,1},{0x103,0,1},{0x102,-1,1},{0x103,0,1},{0x102,0,1},{0x103,0,1},{0x102,0,1},{0x103,0,1},{0x102,0,1},{0x103,0,1}
+buttonset1_cfg={0x102,-1,1},{0x103,0,1},{0x102,-1,1},{0x103,0,1},{0x102,0,1},{0x103,0,1},{0x102,0,1},{0x103,0,1},{0x102,0,1},{0x103,0,1}
 
 // endpoint 생략시 1개에 0번 키설정에 키 default (13) 개
-endpoints=default,0;0,12;1,default // endpoint1_keyset_cfg=default, endpoint1_key_count=default(13), endpoint2_keyset_cfg=default, endpoint2_key_count=12, endpoint3_key_cfg=keyset1, endpoint3_key_count=default
+endpoints=default,0;0,12;1,default // endpoint1_buttonset_cfg=default, endpoint1_key_count=default(13), endpoint2_buttonset_cfg=default, endpoint2_key_count=12, endpoint3_key_cfg=buttonset1, endpoint3_key_count=default
 
 // device_type; endpoint_id, ...; config1=default1
 device1=gpio;;0,default1;1,default2
