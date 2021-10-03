@@ -43,7 +43,7 @@ typedef struct tag_device_74hc165_config {
     int gpio_dt;
     int io_count;
     int bit_order;
-    int is_pullup;
+    int pull_updown;
 } device_74hc165_config_t;
 
 typedef struct tag_device_74hc165_index_item {
@@ -60,7 +60,7 @@ typedef struct tag_device_74hc165_index_table {
 // device.data에 할당 될 구조체
 typedef struct tag_device_74hc165_data {
     device_74hc165_config_t         device_cfg;
-    device_74hc165_index_table_t    button_cfg[1];
+    device_74hc165_index_table_t    button_cfgs[1];
 } device_74hc165_data_t;
 
 
@@ -109,9 +109,9 @@ int init_input_device_for_74hc165(input_device_data_t *device_data, char* device
         pText = szText;
 
         temp_p = strsep(&pText, ",");
-        user_data->device_cfg.gpio_ck = simple_strtol(temp_p, NULL, 0);
-        temp_p = strsep(&pText, ",");
         user_data->device_cfg.gpio_ld = simple_strtol(temp_p, NULL, 0);
+        temp_p = strsep(&pText, ",");
+        user_data->device_cfg.gpio_ck = simple_strtol(temp_p, NULL, 0);
         temp_p = strsep(&pText, ",");
         user_data->device_cfg.gpio_dt = simple_strtol(temp_p, NULL, 0);
         temp_p = strsep(&pText, ",");
@@ -126,9 +126,15 @@ int init_input_device_for_74hc165(input_device_data_t *device_data, char* device
         } else {
             user_data->device_cfg.bit_order = simple_strtol(temp_p, NULL, 0);
         }
+        temp_p = strsep(&pText, ",");
+        if (temp_p == NULL || strcmp(temp_p, "") == 0 || strcmp(temp_p, "default") == 0) {
+            user_data->device_cfg.pull_updown = 0;
+        } else {
+            user_data->device_cfg.pull_updown = simple_strtol(temp_p, NULL, 10);
+        }
     }
 
-    des = user_data->button_cfg;
+    des = user_data->button_cfgs;
 
     for (i = 0; i < device_data->target_endpoint_count; i++ ) {
         input_endpoint_data_t *ep = device_data->target_endpoints[i];
@@ -163,7 +169,7 @@ int init_input_device_for_74hc165(input_device_data_t *device_data, char* device
 
             button_start_index = 0;
             button_count = 0;
-            src = &user_data->button_cfg[i];
+            src = &user_data->button_cfgs[i];
             while (pText != NULL && button_count < MAX_INPUT_BUTTON_COUNT) {
                 char *block_p, *button_p, *value_p;
                 int button, value;
@@ -254,7 +260,7 @@ static void check_input_device_for_74hc165(input_device_data_t *device_data)
     if (user_data->device_cfg.bit_order == 0) {
         for (i = 0; i < device_data->target_endpoint_count; i++) {
             input_endpoint_data_t* endpoint = device_data->target_endpoints[i];
-            device_74hc165_index_table_t* table = &user_data->button_cfg[i];
+            device_74hc165_index_table_t* table = &user_data->button_cfgs[i];
             device_74hc165_index_item_t* btndef = &table->buttondef[table->button_start_index];
 
             cnt = table->button_count;
@@ -278,7 +284,7 @@ static void check_input_device_for_74hc165(input_device_data_t *device_data)
     } else if (user_data->device_cfg.bit_order == 1) {
         int endpoint_idx = 0;
         input_endpoint_data_t* endpoint = device_data->target_endpoints[endpoint_idx];
-        device_74hc165_index_table_t* table = &user_data->button_cfg[endpoint_idx];
+        device_74hc165_index_table_t* table = &user_data->button_cfgs[endpoint_idx];
         device_74hc165_index_item_t* btndef = (device_74hc165_index_item_t *)table->buttondef;
 
         int chips = io_count / 8 + ((io_count % 8)? 1 : 0);
@@ -306,7 +312,7 @@ static void check_input_device_for_74hc165(input_device_data_t *device_data)
                 if (++idx >= table->button_count) {
                     endpoint_idx++;
                     endpoint = device_data->target_endpoints[endpoint_idx];
-                    table = &user_data->button_cfg[endpoint_idx];
+                    table = &user_data->button_cfgs[endpoint_idx];
                     btndef = (device_74hc165_index_item_t *)table->buttondef;
                     idx = 0; 
                 }

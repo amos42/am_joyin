@@ -30,7 +30,7 @@
 typedef struct tag_device_mcp23017_config {
     int i2c_addr;
     int io_count;
-    int is_pullup;
+    int pull_updown;
 } device_mcp23017_config_t;
 
 typedef struct tag_device_mcp23017_index_item {
@@ -47,7 +47,7 @@ typedef struct tag_device_mcp23017_index_table {
 // device.data에 할당 될 구조체
 typedef struct tag_device_mcp23017_data {
     device_mcp23017_config_t         device_cfg;
-    device_mcp23017_index_table_t    button_cfg[1];
+    device_mcp23017_index_table_t    button_cfgs[1];
 } device_mcp23017_data_t;
 
 
@@ -103,9 +103,15 @@ int init_input_device_for_mcp23017(input_device_data_t *device_data, char* devic
         } else {
             user_data->device_cfg.io_count = simple_strtol(temp_p, NULL, 10);
         }
+        temp_p = strsep(&pText, ",");
+        if (temp_p == NULL || strcmp(temp_p, "") == 0 || strcmp(temp_p, "default") == 0) {
+            user_data->device_cfg.pull_updown = 0;
+        } else {
+            user_data->device_cfg.pull_updown = simple_strtol(temp_p, NULL, 10);
+        }
     }
 
-    des = user_data->button_cfg;
+    des = user_data->button_cfgs;
 
     for (i = 0; i < device_data->target_endpoint_count; i++ ) {
         input_endpoint_data_t *ep = device_data->target_endpoints[i];
@@ -140,7 +146,7 @@ int init_input_device_for_mcp23017(input_device_data_t *device_data, char* devic
 
             button_start_index = 0;
             button_count = 0;
-            src = &user_data->button_cfg[i];
+            src = &user_data->button_cfgs[i];
             while (pText != NULL && button_count < MAX_INPUT_BUTTON_COUNT) {
                 char *block_p, *button_p, *value_p;
                 int button, value;
@@ -247,7 +253,7 @@ static void check_input_device_for_mcp23017(input_device_data_t *device_data)
 
     for (i = 0; i < device_data->target_endpoint_count; i++) {
         input_endpoint_data_t* endpoint = device_data->target_endpoints[i];
-        device_mcp23017_index_table_t* table = &user_data->button_cfg[i];
+        device_mcp23017_index_table_t* table = &user_data->button_cfgs[i];
         device_mcp23017_index_item_t* btndef = &table->buttondef[table->button_start_index];
 
         cnt = table->button_count;

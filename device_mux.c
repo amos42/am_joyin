@@ -43,7 +43,7 @@ typedef struct tag_device_mux_config {
 
     int io_count;
     int start_offset;
-    int is_pullup;
+    int pull_updown;
 } device_mux_config_t;
 
 typedef struct tag_device_mux_index_item {
@@ -60,7 +60,7 @@ typedef struct tag_device_mux_index_table {
 // device.data에 할당 될 구조체
 typedef struct tag_device_mux_data {
     device_mux_config_t         device_cfg;
-    device_mux_index_table_t    button_cfg[1];
+    device_mux_index_table_t    button_cfgs[1];
 } device_mux_data_t;
 
 
@@ -125,9 +125,15 @@ int init_input_device_for_mux(input_device_data_t *device_data, char* device_con
         }
         temp_p = strsep(&pText, ",");
         user_data->device_cfg.start_offset = temp_p != NULL ? simple_strtol(temp_p, NULL, 10) : 0;
+        temp_p = strsep(&pText, ",");
+        if (temp_p == NULL || strcmp(temp_p, "") == 0 || strcmp(temp_p, "default") == 0) {
+            user_data->device_cfg.pull_updown = 0;
+        } else {
+            user_data->device_cfg.pull_updown = simple_strtol(temp_p, NULL, 10);
+        }
     }
 
-    des = user_data->button_cfg;
+    des = user_data->button_cfgs;
 
     for (i = 0; i < device_data->target_endpoint_count; i++ ) {
         input_endpoint_data_t *ep = device_data->target_endpoints[i];
@@ -162,7 +168,7 @@ int init_input_device_for_mux(input_device_data_t *device_data, char* device_con
 
             button_start_index = 0;
             button_count = 0;
-            src = &user_data->button_cfg[i];
+            src = &user_data->button_cfgs[i];
             while (pText != NULL && button_count < MAX_INPUT_BUTTON_COUNT) {
                 char *block_p, *button_p, *value_p;
                 int button, value;
@@ -256,7 +262,7 @@ static void check_input_device_for_mux(input_device_data_t *device_data)
 
     for (i = 0; i < device_data->target_endpoint_count; i++) {
         input_endpoint_data_t* endpoint = device_data->target_endpoints[i];
-        device_mux_index_table_t* table = &user_data->button_cfg[i];
+        device_mux_index_table_t* table = &user_data->button_cfgs[i];
         device_mux_index_item_t* btndef = &table->buttondef[table->button_start_index];
 
         cnt = table->button_count;

@@ -213,28 +213,58 @@ am_joyin의 파라미터는 다음과 같다.
 | endpoints               | endpoint 목록 설정 |
 | device1 ~ device4       | device 설정        |
 
-**buttonset 설정**
+### buttonset 설정
+
+* 버튼셋 파라미터 리스트
+> 1. key_code - 키코드
+> 2. min_value - 버튼 최소값
+> 3. max_value - 버튼 최대값
+
+실제 사용 예
 
 ```shell
 buttonset1_cfg="{0x01,-1,1},{0x00,-1,1},{0x13B,0,1},{0x13A,0,1},{0x130,0,1},{0x103,0,1},{0x102,0,1},{0x103,0,1},{0x102,0,1},{0x103,0,1}"
 ```
 
-**endpoint 설정**
+### endpoint 설정
+
+* 엔드포인트 파라미터 리스트
+> 1. endpoint_name - 엔드포인트 이름. 이 이름으로 OS에 장치 등록이 된다.
+> 2. buttonset_index - 사용할 버튼셋 인덱스. default는 0
+> 2. button_count - 사용할 버튼 갯수. default는 버튼셋의 버튼 전체
+
+실제 사용 예
 
 ```shell
-endpoints="default,13;1,11"
+endpoints="default,0,default;ext_joystick,1,,11"
 ```
 
-**device 설정**
-```shell
-device1="gpio;;0,default1,0,12"
-```
+## device 설정
 
-## 각 장치별 파라미터 포맷
+각 장치별로 개별 설정을 갖는다.
+
+기본 포맷
+
+1. 타입 이름
+2. 디바이스 설정
+3. 엔드포인트 설정
+  - 엔드포인트 설정 : 엔드포인트 인덱스, 버튼 시작 인덱스, 버튼 갯수, 엔드포인트별 장치 설정
+
 
 ### GPIO 입력
 
+가장 기본이 되는 GPIO로 직접 버튼의 입력을 받는 장치이다.
+기본 핀맵은 mk_arcade_joystick_rpi와 호환되도록 하고 있다.
+
 ![GPIO Interface](images/mk_joystick_arcade_GPIOs.png)
+
+* 디바이스 파라미터
+> 없음
+
+* 엔드포인트 파라미터
+> 1. config type - 버튼 설정 타입
+>    - default : start_index, button_count
+>    - custom : code_mode (0: keycode, 1:index), {gpio1, button1, value1}, {gpio2, button2, value2}, ...
 
 - 1인용 기본 키 설정
 
@@ -264,7 +294,7 @@ sudo modprobe am_joyin device1="gpio;;0,custom,1,{4,0x1,-1},{17,0x1,1},{27,0x0,-
 
 74HC165는 8=bit 레지스터이기 때문에, 실제로 사용할 땐 복수개를 사용해야 하는 경우가 많다.
 갯수를 특정하기 힘들어서인지, 이를 모듈화 해 놓은 상품은 그다지 흔히 판매되지 않은 듯 하다.
-떄문에 필요하다면 만능 기판 등을 이용해 직접 입력 보드를 만들어서 사용해야 한다.
+때문에 필요하다면 만능 기판 등을 이용해 직접 입력 보드를 만들어서 사용해야 한다.
 
 ![74HC165 Board DIY Board](images/74hc165-board_01.jpg)
 
@@ -275,6 +305,21 @@ sudo modprobe am_joyin device1="gpio;;0,custom,1,{4,0x1,-1},{17,0x1,1},{27,0x0,-
 해당 보드의 회로도는 https://github.com/amos42/pcbs/tree/master/joystick-input 를 통해 얻을 수 있다.
 
 74HC165 장치를 사용하기 위해서는 기본적으로 3개 핀에 해당하는 gpio 주소를 파라미터로 전달해야 한다.
+순서대로 LD, CK, DT 이다.
+
+* 디바이스 파라미터
+> 1. LD - Load 핀 gpio 번호 \
+> 2. CK - Clock 핀 gpio 번호 \
+> 3. DT - Data(Q8) 핀 gpio 번호 \
+> 4. IO Count - 전체 IO 갯수 \
+> 5. Bit Order - IO 데이터 순서. 0은 D7~D0 순서, 1은 D0~D7 순서
+
+* 엔드포인트 파라미터
+> 1. config type - 버튼 설정 타입
+>    - default : start_index, button_count
+>    - custom : code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
+
+실제 사용 예
 
 ```shell
 sudo modprobe am_joyin device1="74hc165;16,20,21,,1;0,,default"
@@ -293,6 +338,17 @@ MCP23017 모듈은 다음과 같은 형태로 주로 판매되고 있다.
 
 I2C 장치이기 때문에 액세스를 위해서는 주소를 알아야 한다. 판매되는 상품의 경우엔 기본적으로 0x20으로 세팅되어 있으며, 점퍼 및 납땜을 통해 주소를 변경할 수 있다. 2p 이상인 조이스틱 제작을 위해서는 2개의 칩을 사용해야 하기 때문에, 필히 서로 다른 주소를 갖도록 세팅되어 있어야 한다.
 
+* 디바이스 파라미터
+> 1. i2c_addr - I2C 주소. default는 0x20 \
+> 2. io_count - 전체 IO 갯수
+
+* 엔드포인트 파라미터
+> 1. config type - 버튼 설정 타입
+>    - default : start_index, button_count
+>    - custom : code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
+
+실제 사용 예
+
 ```shell
 sudo modprobe am_joyin device1="mcp23017;0x20;0,,default"
 ```
@@ -309,8 +365,21 @@ MUX 모듈은 다음과 같은 형태로 주로 판매되고 있다.
 
 장치를 사용하기 위해서는 주소핀을 연결할 gpio 번호와 입출력 핀을 연결 할 gpio 번호가 각각 파라미터로 전달되어야 한다. 16-bit MUX의 경우엔 주소핀이 총 4개가 필요하다.
 
+* 디바이스 파라미터
+> 1. rw_gpio - 읽기/쓰기 핀 gpio 번호 \
+> 2. {addr0_gpio, addr1_gpio, ...} - 주소핀의 gpio 주소 리스트 \
+> 3. io_count - 전체 IO 갯수 \
+> 4. start_offset - IO 시작핀의 오프셋
+
+* 엔드포인트 파라미터
+> 1. config type - 버튼 설정 타입
+>    - default : start_index, button_count
+>    - custom : code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
+
+실제 사용 예
+
 ```shell
-sudo modprobe am_joyin device1="mux;5,{26,19,13,6},default,1;0,,default"
+sudo modprobe am_joyin device1="mux;5,{26,19,13,6},default,0;0,,default"
 ```
 
 ---

@@ -14,6 +14,10 @@
 #define INPUT_GPIO_CONFIG_TYPE_INDEX    (0)
 #define INPUT_GPIO_CONFIG_TYPE_KEYCODE  (1)
 
+typedef struct tag_device_gpio_config {
+    int pull_updown;
+} device_gpio_config_t;
+
 typedef struct tag_device_gpio_index_item {
     int gpio;
     int button;
@@ -27,8 +31,8 @@ typedef struct tag_device_gpio_index_table {
 } device_gpio_index_table_t;
 
 typedef struct tag_device_gpio_data {
-    int is_pullup;
-    device_gpio_index_table_t items[1];
+    device_gpio_config_t      device_cfg;
+    device_gpio_index_table_t button_cfgs[1];
 } device_gpio_data_t;
 
 
@@ -88,7 +92,20 @@ int init_input_device_for_gpio(input_device_data_t *device_data, char* device_co
     char* temp_p;
 
     device_gpio_data_t* user_data = (device_gpio_data_t *)kzalloc(sizeof(device_gpio_data_t) + sizeof(device_gpio_index_table_t) * (device_data->target_endpoint_count - 1), GFP_KERNEL);
-    des = user_data->items;
+
+    if (device_config_str != NULL) {
+        strcpy(szText, device_config_str); 
+        pText = szText;
+
+        temp_p = strsep(&pText, ",");
+        if (temp_p == NULL || strcmp(temp_p, "") == 0 || strcmp(temp_p, "default") == 0) {
+            user_data->device_cfg.pull_updown = 0;
+        } else {
+            user_data->device_cfg.pull_updown = simple_strtol(temp_p, NULL, 10);
+        }
+    }
+
+    des = user_data->button_cfgs;
 
     for (i = 0; i < device_data->target_endpoint_count; i++ ) {
         input_endpoint_data_t *ep = device_data->target_endpoints[i];
@@ -139,7 +156,7 @@ int init_input_device_for_gpio(input_device_data_t *device_data, char* device_co
 
             button_start_index = 0;
             button_count = 0;
-            src = &user_data->items[i];
+            src = &user_data->button_cfgs[i];
             while (pText != NULL && button_count < MAX_INPUT_BUTTON_COUNT) {
                 char *block_p, *gpio_p, *button_p, *value_p;
                 int gpio, button, value;
@@ -210,7 +227,7 @@ static void start_input_device_for_gpio(input_device_data_t *device_data)
     device_gpio_data_t* user_data = (device_gpio_data_t *)device_data->data;
 
     if (user_data == NULL) return;
-    table = user_data->items;
+    table = user_data->button_cfgs;
 
     pull_idx = 0;
     for (i = 0; i < device_data->target_endpoint_count; i++) {
@@ -239,7 +256,7 @@ static void check_input_device_for_gpio(input_device_data_t* device_data)
     device_gpio_data_t* user_data = (device_gpio_data_t *)device_data->data;
     
     if (user_data == NULL) return;
-    table = user_data->items;
+    table = user_data->button_cfgs;
     
     for (i = 0; i < device_data->target_endpoint_count; i++) {
         input_endpoint_data_t* endpoint = device_data->target_endpoints[i];
