@@ -274,6 +274,7 @@ sudo modprobe am_joyin device1="gpio;;0,custom,1,{4,0x1,-1},{17,0x1,1},{27,0x0,-
 
 해당 보드의 회로도는 https://github.com/amos42/pcbs/tree/master/joystick-input 를 통해 얻을 수 있다.
 
+74HC165 장치를 사용하기 위해서는 기본적으로 3개 핀에 해당하는 gpio 주소를 파라미터로 전달해야 한다.
 
 ```shell
 sudo modprobe am_joyin device1="74hc165;16,20,21,,1;0,,default"
@@ -290,6 +291,7 @@ MCP23017 모듈은 다음과 같은 형태로 주로 판매되고 있다.
 
 ![MCP23017 Board Board](images/mcp23017-board.jpg)
 
+I2C 장치이기 때문에 액세스를 위해서는 주소를 알아야 한다. 판매되는 상품의 경우엔 기본적으로 0x20으로 세팅되어 있으며, 점퍼 및 납땜을 통해 주소를 변경할 수 있다. 2p 이상인 조이스틱 제작을 위해서는 2개의 칩을 사용해야 하기 때문에, 필히 서로 다른 주소를 갖도록 세팅되어 있어야 한다.
 
 ```shell
 sudo modprobe am_joyin device1="mcp23017;0x20;0,,default"
@@ -305,6 +307,8 @@ MUX 모듈은 다음과 같은 형태로 주로 판매되고 있다.
 
 ![MUX Board Board](images/multiplexer-board.jpg)
 
+장치를 사용하기 위해서는 주소핀을 연결할 gpio 번호와 입출력 핀을 연결 할 gpio 번호가 각각 파라미터로 전달되어야 한다. 16-bit MUX의 경우엔 주소핀이 총 4개가 필요하다.
+
 ```shell
 sudo modprobe am_joyin device1="mux;5,{26,19,13,6},default,1;0,,default"
 ```
@@ -312,5 +316,5 @@ sudo modprobe am_joyin device1="mux;5,{26,19,13,6},default,1;0,,default"
 ---
 
 > ***NOTE***
-> 이것은 라즈베리파이3B, 라즈베리파이3B+, 라즈베리파이4B에서 테스트 되었다.
+> am_joyin 드라이버는 라즈베리파이3B, 라즈베리파이3B+, 라즈베리파이4B에서 테스트 되었다.
 > 그 이외의 기종에 대한 동작은 보증하지 못 한다.
