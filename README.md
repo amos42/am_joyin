@@ -209,9 +209,15 @@ am_joyin의 파라미터는 다음과 같다.
 
 | 파라미터                 |  설명              | 
 |-------------------------|--------------------|
+| drivercfg               | 드라이버 전역 설정  |
 | buttonset1 ~ buttonset2 | buttonset 설정     |
 | endpoints               | endpoint 목록 설정 |
 | device1 ~ device4       | device 설정        |
+
+
+### driver 전역 설정
+> 1. timer_period : 타이머 주기. Hz 단위로 기술. default는 100Hz
+> 2. debug : 디버그 모드 여부
 
 ### buttonset 설정
 
@@ -250,6 +256,14 @@ endpoints="default,0,default;ext_joystick,1,,11"
 3. 엔드포인트 설정
   - 엔드포인트 설정 : 엔드포인트 인덱스, 버튼 시작 인덱스, 버튼 갯수, 엔드포인트별 장치 설정
 
+현재 지원 가능한 타입은 다음과 같다.
+
+| 타입명     |                         |
+|-----------|--------------------------|
+| gpio      | GPIO 다이렉트로 입력      |
+| 74hc165   | 74HC165 시프트 레지스터   |
+| mcp23017  | MCP23017 16비트 I2C 입력  |
+| mux       | Multiplexer 입력         |
 
 ### GPIO 입력
 

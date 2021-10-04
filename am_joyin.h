@@ -13,9 +13,10 @@
 
 
 typedef struct tag_am_joyin_data {
-    int used;
-    struct mutex mutex;
-    struct timer_list timer;
+    // 타이머 주기
+    unsigned long timer_period;
+    // 디버그 모드
+    BOOL is_debug;
 
     // 버튼셋 리스트
     input_buttonset_data_t buttonset_list[MAX_INPUT_BUTTONSET_COUNT];
@@ -32,6 +33,11 @@ typedef struct tag_am_joyin_data {
     // 장치 리스트
     input_device_data_t device_list[MAX_INPUT_DEVICE_COUNT];
     int input_device_count;
+
+    // 런타임 참조 정보
+    int used;
+    struct mutex mutex;
+    struct timer_list timer;
 } am_joyin_data_t;
 
 

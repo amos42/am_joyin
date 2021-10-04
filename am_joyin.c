@@ -10,10 +10,10 @@
 #define MODULE
 #endif
 
-#define VENDOR_ID (0xA042)
-#define PRODUCT_ID (0x0001)
+#define VENDOR_ID       (0xA042)
+#define PRODUCT_ID      (0x0001)
 #define PRODUCT_VERSION (0x0100)
-#define DEVICE_NAME "Amos Joistick"
+#define DEVICE_NAME     "Amos Joystick"
 
 
 #include <linux/kernel.h>
@@ -115,6 +115,7 @@ static void am_timer(unsigned long private) {
     am_joyin_data_t *inp = (void *) private;
 #endif
     int i, j;
+    unsigned long next_timer = jiffies + inp->timer_period; // 다음 타이머 주기를 미리 구해 놓는다.
 
     for (i = 0; i < inp->input_endpoint_count; i++) {
         input_endpoint_data_t *ep = &inp->endpoint_list[i];
@@ -133,7 +134,8 @@ static void am_timer(unsigned long private) {
         reportInput(ep->indev, ep->target_buttonset->button_data, ep->button_count, ep->report_button_state, ep->current_button_state);
     }
 
-    mod_timer(&inp->timer, jiffies + DEFAULT_REFRESH_TIME);
+    // 다음 타이머 트리거
+    mod_timer(&inp->timer, next_timer);
 }
 
 
@@ -153,8 +155,8 @@ static void startTimer(void)
 {
     if (a_input != NULL) {
         if (a_input->input_endpoint_count > 0 && a_input->input_device_count > 0){
-            mod_timer(&a_input->timer, jiffies + DEFAULT_REFRESH_TIME);
-            //printk("start dev input timer\n");
+            mod_timer(&a_input->timer, jiffies + a_input->timer_period);
+            //printk("start dev input timer");
         }
     }
 }
@@ -164,7 +166,7 @@ static void stopTimer(void)
 {
     if (a_input != NULL) {
         del_timer_sync(&a_input->timer);
-        //printk("stop dev input timer\n");
+        //printk("stop dev input timer");
     }
 }
 
@@ -325,7 +327,7 @@ static int am_joyin_init(void)
     int i;
     int err;
 
-    //printk("init input dev.....\n");
+    //printk("init input dev.....");
 
     // 커맨드 라인 파라미터 전처리
     prepocess_params();
@@ -348,7 +350,14 @@ static int am_joyin_init(void)
     // 커맨드 라인 파라미터들을 분석한다.
     parsing_device_config_params(a_input);
 
-    //printk("start register input dev...\n");
+    // 타이머 주기 설정. 비어 있으면 기본 타이머 주기
+    if (a_input->timer_period > 0) {
+        a_input->timer_period = HZ / a_input->timer_period;
+    } else {
+        a_input->timer_period = DEFAULT_REFRESH_TIME;
+    }
+
+    //printk("start register input dev...");
 
     // 설정으로 지정한 모든 장치를 초기화 한다.
     for (i = 0; i < a_input->input_device_count; i++) {
@@ -364,7 +373,7 @@ static int am_joyin_init(void)
         }
     }
 
-    //printk("end register input dev.\n");
+    //printk("end register input dev.");
 
     // 한개라도 endpoint가 등록되어 있다면 정상 종료
     for (i = 0; i < a_input->input_endpoint_count; i++) {
@@ -373,6 +382,7 @@ static int am_joyin_init(void)
         }
     }
 
+    // 단 한개도 enpoint가 없다면 에러
     printk(KERN_ERR"nothing input endpoint\n");
     err = -ENODEV;
 
@@ -386,7 +396,7 @@ err_free_dev:
 static void am_joyin_exit(void)
 {
     cleanup();
-    //printk("unregister input dev\n");
+    //printk("unregister input dev");
 }
 
 

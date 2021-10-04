@@ -47,6 +47,8 @@ char *strsep(char **stringp, const char *delim)
     module_param_named(N, V, charp, 0);     \
     MODULE_PARM_DESC(N, "Joystick device " #N " button config parameters");
 
+AM_PARAM_DEFINE_WITH_VARIABLE(drivercfg, am_driver_cfg)
+
 AM_PARAM_ARRAY_VARIABLE(am_buttonset_cfg, MAX_INPUT_BUTTONSET_COUNT)
 AM_PARAM_DEFINE(buttonset1, am_buttonset_cfg[0])
 AM_PARAM_DEFINE(buttonset2, am_buttonset_cfg[1])
@@ -90,18 +92,40 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
     char szText[512];
     char* pText;
     int idx;
+    input_buttonset_data_t* target_buttonset;
+
+    // default driver 설정 초기화
+    a_input->timer_period = 0;
+    a_input->is_debug = FALSE;
 
     // default buttonset 설정 초기화
-    input_buttonset_data_t* target_buttonset = &a_input->buttonset_list[a_input->input_buttonset_count++];
+    target_buttonset = a_input->buttonset_list;
     for (i = 0; i < DEFAULT_INPUT_BUTTON_COUNT; i++) {
         target_buttonset->button_data[i] = default_buttonset[i];
     }
     target_buttonset->button_count = DEFAULT_INPUT_BUTTON_COUNT;
+    a_input->input_buttonset_count = 1;
+
+    // 드라이버 설정
+    if (am_driver_cfg != NULL) {
+        char *timer_period_p, *debug_p;
+
+        strcpy(szText, am_driver_cfg);
+        pText = szText;
+
+        timer_period_p = strsep(&pText, ",");
+        debug_p = strsep(&pText, ",");
+
+        if (timer_period_p != NULL) {
+            a_input->timer_period = simple_strtol(timer_period_p, NULL, 10);
+        }
+        if (debug_p != NULL && strcmp(debug_p, "debug") == 0) {
+            a_input->is_debug = TRUE;
+        }
+    }
 
     // buttonset 설정
     for (i = 0; i < MAX_INPUT_BUTTONSET_COUNT; i++) {
-        input_buttonset_data_t* target_buttonset;
-
         if (am_buttonset_cfg[i] == NULL) continue;
 
         target_buttonset = &a_input->buttonset_list[a_input->input_buttonset_count++];
@@ -134,57 +158,59 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
         target_buttonset->button_count = idx;
     }
 
-    strcpy(szText, am_endpoints_cfg);
-    pText = szText;
+    if (am_endpoints_cfg != NULL) {
+        strcpy(szText, am_endpoints_cfg);
+        pText = szText;
 
-    // endpoint 설정
-    idx = 0;
-    while (pText != NULL && idx < MAX_INPUT_ENDPOINT_COUNT) {
-        input_buttonset_data_t* btncfg_item;
-        char *ptr, *name_p, *keycfg_p, *buttoncnt_p;
-        int keycfg_idx, button_cnt;
+        // endpoint 설정
+        idx = 0;
+        while (pText != NULL && idx < MAX_INPUT_ENDPOINT_COUNT) {
+            input_buttonset_data_t* btncfg_item;
+            char *ptr, *name_p, *keycfg_p, *buttoncnt_p;
+            int keycfg_idx, button_cnt;
 
-        ptr = strsep(&pText, ";");
+            ptr = strsep(&pText, ";");
 
-        name_p = strsep(&ptr, ",");
-        keycfg_p = strsep(&ptr, ",");
-        buttoncnt_p = strsep(&ptr, ",");
+            name_p = strsep(&ptr, ",");
+            keycfg_p = strsep(&ptr, ",");
+            buttoncnt_p = strsep(&ptr, ",");
 
-        if (name_p == NULL || strcmp(name_p, "") == 0 || strcmp(name_p, "default") == 0) {
-            name_p = NULL;
+            if (name_p == NULL || strcmp(name_p, "") == 0 || strcmp(name_p, "default") == 0) {
+                name_p = NULL;
+            }
+            if (keycfg_p == NULL || strcmp(keycfg_p, "default") == 0 || strcmp(keycfg_p, "") == 0) {
+                keycfg_idx = 0;
+            }
+            else {
+                keycfg_idx = simple_strtol(keycfg_p, NULL, 10);
+            }
+
+            btncfg_item = &a_input->buttonset_list[keycfg_idx];
+
+            if (buttoncnt_p == NULL || strcmp(buttoncnt_p, "default") == 0 || strcmp(buttoncnt_p, "") == 0) {
+                button_cnt = 0;
+            }
+            else {
+                button_cnt = simple_strtol(buttoncnt_p, NULL, 10);
+            }
+            if (button_cnt <= 0) {
+                button_cnt = btncfg_item->button_count;
+            }
+
+            // endpoint 추가
+            if (name_p != NULL) {
+                strncpy(a_input->endpoint_list[idx].endpoint_name, name_p, 31);
+            } else {
+                snprintf(a_input->endpoint_list[idx].endpoint_name, 31, "AmosJoystick_%d", idx + 1);
+            }
+            a_input->endpoint_list[idx].endpoint_id = idx;
+            a_input->endpoint_list[idx].target_buttonset = btncfg_item;
+            a_input->endpoint_list[idx].button_count = button_cnt;
+
+            idx++;
         }
-        if (keycfg_p == NULL || strcmp(keycfg_p, "default") == 0 || strcmp(keycfg_p, "") == 0) {
-            keycfg_idx = 0;
-        }
-        else {
-            keycfg_idx = simple_strtol(keycfg_p, NULL, 10);
-        }
-
-        btncfg_item = &a_input->buttonset_list[keycfg_idx];
-
-        if (buttoncnt_p == NULL || strcmp(buttoncnt_p, "default") == 0 || strcmp(buttoncnt_p, "") == 0) {
-            button_cnt = 0;
-        }
-        else {
-            button_cnt = simple_strtol(buttoncnt_p, NULL, 10);
-        }
-        if (button_cnt <= 0) {
-            button_cnt = btncfg_item->button_count;
-        }
-
-        // endpoint 추가
-        if (name_p != NULL) {
-            strncpy(a_input->endpoint_list[idx].endpoint_name, name_p, 31);
-        } else {
-            snprintf(a_input->endpoint_list[idx].endpoint_name, 31, "AmosJoystick_%d", idx + 1);
-        }
-        a_input->endpoint_list[idx].endpoint_id = idx;
-        a_input->endpoint_list[idx].target_buttonset = btncfg_item;
-        a_input->endpoint_list[idx].button_count = button_cnt;
-
-        idx++;
+        a_input->input_endpoint_count = idx;
     }
-    a_input->input_endpoint_count = idx;
 
     // device들 설정
     for (i = 0; i < MAX_INPUT_DEVICE_COUNT; i++) {
