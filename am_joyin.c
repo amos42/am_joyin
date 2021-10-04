@@ -137,9 +137,9 @@ static void am_timer(unsigned long private) {
     // 만약 키체크 시간이 너무 길어서 다음 타이머 주기를 초과해 버리면 예외 처리
     if (next_timer <= jiffies) {
         next_timer = jiffies + inp->timer_period;
-        // 
+        
+        // 타이머 주기를 초과하는 횟수가 100회를 넘으면 타이머 중단
         if (++inp->missing_timer_count > 100) {
-            // 에러 출력 후, 타이머 호출을 중단
             printk(KERN_ERR"Button check time is too late. Terminate the timer.");
             return;
         }
