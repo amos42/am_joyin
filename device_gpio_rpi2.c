@@ -112,12 +112,18 @@ int init_input_device_for_gpio(input_device_data_t *device_data, char* device_co
         char* cfgtype_p;
         int button_start_index, button_count;
 
-        if (ep == NULL || endpoint_config_str[i] == NULL) continue;
+        if (ep == NULL) continue;
 
-        strcpy(szText, endpoint_config_str[i]); 
-        pText = szText;
+        if (endpoint_config_str[i] != NULL) {
+            strcpy(szText, endpoint_config_str[i]); 
+            pText = szText;
 
-        cfgtype_p = strsep(&pText, ",");
+            cfgtype_p = strsep(&pText, ",");
+        } else {
+            pText = NULL;
+            cfgtype_p = NULL;
+        }
+
         if (cfgtype_p == NULL || strcmp(cfgtype_p, "default1") == 0 || strcmp(cfgtype_p, "default") == 0 || strcmp(cfgtype_p, "") == 0){
             src = (device_gpio_index_table_t *)&default_input1_gpio_config;
             code_mode = 0;
