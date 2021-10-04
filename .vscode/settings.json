@@ -1,0 +1,13 @@
+{
+    "files.exclude": {
+        "**/.tmp_versions": true,
+        "**/*.ko": true,
+        "**/*.ko.cmd": true,
+        "**/*.mod.c": true,
+        "**/*.o": true,
+        "**/*.o.cmd": true,
+        "**/build/": true,
+        "**/Module.symvers": true,
+        "**/modules.order": true
+    }
+}
