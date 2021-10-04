@@ -38,6 +38,7 @@ typedef struct tag_am_joyin_data {
     int used;
     struct mutex mutex;
     struct timer_list timer;
+    int missing_timer_count;
 } am_joyin_data_t;
 
 

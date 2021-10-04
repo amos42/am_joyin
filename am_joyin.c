@@ -134,6 +134,17 @@ static void am_timer(unsigned long private) {
         reportInput(ep->indev, ep->target_buttonset->button_data, ep->button_count, ep->report_button_state, ep->current_button_state);
     }
 
+    // 만약 키체크 시간이 너무 길어서 다음 타이머 주기를 초과해 버리면 예외 처리
+    if (next_timer <= jiffies) {
+        next_timer = jiffies + inp->timer_period;
+        // 
+        if (++inp->missing_timer_count > 100) {
+            // 에러 출력 후, 타이머 호출을 중단
+            printk(KERN_ERR"Button check time is too late. Terminate the timer.");
+            return;
+        }
+    }
+
     // 다음 타이머 트리거
     mod_timer(&inp->timer, next_timer);
 }
