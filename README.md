@@ -25,18 +25,18 @@ Amos Joystick Input Driver for Raspbrri-pi Arcade (or another SBC)
 | device    | 입출력을 실제로 처리할 장치                                      | 최대 4개           |
 
 
-**키셋**
+**버튼셋**
 
-커스텀 키에서 사용하는 코드는 input-event-codes.h 파일을 참고하면 된다.
+커스텀 버튼에서 사용하는 코드는 input-event-codes.h 파일을 참고하면 된다.
 
 [input-event-codes.h](extra/input-event-codes.h)
 
-기본 제공 키셋 (buttonset id = 0)
+기본 제공 버튼셋 (buttonset id = 0)
 
 | 키코드       | 코드  | 최소값 | 최대값 |
 |-------------|-------|--------|-------|
-| ABS_Y       | 0x01  | -1     | 1     |
-| ABS_X       | 0x00  | -1     | 1     |
+| ABS_Y       | 0x01  | -100   | 100   |
+| ABS_X       | 0x00  | -100   | 100   |
 | BTN_START   | 0x13B | 0      | 1     |
 | BTN_SELECT  | 0x13A | 0      | 1     |
 | BTN_A       | 0x130 | 0      | 1     |
@@ -395,6 +395,34 @@ MUX 모듈은 다음과 같은 형태로 주로 판매되고 있다.
 ```shell
 sudo modprobe am_joyin device1="mux;5,{26,19,13,6},default,0;0,,default"
 ```
+
+## 드라이버 동작 테스트
+
+동작 테스트를 위해서는 jstest 유틸리티를 사용하면 된다.
+
+jstest 유틸리티의 설치 방법은 다음과 같다.
+
+```shell
+> sudo apt install joystick
+```
+
+만약 첫번째 설치 된 조이스틱 장치를 테스트 해 보고 싶다면 다음과 같이 입력한다.
+
+```shell
+> jstest /dev/input/js0
+```
+
+정상적으로 실행되면 콘솔 상에 현재 버튼 상태가 나타난다. 버튼을 누르게 되면 실시간으로 상태가 변경됨을 확인할 수 있다.
+
+```shell
+Driver version is 2.1.0.
+Joystick (AmosJoystick_1)
+has 2 axes (X, Y)
+and 12 buttons (BtnTrigger, BtnA, BtnB, BtnX, BtnY, BtnTL, BtnTR, BtnTL2, BtnTR2, BtnSelect, BtnStart, BtnMode).
+Testing ... (interrupt to exit)
+Axes:  0:     0  1:     0  Buttons:  0:off  1:off  2:off  3:off  4:off  5:off  6:off  7:off  8:off  9:off 10:off 11:off
+```
+
 
 ---
 
