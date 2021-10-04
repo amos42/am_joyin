@@ -94,21 +94,25 @@ int init_input_device_for_mcp23017(input_device_data_t *device_data, char* devic
     if (device_config_str != NULL) {
         strcpy(szText, device_config_str); 
         pText = szText;
+    } else {
+        pText = NULL;
+    }
 
-        temp_p = strsep(&pText, ",");
-        user_data->device_cfg.i2c_addr = temp_p != NULL ? simple_strtol(temp_p, NULL, 0) : 0x20;
-        temp_p = strsep(&pText, ",");
-        if (temp_p == NULL || strcmp(temp_p, "") == 0 || strcmp(temp_p, "default") == 0) {
-            user_data->device_cfg.io_count = INPUT_MCP23017_DEFAULT_KEYCODE_TABLE_ITEM_COUNT;
-        } else {
-            user_data->device_cfg.io_count = simple_strtol(temp_p, NULL, 10);
-        }
-        temp_p = strsep(&pText, ",");
-        if (temp_p == NULL || strcmp(temp_p, "") == 0 || strcmp(temp_p, "default") == 0) {
-            user_data->device_cfg.pull_updown = 0;
-        } else {
-            user_data->device_cfg.pull_updown = simple_strtol(temp_p, NULL, 10);
-        }
+    temp_p = strsep(&pText, ",");
+    user_data->device_cfg.i2c_addr = (temp_p != NULL && strcmp(temp_p, "") != 0) ? simple_strtol(temp_p, NULL, 0) : 0x20;
+
+    temp_p = strsep(&pText, ",");
+    if (temp_p == NULL || strcmp(temp_p, "") == 0 || strcmp(temp_p, "default") == 0) {
+        user_data->device_cfg.io_count = INPUT_MCP23017_DEFAULT_KEYCODE_TABLE_ITEM_COUNT;
+    } else {
+        user_data->device_cfg.io_count = simple_strtol(temp_p, NULL, 10);
+    }
+
+    temp_p = strsep(&pText, ",");
+    if (temp_p == NULL || strcmp(temp_p, "") == 0 || strcmp(temp_p, "default") == 0) {
+        user_data->device_cfg.pull_updown = 0;
+    } else {
+        user_data->device_cfg.pull_updown = simple_strtol(temp_p, NULL, 10);
     }
 
     des = user_data->button_cfgs;
