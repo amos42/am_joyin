@@ -68,10 +68,10 @@ typedef struct tag_device_mux_data {
 
 static const device_mux_index_table_t default_input_mux_config = {
     {
-        {ABS_Y,      -1},
-        {ABS_Y,       1},
-        {ABS_X,      -1},
-        {ABS_X,       1}, 
+        {ABS_Y,      -DEFAULT_INPUT_ABS_MAX_VALUE},
+        {ABS_Y,       DEFAULT_INPUT_ABS_MAX_VALUE},
+        {ABS_X,      -DEFAULT_INPUT_ABS_MAX_VALUE},
+        {ABS_X,       DEFAULT_INPUT_ABS_MAX_VALUE}, 
         {BTN_START,   1},
         {BTN_SELECT,  1},
         {BTN_A,       1},

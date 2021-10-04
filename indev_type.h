@@ -42,9 +42,10 @@ typedef int BOOL;
 #define MAX_INPUT_DEVICE_COUNT                (4)
 
 #define DEFAULT_INPUT_BUTTON_COUNT            (14)
+#define DEFAULT_INPUT_ABS_MAX_VALUE           (100)
 #define DEFAULT_INPUT_BUTTONS { \
-                                {ABS_Y,      -1, 1}, \
-                                {ABS_X,      -1, 1}, \
+                                {ABS_Y,      -DEFAULT_INPUT_ABS_MAX_VALUE, DEFAULT_INPUT_ABS_MAX_VALUE}, \
+                                {ABS_X,      -DEFAULT_INPUT_ABS_MAX_VALUE, DEFAULT_INPUT_ABS_MAX_VALUE}, \
                                 {BTN_START,   0, 1}, \
                                 {BTN_SELECT,  0, 1}, \
                                 {BTN_A,       0, 1}, \

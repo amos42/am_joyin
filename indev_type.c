@@ -39,8 +39,8 @@
 
 
 // const input_button_data_t default_buttonset[DEFAULT_INPUT_BUTTON_COUNT] = {
-//     {ABS_Y,      -1, 1},
-//     {ABS_X,      -1, 1},
+//     {ABS_Y,      -100, 100},
+//     {ABS_X,      -100, 100},
 //     {BTN_START,   0, 1},
 //     {BTN_SELECT,  0, 1},
 //     {BTN_A,       0, 1},
@@ -56,44 +56,6 @@
 // };
 
 const input_button_data_t default_buttonset[DEFAULT_INPUT_BUTTON_COUNT] = DEFAULT_INPUT_BUTTONS;
-
-
-
-// // 버튼셋 리스트. 기본적으로 1개 포함
-// input_buttonset_data_t buttonset_list[MAX_INPUT_BUTTONSET_COUNT]; // = {
-// //     {
-// //         {
-// //             {ABS_Y,     -1, 1},
-// //             {ABS_X,     -1, 1},
-// //             {BTN_START,  0, 1},
-// //             {BTN_SELECT, 0, 1},
-// //             {BTN_A,      0, 1},
-// //             {BTN_B,      0, 1},
-// //             {BTN_X,      0, 1},
-// //             {BTN_Y,      0, 1},
-// //             {BTN_TL,     0, 1},
-// //             {BTN_TR,     0, 1},
-// //             {BTN_MODE,   0, 1},
-// //             {BTN_TL2,    0, 1},
-// //             {BTN_TR2,    0, 1},
-// //             {BTN_TRIGGER,      0, 1}
-// //         },
-// //         DEFAULT_INPUT_BUTTON_COUNT
-// //     },    
-// // };
-// int input_buttonset_count = 0; //MAX_INPUT_DEFAULT_BUTTONSET_COUNT;
-
-// // endpoint 리스트
-// input_endpoint_data_t endpoint_list[MAX_INPUT_ENDPOINT_COUNT];
-// int input_endpoint_count = 0;
-
-// // 징치 타입 기술 리스트
-// input_device_type_desc_t device_type_desc_list[MAX_INPUT_DEVICE_TYPE_DESC_COUNT];
-// int input_device_type_desc_count;
-
-// // 장치 리스트
-// input_device_data_t device_list[MAX_INPUT_DEVICE_COUNT];
-// int input_device_count = 0;
 
 
 /**

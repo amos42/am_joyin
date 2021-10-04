@@ -40,10 +40,10 @@ typedef struct tag_device_gpio_data {
 
 static const device_gpio_index_table_t default_input1_gpio_config = {
     {
-        {4,  ABS_Y,     -1},
-        {17, ABS_Y,      1},
-        {27, ABS_X,     -1},
-        {22, ABS_X,      1},
+        {4,  ABS_Y,     -DEFAULT_INPUT_ABS_MAX_VALUE},
+        {17, ABS_Y,      DEFAULT_INPUT_ABS_MAX_VALUE},
+        {27, ABS_X,     -DEFAULT_INPUT_ABS_MAX_VALUE},
+        {22, ABS_X,      DEFAULT_INPUT_ABS_MAX_VALUE},
         {10, BTN_START,  1},
         {9,  BTN_SELECT, 1},
         {25, BTN_A,      1},
@@ -59,10 +59,10 @@ static const device_gpio_index_table_t default_input1_gpio_config = {
 
 static const device_gpio_index_table_t default_input2_gpio_config = {
     {
-        {11, ABS_Y,     -1},
-        {5,  ABS_Y,      1},
-        {6,  ABS_X,     -1},
-        {13, ABS_X,      1},
+        {11, ABS_Y,     -DEFAULT_INPUT_ABS_MAX_VALUE},
+        {5,  ABS_Y,      DEFAULT_INPUT_ABS_MAX_VALUE},
+        {6,  ABS_X,     -DEFAULT_INPUT_ABS_MAX_VALUE},
+        {13, ABS_X,      DEFAULT_INPUT_ABS_MAX_VALUE},
         {19, BTN_START,  1},
         {26, BTN_SELECT, 1},
         {21, BTN_A,      1},
