@@ -40,6 +40,7 @@
 typedef struct tag_device_mux_config {
     int rw_gpio;
     int addr_gpio[MAX_MUX_ADDR_REG_COUNT];
+    int addr_bit_count;
 
     int io_count;
     int start_offset;
@@ -107,14 +108,18 @@ int init_input_device_for_mux(input_device_data_t *device_data, char* device_con
         pText = szText;
 
         temp_p = strsep(&pText, ",");
+        if (temp_p == NULL || strcmp(temp_p, "") == 0) return -EINVAL;
         user_data->device_cfg.rw_gpio = temp_p != NULL ? simple_strtol(temp_p, NULL, 0) : -1;
 
+        user_data->device_cfg.addr_bit_count = 0;
         strsep(&pText, "{");
         block_p = strsep(&pText, "}");
         for (i = 0; i < MAX_MUX_ADDR_REG_COUNT; i++) {
             temp_p = strsep(&block_p, ",");
-            user_data->device_cfg.addr_gpio[i] = temp_p != NULL ? simple_strtol(temp_p, NULL, 0) : -1;
+            if (temp_p == NULL || strcmp(temp_p, "") == 0) break;
+            user_data->device_cfg.addr_gpio[user_data->device_cfg.addr_bit_count++] = simple_strtol(temp_p, NULL, 0);
         }
+        if (user_data->device_cfg.addr_bit_count <= 0) return -EINVAL;
         strsep(&pText, ",");
 
         temp_p = strsep(&pText, ",");
@@ -131,6 +136,8 @@ int init_input_device_for_mux(input_device_data_t *device_data, char* device_con
         } else {
             user_data->device_cfg.pull_updown = simple_strtol(temp_p, NULL, 10);
         }
+    } else {
+        return -EINVAL;
     }
 
     des = user_data->button_cfgs;
@@ -278,9 +285,9 @@ static void check_input_device_for_mux(input_device_data_t *device_data)
         for (j = 0; j < cnt; j++ ){
             int addr_reg = addr;
             int *addr_gpio = user_data->device_cfg.addr_gpio;
-            for (k = 0; k < MAX_MUX_ADDR_REG_COUNT; k++ ){
+            int addr_bit_count = user_data->device_cfg.addr_bit_count;
+            for (k = 0; k < addr_bit_count; k++ ){
                 int gpio = *addr_gpio++;
-                if (gpio == -1) break;
                 gpio_set_value(gpio, addr_reg & 1);
                 addr_reg >>= 1;
             }

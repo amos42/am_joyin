@@ -109,11 +109,15 @@ int init_input_device_for_74hc165(input_device_data_t *device_data, char* device
         pText = szText;
 
         temp_p = strsep(&pText, ",");
+        if (temp_p == NULL || strcmp(temp_p, "") == 0) return -EINVAL;
         user_data->device_cfg.gpio_ld = simple_strtol(temp_p, NULL, 0);
         temp_p = strsep(&pText, ",");
+        if (temp_p == NULL || strcmp(temp_p, "") == 0) return -EINVAL;
         user_data->device_cfg.gpio_ck = simple_strtol(temp_p, NULL, 0);
         temp_p = strsep(&pText, ",");
+        if (temp_p == NULL || strcmp(temp_p, "") == 0) return -EINVAL;
         user_data->device_cfg.gpio_dt = simple_strtol(temp_p, NULL, 0);
+
         temp_p = strsep(&pText, ",");
         if (temp_p == NULL || strcmp(temp_p, "") == 0 || strcmp(temp_p, "default") == 0) {
             user_data->device_cfg.io_count = INPUT_74HC165_DEFAULT_KEYCODE_TABLE_ITEM_COUNT;
@@ -132,6 +136,8 @@ int init_input_device_for_74hc165(input_device_data_t *device_data, char* device
         } else {
             user_data->device_cfg.pull_updown = simple_strtol(temp_p, NULL, 10);
         }
+    } else {
+        return -EINVAL;
     }
 
     des = user_data->button_cfgs;

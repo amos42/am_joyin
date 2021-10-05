@@ -150,13 +150,13 @@ int gpio_init(u32 peri_base_addr)
     peri_base = peri_base_addr;
     if (!peri_base) {
         pr_err("failed to find peripherals address base via device-tree - not a Raspberry PI board ?\n");
-        return -ENODEV;
+        return -EINVAL;
     }
 
     /* Set up gpio pointer for direct register access */
     if ((gpio = ioremap(GPIO_BASE, 0xB0)) == NULL) {
         pr_err("io remap failed\n");
-        return -ENODEV;
+        return -EINVAL;
     }
 
     is_2711 = *(gpio + GPIO_PUP_PDN_CNTRL_REG3) != 0x6770696f;

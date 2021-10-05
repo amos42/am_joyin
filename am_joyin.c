@@ -374,7 +374,7 @@ static int am_joyin_init(void)
     for (i = 0; i < a_input->input_device_count; i++) {
         input_device_data_t *dev = &a_input->device_list[i];
 
-        printk(KERN_INFO"register input dev #%d : %s\n", i, dev->device_type_desc->device_type);
+        printk(KERN_INFO"register input dev #%d : %s", i, dev->device_type_desc->device_type);
 
         dev->device_type_desc->start_input_dev(dev);
 
@@ -394,11 +394,11 @@ static int am_joyin_init(void)
     }
 
     // 단 한개도 enpoint가 없다면 에러
-    printk(KERN_ERR"nothing input endpoint\n");
+    printk(KERN_ERR"nothing input endpoint");
     err = -ENODEV;
 
 err_free_dev:
-    printk(KERN_ERR"fail register input dev\n");
+    printk(KERN_ERR"fail register input dev");
     cleanup();
     return err;
 }

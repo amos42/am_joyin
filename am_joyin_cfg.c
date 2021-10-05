@@ -225,6 +225,7 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
         pText = szText;
 
         typeid_p = strsep(&pText, ";");
+        if (typeid_p == NULL || strcmp(typeid_p, "") == 0) continue;
 
         type_desc = NULL;
         for (j = 0; j < a_input->input_device_type_desc_count; j++) {
@@ -239,7 +240,7 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
             continue;
         }
 
-        device = &a_input->device_list[a_input->input_device_count++];
+        device = &a_input->device_list[a_input->input_device_count];
 
         device->device_type_desc = type_desc;
 
@@ -273,8 +274,14 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
         }
 
         if (type_desc->init_input_dev != NULL) {
-            type_desc->init_input_dev(device, device_params_p, endpoint_params);
+            int err = type_desc->init_input_dev(device, device_params_p, endpoint_params);
+            if (err != 0) {
+                printk(KERN_ERR"invalid initialize parameter for %s", typeid_p);
+                continue;
+            }
         }
+
+        a_input->input_device_count++;
     }
 }
 
