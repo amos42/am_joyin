@@ -89,13 +89,22 @@ sudo apt install -y --force-yes raspberrypi-kernel-headers
 
 사전 작업이 마무리 되었다면 본격적으로 설치 작업을 진행한다.
 
-**1. 드라이버 소스를 받는다.**
+#### wget 사용시
+
+```shell
+wget https://github.com/amos42/am_joyin/releases/download/v0.1.0-alpha02/am_joyin-0.1.0.deb
+sudo dpkg -i am_joyin-0.1.0.deb
+```
+
+#### git 사용시
+
+1. 드라이버 소스를 받는다.
 
 ```shell
 git clone https://github.com/amos42/am_joyin.git
 ```
 
-**.deb 패키지를 생성 후 설치한다.**
+2. deb 패키지를 생성 후 설치한다.
 
 ```shell
 cd am_joyin
