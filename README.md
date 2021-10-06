@@ -251,7 +251,7 @@ buttonset1_cfg="{0x01,-1,1},{0x00,-1,1},{0x13B,0,1},{0x13A,0,1},{0x130,0,1},{0x1
 실제 사용 예
 
 ```shell
-endpoints="default,0,default;ext_joystick,1,,11"
+endpoints="default,0,default;ext_joystick,1,11"
 ```
 
 ## device 설정
@@ -298,7 +298,7 @@ sudo modprobe am_joyin device1="gpio;;0,default1,0,default"
 - 2인용 설정
 
 ```shell
-sudo modprobe am_joyin endpoints="default,12;default,12" device1="gpio;;0,default1,0,12;1,default2,0,12"
+sudo modprobe am_joyin endpoints="default,,12;default,,12" device1="gpio;;0,default1,0,12;1,default2,0,12"
 ```
 
 - 커스텀 키 설정
