@@ -327,7 +327,11 @@ sudo modprobe am_joyin device1="gpio;;0,custom,1,{4,0x1,-1},{17,0x1,1},{27,0x0,-
 
 해당 보드의 회로도는 https://github.com/amos42/pcbs/tree/master/joystick-input 를 통해 얻을 수 있다.
 
-74HC165 장치를 사용하기 위해서는 기본적으로 3개 핀에 해당하는 gpio 주소를 파라미터로 전달해야 한다.
+74HC165 장치를 사용하기 위해서는 기본적으로 VCC, GND 및 Load, Clock, Data (=Q8) 핀을 라즈베리파이의 전원 및 GPIO 핀에 연결한다.
+
+![74HC165 Board Board](images/74hc165-board_03.jpg)
+
+이 중에 3개 핀에 해당하는 GPIO 주소를 파라미터로 전달해야 한다.
 순서대로 LD, CK, DT 이다.
 
 * 디바이스 파라미터
@@ -357,7 +361,7 @@ I2C를 이용해 키 입력을 받고자 한다면 MCP23017 칩을 사용하면 
 
 MCP23017 모듈은 다음과 같은 형태로 주로 판매되고 있다.
 
-![MCP23017 Board Board](images/mcp23017-board.jpg)
+![MCP23017 Board Board](images/mcp23017-board_01.jpg)
 
 I2C 장치이기 때문에 액세스를 위해서는 주소를 알아야 한다. 판매되는 상품의 경우엔 기본적으로 0x20으로 세팅되어 있으며, 점퍼 및 납땜을 통해 주소를 변경할 수 있다. 2p 이상인 조이스틱 제작을 위해서는 2개의 칩을 사용해야 하기 때문에, 필히 서로 다른 주소를 갖도록 세팅되어 있어야 한다.
 
