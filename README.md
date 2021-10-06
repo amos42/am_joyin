@@ -279,7 +279,9 @@ endpoints="default,0,default;ext_joystick,1,11"
 가장 기본이 되는 GPIO로 직접 버튼의 입력을 받는 장치이다.
 기본 핀맵은 mk_arcade_joystick_rpi와 호환되도록 하고 있다.
 
-![GPIO Interface](images/mk_joystick_arcade_GPIOs.png)
+![GPIO Interface](images/mk_joystick_arcade_GPIOsb_hk.png)
+
+![GPIO Test Board](images/gpio-test-board.jpg)
 
 * 디바이스 파라미터
 > 없음
@@ -323,13 +325,13 @@ sudo modprobe am_joyin device1="gpio;;0,custom,1,{4,0x1,-1},{17,0x1,1},{27,0x0,-
 
 이를 PCB로 구현한 모습이다.
 
-![74HC165 Board Board](images/74hc165-board_02.jpg)
+![74HC165 Board](images/74hc165-board_02.jpg)
 
 해당 보드의 회로도는 https://github.com/amos42/pcbs/tree/master/joystick-input 를 통해 얻을 수 있다.
 
 74HC165 장치를 사용하기 위해서는 기본적으로 VCC, GND 및 Load, Clock, Data (=Q8) 핀을 라즈베리파이의 전원 및 GPIO 핀에 연결한다.
 
-![74HC165 Board Board](images/74hc165-board_03.jpg)
+![74HC165 Test Board](images/74hc165-board_03.jpg)
 
 이 3개 핀에 해당하는 GPIO 주소를 파라미터로 전달해야 한다.
 순서대로 LD, CK, DT 이다.
