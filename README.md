@@ -92,7 +92,7 @@ sudo apt install -y --force-yes raspberrypi-kernel-headers
 #### wget 사용시
 
 ```shell
-wget https://github.com/amos42/am_joyin/releases/download/v0.1.0-alpha02/am_joyin-0.1.0.deb
+wget https://github.com/amos42/am_joyin/releases/download/v0.1.0-alpha03/am_joyin-0.1.0.deb
 sudo dpkg -i am_joyin-0.1.0.deb
 ```
 
