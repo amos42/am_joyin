@@ -77,21 +77,12 @@ static const device_gpio_index_table_t default_input2_gpio_config = {
 };
 
 
-// device_config_str : endpoint,config_type(default1 | default2 | custom), ...
-//        default1 = default #1. add_params : default | key_cnt
-//        default2 = default #2. add_params : default | key_cnt
-// ex) device1=gpio;0,default1
-//     device3=gpio;1,custom,code,{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1}
-int init_input_device_for_gpio(input_device_data_t *device_data, char* device_config_str, char* endpoint_config_str[])
+// device 파라미터 파싱
+static int __parse_device_param_for_gpio(device_gpio_data_t* user_data, char* device_config_str)
 {
-     int i;
-    device_gpio_index_table_t *src, *des;
-    int code_mode;
     char szText[512];
     char* pText;
     char* temp_p;
-
-    device_gpio_data_t* user_data = (device_gpio_data_t *)kzalloc(sizeof(device_gpio_data_t) + sizeof(device_gpio_index_table_t) * (device_data->target_endpoint_count - 1), GFP_KERNEL);
 
     if (device_config_str != NULL) {
         strcpy(szText, device_config_str); 
@@ -103,12 +94,28 @@ int init_input_device_for_gpio(input_device_data_t *device_data, char* device_co
         } else {
             user_data->device_cfg.pull_updown = simple_strtol(temp_p, NULL, 10);
         }
+    } else {
+        user_data->device_cfg.pull_updown = 0;
     }
+
+    return 0;
+}
+
+
+// 각 endpoint 파라미터 파싱
+static int __parse_endpoint_param_for_gpio(device_gpio_data_t* user_data, char* endpoint_config_str[], input_endpoint_data_t *endpoint_list[], int endpoint_count)
+{
+    int i;
+    device_gpio_index_table_t *src, *des;
+    int code_mode;
+    char szText[512];
+    char* pText;
+    char* temp_p;
 
     des = user_data->button_cfgs;
 
-    for (i = 0; i < device_data->target_endpoint_count; i++ ) {
-        input_endpoint_data_t *ep = device_data->target_endpoints[i];
+    for (i = 0; i < endpoint_count; i++ ) {
+        input_endpoint_data_t *ep = endpoint_list[i];
         char* cfgtype_p;
         int button_start_index, button_count;
 
@@ -130,19 +137,10 @@ int init_input_device_for_gpio(input_device_data_t *device_data, char* device_co
 
             temp_p = strsep(&pText, ",");
             if (temp_p == NULL || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {
-                button_start_index = 0;
-            } else {
-                button_start_index = simple_strtol(temp_p, NULL, 10);
-            }
-            temp_p = strsep(&pText, ",");
-            if (temp_p == NULL || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {
                 button_count = src->button_count;
             } else {
                 button_count = simple_strtol(temp_p, NULL, 10);
             }
-        } else if(strcmp(cfgtype_p, "default2") == 0){
-            src = (device_gpio_index_table_t *)&default_input2_gpio_config;
-            code_mode = 0;
 
             temp_p = strsep(&pText, ",");
             if (temp_p == NULL || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {
@@ -150,11 +148,22 @@ int init_input_device_for_gpio(input_device_data_t *device_data, char* device_co
             } else {
                 button_start_index = simple_strtol(temp_p, NULL, 10);
             }
+        } else if(strcmp(cfgtype_p, "default2") == 0){
+            src = (device_gpio_index_table_t *)&default_input2_gpio_config;
+            code_mode = 0;
+
             temp_p = strsep(&pText, ",");
             if (temp_p == NULL || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {
                 button_count = src->button_count;
             } else {
                 button_count = simple_strtol(temp_p, NULL, 10);
+            }
+
+            temp_p = strsep(&pText, ",");
+            if (temp_p == NULL || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {
+                button_start_index = 0;
+            } else {
+                button_start_index = simple_strtol(temp_p, NULL, 10);
             }
         } else if(strcmp(cfgtype_p, "custom") == 0){
             char* keycode_p = strsep(&pText, ",");
@@ -174,15 +183,17 @@ int init_input_device_for_gpio(input_device_data_t *device_data, char* device_co
                 value_p = strsep(&block_p, ",");
                 strsep(&pText, ",");
 
-                gpio = simple_strtol(gpio_p, NULL, 0);
-                button = simple_strtol(button_p, NULL, 0);
-                value = simple_strtol(value_p, NULL, 0);
+                gpio = (button_p != NULL) ? simple_strtol(gpio_p, NULL, 0) : -1;
+                button = (button_p != NULL) ? simple_strtol(button_p, NULL, 0) : -1;
+                value = (value_p != NULL) ? simple_strtol(value_p, NULL, 0) : -1;
 
                 // 키 설정 추가
-                src->buttondef[button_count].gpio = gpio;
-                src->buttondef[button_count].button = button;
-                src->buttondef[button_count].value = value;
-                button_count++;
+                if (button >= 0 && gpio >= 0) {
+                    src->buttondef[button_count].gpio = gpio;
+                    src->buttondef[button_count].button = button;
+                    src->buttondef[button_count].value = value;
+                    button_count++;
+                }
             }
         } else {
             continue;
@@ -202,8 +213,8 @@ int init_input_device_for_gpio(input_device_data_t *device_data, char* device_co
                     }
                 }
             }
-            des->button_start_index = button_start_index;
             des->button_count = button_count;
+            des->button_start_index = button_start_index;
         } else if (code_mode == 1) {
             int j;
             // if (button_count > ep->button_count) button_count = ep->button_count;
@@ -212,11 +223,44 @@ int init_input_device_for_gpio(input_device_data_t *device_data, char* device_co
                 des->buttondef[j].gpio = src->buttondef[j].gpio;
                 des->buttondef[j].value = src->buttondef[j].value;
             }
-            des->button_start_index = button_start_index;
             des->button_count = button_count;
+            des->button_start_index = button_start_index;
         }
 
         des++;
+    }
+
+    return 0;
+}
+
+
+// device_config_str : 
+// endpoint_config_str : endpoint, config_type (default1 | default2 | custom), ...
+//        default1: button_count, start_index
+//        default2: button_count, start_index
+//        custom = code_type (0|1), n * {gpio, button, value}
+//            code_type = 0 : key code
+//            code_type = 1 : index
+//
+// ex) device1=gpio;;0,default1
+//     device2=gpio;;1,custom,0,{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1}
+static int init_input_device_for_gpio(input_device_data_t *device_data, char* device_config_str, char* endpoint_config_strs[])
+{
+    device_gpio_data_t* user_data;
+    int result;
+
+    user_data = (device_gpio_data_t *)kzalloc(sizeof(device_gpio_data_t) + sizeof(device_gpio_index_table_t) * (device_data->target_endpoint_count - 1), GFP_KERNEL);
+
+    result = __parse_device_param_for_gpio(user_data, device_config_str);
+    if (result != 0) {
+        kfree(user_data);
+        return result;
+    }
+
+    result = __parse_endpoint_param_for_gpio(user_data, endpoint_config_strs, device_data->target_endpoints, device_data->target_endpoint_count);
+    if (result != 0) {
+        kfree(user_data);
+        return result;
     }
 
     device_data->data = (void *)user_data;

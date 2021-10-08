@@ -288,7 +288,7 @@ endpoints="default,0,default;ext_joystick,1,11"
 
 * 엔드포인트 파라미터
 > 1. config type - 버튼 설정 타입
->    - default : start_index, button_count
+>    - default : button_count, start_index
 >    - custom : code_mode (0: keycode, 1:index), {gpio1, button1, value1}, {gpio2, button2, value2}, ...
 
 - 1인용 기본 키 설정
@@ -300,7 +300,7 @@ sudo modprobe am_joyin device1="gpio;;0,default1,0,default"
 - 2인용 설정
 
 ```shell
-sudo modprobe am_joyin endpoints="default,,12;default,,12" device1="gpio;;0,default1,0,12;1,default2,0,12"
+sudo modprobe am_joyin endpoints="default,12;default,12" device1="gpio;;0,default1,12;1,default2,12"
 ```
 
 - 커스텀 키 설정
@@ -345,8 +345,8 @@ sudo modprobe am_joyin device1="gpio;;0,custom,1,{4,0x1,-1},{17,0x1,1},{27,0x0,-
 
 * 엔드포인트 파라미터
 > 1. config type - 버튼 설정 타입
->    - default : start_index, button_count
->    - custom : code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
+>    - default : button_count, start_index, io_skip_count
+>    - custom : io_skip_count, code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
 
 실제 사용 예
 
@@ -373,13 +373,13 @@ I2C 장치이기 때문에 액세스를 위해서는 주소를 알아야 한다.
 
 * 엔드포인트 파라미터
 > 1. config type - 버튼 설정 타입
->    - default : start_index, button_count
->    - custom : code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
+>    - default : button_count, start_index, io_skip_count
+>    - custom : io_skip_count, code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
 
 실제 사용 예
 
 ```shell
-sudo modprobe am_joyin device1="mcp23017;0x20;0,,default"
+sudo modprobe am_joyin device1="mcp23017;0x20;0,default"
 ```
 
 ### Multiplexer(=MUX) 입력
@@ -405,12 +405,11 @@ MUX 모듈은 다음과 같은 형태로 주로 판매되고 있다.
 > 1. rw_gpio - 읽기/쓰기 핀 gpio 번호 \
 > 2. {addr0_gpio, addr1_gpio, ...} - 주소핀의 gpio 주소 리스트 \
 > 3. io_count - 전체 IO 갯수 \
-> 4. start_offset - IO 시작핀의 오프셋
 
 * 엔드포인트 파라미터
 > 1. config type - 버튼 설정 타입
->    - default : start_index, button_count
->    - custom : code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
+>    - default : button_count, start_index, io_skip_count
+>    - custom : io_skip_count, code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
 
 실제 사용 예
 

@@ -43,7 +43,7 @@ typedef struct tag_device_mux_config {
     int addr_bit_count;
 
     int io_count;
-    int start_offset;
+    //int start_offset;
     int pull_updown;
 } device_mux_config_t;
 
@@ -54,6 +54,7 @@ typedef struct tag_device_mux_index_item {
 
 typedef struct tag_device_mux_index_table {
     device_mux_index_item_t buttondef[MAX_INPUT_BUTTON_COUNT];
+    int io_skip_count;
     int button_start_index;
     int button_count;
 } device_mux_index_table_t;
@@ -86,66 +87,73 @@ static const device_mux_index_table_t default_input_mux_config = {
         {BTN_TR2,     1},
         {BTN_TRIGGER, 1}
     }, 
-    0, INPUT_MUX_DEFAULT_KEYCODE_TABLE_ITEM_COUNT
+    0, 0, INPUT_MUX_DEFAULT_KEYCODE_TABLE_ITEM_COUNT
 };
 
 
-// device_config_str :  read_gpio,{addr0_gpio, addr1_gpio, ...},io_count,start_offset
-// endpoint_count_str : endpoint1_keycode(default | custom), code_type(code | index), n * {keycode1, value1}
-int init_input_device_for_mux(input_device_data_t *device_data, char* device_config_str, char* endpoint_config_str[])
+// device 파라미터 파싱
+static int __parse_device_param_for_mux(device_mux_data_t* user_data, char* device_config_str)
+{
+    int i;
+    char szText[512];
+    char* pText;
+    char* temp_p, *block_p;
+
+    strcpy(szText, device_config_str); 
+    pText = szText;
+
+    temp_p = strsep(&pText, ",");
+    if (temp_p == NULL || strcmp(temp_p, "") == 0) return -EINVAL;
+    user_data->device_cfg.rw_gpio = temp_p != NULL ? simple_strtol(temp_p, NULL, 0) : -1;
+
+    user_data->device_cfg.addr_bit_count = 0;
+    strsep(&pText, "{");
+    block_p = strsep(&pText, "}");
+    for (i = 0; i < MAX_MUX_ADDR_REG_COUNT; i++) {
+        temp_p = strsep(&block_p, ",");
+        if (temp_p == NULL || strcmp(temp_p, "") == 0) break;
+        user_data->device_cfg.addr_gpio[user_data->device_cfg.addr_bit_count++] = simple_strtol(temp_p, NULL, 0);
+    }
+    if (user_data->device_cfg.addr_bit_count <= 0) return -EINVAL;
+    strsep(&pText, ",");
+
+    temp_p = strsep(&pText, ",");
+    if (temp_p == NULL || strcmp(temp_p, "") == 0 || strcmp(temp_p, "default") == 0) {
+        user_data->device_cfg.io_count = INPUT_MUX_DEFAULT_KEYCODE_TABLE_ITEM_COUNT;
+    } else {
+        user_data->device_cfg.io_count = simple_strtol(temp_p, NULL, 10);
+    }
+
+    // temp_p = strsep(&pText, ",");
+    // user_data->device_cfg.start_offset = temp_p != NULL ? simple_strtol(temp_p, NULL, 10) : 0;
+
+    temp_p = strsep(&pText, ",");
+    if (temp_p == NULL || strcmp(temp_p, "") == 0 || strcmp(temp_p, "default") == 0) {
+        user_data->device_cfg.pull_updown = 0;
+    } else {
+        user_data->device_cfg.pull_updown = simple_strtol(temp_p, NULL, 10);
+    }
+
+    return 0;
+}
+
+
+// 각 endpoint 파라미터 파싱
+static int __parse_endpoint_param_for_mux(device_mux_data_t* user_data, char* endpoint_config_str[], input_endpoint_data_t *endpoint_list[], int endpoint_count)
 {
     int i, j;
     int code_mode;
     device_mux_index_table_t *src, *des;
     char szText[512];
     char* pText;
-    char* temp_p, *block_p;
-    
-    device_mux_data_t* user_data = (device_mux_data_t *)kzalloc(sizeof(device_mux_data_t) + sizeof(device_mux_index_table_t) * (device_data->target_endpoint_count - 1), GFP_KERNEL);
-
-    if (device_config_str != NULL) {
-        strcpy(szText, device_config_str); 
-        pText = szText;
-
-        temp_p = strsep(&pText, ",");
-        if (temp_p == NULL || strcmp(temp_p, "") == 0) return -EINVAL;
-        user_data->device_cfg.rw_gpio = temp_p != NULL ? simple_strtol(temp_p, NULL, 0) : -1;
-
-        user_data->device_cfg.addr_bit_count = 0;
-        strsep(&pText, "{");
-        block_p = strsep(&pText, "}");
-        for (i = 0; i < MAX_MUX_ADDR_REG_COUNT; i++) {
-            temp_p = strsep(&block_p, ",");
-            if (temp_p == NULL || strcmp(temp_p, "") == 0) break;
-            user_data->device_cfg.addr_gpio[user_data->device_cfg.addr_bit_count++] = simple_strtol(temp_p, NULL, 0);
-        }
-        if (user_data->device_cfg.addr_bit_count <= 0) return -EINVAL;
-        strsep(&pText, ",");
-
-        temp_p = strsep(&pText, ",");
-        if (temp_p == NULL || strcmp(temp_p, "") == 0 || strcmp(temp_p, "default") == 0) {
-            user_data->device_cfg.io_count = INPUT_MUX_DEFAULT_KEYCODE_TABLE_ITEM_COUNT;
-        } else {
-            user_data->device_cfg.io_count = simple_strtol(temp_p, NULL, 10);
-        }
-        temp_p = strsep(&pText, ",");
-        user_data->device_cfg.start_offset = temp_p != NULL ? simple_strtol(temp_p, NULL, 10) : 0;
-        temp_p = strsep(&pText, ",");
-        if (temp_p == NULL || strcmp(temp_p, "") == 0 || strcmp(temp_p, "default") == 0) {
-            user_data->device_cfg.pull_updown = 0;
-        } else {
-            user_data->device_cfg.pull_updown = simple_strtol(temp_p, NULL, 10);
-        }
-    } else {
-        return -EINVAL;
-    }
+    char* temp_p;
 
     des = user_data->button_cfgs;
 
-    for (i = 0; i < device_data->target_endpoint_count; i++ ) {
-        input_endpoint_data_t *ep = device_data->target_endpoints[i];
+    for (i = 0; i < endpoint_count; i++ ) {
+        input_endpoint_data_t *ep = endpoint_list[i];
         char* cfgtype_p;
-        int button_start_index, button_count;
+        int io_skip_count, button_start_index, button_count;
 
         if (ep == NULL) continue;
 
@@ -165,19 +173,40 @@ int init_input_device_for_mux(input_device_data_t *device_data, char* device_con
 
             temp_p = strsep(&pText, ",");
             if (temp_p == NULL || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {
-                button_start_index = 0;
-            } else {
-                button_start_index = simple_strtol(temp_p, NULL, 10);
-            }
-            temp_p = strsep(&pText, ",");
-            if (temp_p == NULL || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {
                 button_count = src->button_count;
             } else {
                 button_count = simple_strtol(temp_p, NULL, 10);
             }
+
+            temp_p = strsep(&pText, ",");
+            if (temp_p == NULL || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {
+                button_start_index = 0;
+            } else {
+                button_start_index = simple_strtol(temp_p, NULL, 10);
+            }
+
+            temp_p = strsep(&pText, ",");
+            if (temp_p == NULL || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {
+                io_skip_count = 0;
+            } else {
+                io_skip_count = simple_strtol(temp_p, NULL, 10);
+            }
         } else if(strcmp(cfgtype_p, "custom") == 0){
-            char* keycode_p = strsep(&pText, ";");
-            code_mode = simple_strtol(keycode_p, NULL, 10);
+            char* keycode_p;
+
+            temp_p = strsep(&pText, ",");
+            if (temp_p == NULL || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {
+                io_skip_count = 0;
+            } else {
+                io_skip_count = simple_strtol(temp_p, NULL, 10);
+            }
+
+            keycode_p = strsep(&pText, ",");
+            if (temp_p == NULL || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {
+                code_mode = 0;
+            } else {
+                code_mode = simple_strtol(keycode_p, NULL, 10);
+            }
 
             button_start_index = 0;
             button_count = 0;
@@ -192,13 +221,15 @@ int init_input_device_for_mux(input_device_data_t *device_data, char* device_con
                 value_p = strsep(&block_p, ",");
                 strsep(&pText, ",");
 
-                button = simple_strtol(button_p, NULL, 0);
-                value = simple_strtol(value_p, NULL, 0);
+                button = (button_p != NULL) ? simple_strtol(button_p, NULL, 0) : -1;
+                value = (value_p != NULL) ? simple_strtol(value_p, NULL, 0) : -1;
 
                 // 키 설정 추가
-                src->buttondef[button_count].button = button;
-                src->buttondef[button_count].value = value;
-                button_count++;
+                if (button >= 0) {
+                    src->buttondef[button_count].button = button;
+                    src->buttondef[button_count].value = value;
+                    button_count++;
+                }
             }
         } else {
             continue;
@@ -217,20 +248,67 @@ int init_input_device_for_mux(input_device_data_t *device_data, char* device_con
                     }
                 }
             }
-            des->button_start_index = button_start_index;
             des->button_count = button_count;
+            des->button_start_index = button_start_index;
+            des->io_skip_count = io_skip_count;
         } else if (code_mode == 1) {
             // if (button_count > ep->button_count) button_count = ep->button_count;
             for (j = 0; j < button_count; j++) {
                 des->buttondef[j].button = src->buttondef[j].button;
                 des->buttondef[j].value = src->buttondef[j].value;
             }
-            des->button_start_index = button_start_index;
             des->button_count = button_count;
+            des->button_start_index = button_start_index;
+            des->io_skip_count = io_skip_count;
         }
 
         des++;
     }
+
+    return 0;
+}
+
+
+// device_config_str : read_gpio, {addr0_gpio, addr1_gpio, ...}, io_count
+// endpoint_config_str : endpoint, config_type (default | custom), ...
+//        default: button_count, start_index, io_skip_count
+//        custom: io_skip_count, code_type (0|1), n * {button, value}
+//            code_type = 0 : key code
+//            code_type = 1 : index
+//
+// ex) device1=mcp23017;0x20,16;0,default,12
+//     device2=mcp23017;0x20;1,custom,,0,{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1}
+static int init_input_device_for_mux(input_device_data_t *device_data, char* device_config_str, char* endpoint_config_strs[])
+{
+    device_mux_data_t* user_data;
+    int result;
+    //int i, all_io_count;
+    
+    if (device_config_str == NULL || strcmp(device_config_str, "") == 0) return -EINVAL;
+
+    user_data = (device_mux_data_t *)kzalloc(sizeof(device_mux_data_t) + sizeof(device_mux_index_table_t) * (device_data->target_endpoint_count - 1), GFP_KERNEL);
+
+    result = __parse_device_param_for_mux(user_data, device_config_str);
+    if (result != 0) {
+        kfree(user_data);
+        return result;
+    }
+
+    result = __parse_endpoint_param_for_mux(user_data, endpoint_config_strs, device_data->target_endpoints, device_data->target_endpoint_count);
+    if (result != 0) {
+        kfree(user_data);
+        return result;
+    }
+
+    // all_io_count = 0;
+    // for (i = 0; i < device_data->endpoint_count; i++ ) {
+    //     ep = &user_data->user_data->button_cfgs[i]
+    //     all_io_count += ep->io_skip_count + ep->button_count;
+    // }
+    // if (user_data->device_cfg.io_count > all_io_count) {
+    //     user_data->device_cfg.io_count = all_io_count;
+    // }
+
 
     device_data->data = (void *)user_data;
 
@@ -271,13 +349,15 @@ static void check_input_device_for_mux(input_device_data_t *device_data)
 
     read_gpio = user_data->device_cfg.rw_gpio;
 
-    addr = user_data->device_cfg.start_offset;
+    //addr = user_data->device_cfg.start_offset;
+    addr = 0;
 
     for (i = 0; i < device_data->target_endpoint_count; i++) {
         input_endpoint_data_t* endpoint = device_data->target_endpoints[i];
         device_mux_index_table_t* table = &user_data->button_cfgs[i];
         device_mux_index_item_t* btndef = &table->buttondef[table->button_start_index];
 
+        addr += table->io_skip_count;
         cnt = table->button_count;
         if (cnt > io_count) cnt = io_count;
         io_count -= cnt;
