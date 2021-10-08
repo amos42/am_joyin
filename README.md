@@ -263,9 +263,30 @@ endpoints="default,0,default;ext_joystick,1,11"
 1. 타입 이름
 2. 디바이스 설정
 3. 엔드포인트 설정
-  - 엔드포인트 설정 : 엔드포인트 인덱스, 버튼 시작 인덱스, 버튼 갯수, 엔드포인트별 장치 설정
+    - 엔드포인트 설정 : 엔드포인트 인덱스, 엔드포인트별 장치 설정
 
-현재 지원 가능한 타입은 다음과 같다.
+예를 들어 다음과 같이 지정했다고 가정하자.
+
+```shell
+device1="74hc165;16,20,21,24,1;0,default,12;1,default,12"
+```
+
+이 파라미터는 다음과 같이 해석된다.
+
+![device 파라미터 해석](images/param_sep.png)
+
+> 1. 장치 타입 : 74hc165
+> 2. 장치 파라미터 : 16, 20, 21, 24, 1
+> 3. 첫번째 엔드포인트 :
+>     - 엔드포인트 인덱스 : 0
+>     - 엔드포인트 파라미터 : default, 12
+> 4. 두번째 엔드포인트 :
+>     - 엔드포인트 인덱스 : 1
+>     - 엔드포인트 파라미터 : default, 12
+
+각각의 파라미터의 의미는 각 장치별로 해석을 달리한다.
+
+현재 지원 가능한 장치 타입은 다음과 같다.
 
 | 타입명     |                         |
 |-----------|--------------------------|
@@ -351,7 +372,7 @@ sudo modprobe am_joyin device1="gpio;;0,custom,1,{4,0x1,-1},{17,0x1,1},{27,0x0,-
 실제 사용 예
 
 ```shell
-sudo modprobe am_joyin device1="74hc165;16,20,21,,1;0,,default"
+sudo modprobe am_joyin device1="74hc165;16,20,21,24,1;0,default,12;1,default,12"
 ```
 
 ### MCP23017 입력
@@ -414,7 +435,7 @@ MUX 모듈은 다음과 같은 형태로 주로 판매되고 있다.
 실제 사용 예
 
 ```shell
-sudo modprobe am_joyin device1="mux;5,{26,19,13,6},default,0;0,,default"
+sudo modprobe am_joyin device1="mux;5,{26,19,13,6},default,0;0,default"
 ```
 
 ## 드라이버 동작 테스트
@@ -437,11 +458,10 @@ jstest 유틸리티의 설치 방법은 다음과 같다.
 
 ```shell
 Driver version is 2.1.0.
-Joystick (AmosJoystick_1)
-has 2 axes (X, Y)
-and 12 buttons (BtnTrigger, BtnA, BtnB, BtnX, BtnY, BtnTL, BtnTR, BtnTL2, BtnTR2, BtnSelect, BtnStart, BtnMode).
+Joystick (AmosJoystick_1) has 2 axes (X, Y)
+and 9 buttons (BtnA, BtnB, BtnX, BtnY, BtnTL, BtnTR, BtnSelect, BtnStart, BtnMode).
 Testing ... (interrupt to exit)
-Axes:  0:     0  1:     0  Buttons:  0:off  1:off  2:off  3:off  4:off  5:off  6:off  7:off  8:off  9:off 10:off 11:off
+Axes:  0:     0  1:     0 Buttons:  0:off  1:off  2:off  3:off  4:off  5:off  6:off  7:off  8:off
 ```
 
 
