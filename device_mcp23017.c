@@ -9,6 +9,7 @@
 #include <linux/delay.h>
 #include <linux/uaccess.h>
 #include "gpio_util.h"
+#include "parse_util.h"
 
 //#define GPIO_GET(i)   GPIO_READ(i)
 //#define GPIO_GET_VALUE(i)   getGpio(i)
@@ -43,9 +44,9 @@ typedef struct tag_device_mcp23017_index_item {
 
 typedef struct tag_device_mcp23017_index_table {
     device_mcp23017_index_item_t buttondef[MAX_INPUT_BUTTON_COUNT];
-    int io_skip_count;
+    int pin_count;
     int button_start_index;
-    int button_count;
+    int io_skip_count;
 } device_mcp23017_index_table_t;
 
 // device.data에 할당 될 구조체
@@ -76,7 +77,8 @@ static const device_mcp23017_index_table_t default_input_mcp23017_config = {
         {BTN_TR2,     1},
         {BTN_TRIGGER, 1}
     }, 
-    0, 0, INPUT_MCP23017_DEFAULT_KEYCODE_TABLE_ITEM_COUNT
+    INPUT_MCP23017_DEFAULT_KEYCODE_TABLE_ITEM_COUNT,
+    0, 0
 };
 
 
@@ -92,25 +94,13 @@ static int __parse_device_param_for_mcp23017(device_mcp23017_data_t* user_data, 
         pText = szText;
 
         temp_p = strsep(&pText, ",");
-        if (temp_p == NULL || strcmp(temp_p, "") == 0 || strcmp(temp_p, "default") == 0) {
-            user_data->device_cfg.i2c_addr = MPC23017_DEFAULT_I2C_ADDR;
-        } else {
-            user_data->device_cfg.i2c_addr = simple_strtol(temp_p, NULL, 0);
-        }
+        user_data->device_cfg.i2c_addr = parse_number(temp_p, 0, MPC23017_DEFAULT_I2C_ADDR);
 
         temp_p = strsep(&pText, ",");
-        if (temp_p == NULL || strcmp(temp_p, "") == 0 || strcmp(temp_p, "default") == 0) {
-            user_data->device_cfg.io_count = INPUT_MCP23017_DEFAULT_KEYCODE_TABLE_ITEM_COUNT;
-        } else {
-            user_data->device_cfg.io_count = simple_strtol(temp_p, NULL, 10);
-        }
+        user_data->device_cfg.io_count = parse_number(temp_p, 10, INPUT_MCP23017_DEFAULT_KEYCODE_TABLE_ITEM_COUNT);
 
         temp_p = strsep(&pText, ",");
-        if (temp_p == NULL || strcmp(temp_p, "") == 0 || strcmp(temp_p, "default") == 0) {
-            user_data->device_cfg.pull_updown = 0;
-        } else {
-            user_data->device_cfg.pull_updown = simple_strtol(temp_p, NULL, 10);
-        }
+        user_data->device_cfg.pull_updown = parse_number(temp_p, 10, 0);
     } else {
         user_data->device_cfg.i2c_addr = MPC23017_DEFAULT_I2C_ADDR;
         user_data->device_cfg.io_count = INPUT_MCP23017_DEFAULT_KEYCODE_TABLE_ITEM_COUNT;
@@ -136,7 +126,7 @@ static int __parse_endpoint_param_for_mcp23017(device_mcp23017_data_t* user_data
     for (i = 0; i < endpoint_count; i++ ) {
         input_endpoint_data_t *ep = endpoint_list[i];
         char* cfgtype_p;
-        int io_skip_count, button_start_index, button_count;
+        int pin_count, button_start_index, io_skip_count;
 
         if (ep == NULL) continue;
 
@@ -152,49 +142,33 @@ static int __parse_endpoint_param_for_mcp23017(device_mcp23017_data_t* user_data
 
         if (cfgtype_p == NULL || strcmp(cfgtype_p, "default") == 0 || strcmp(cfgtype_p, "") == 0){
             src = (device_mcp23017_index_table_t *)&default_input_mcp23017_config;
-            code_mode = 0;            
+            code_mode = INPUT_CODE_TYPE_KEYCODE;
 
             temp_p = strsep(&pText, ",");
-            if (temp_p == NULL || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {
-                button_count = src->button_count;
-            } else {
-                button_count = simple_strtol(temp_p, NULL, 10);
-            }
+            pin_count = parse_number(temp_p, 10, src->pin_count);
 
             temp_p = strsep(&pText, ",");
-            if (temp_p == NULL || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {
-                button_start_index = 0;
-            } else {
-                button_start_index = simple_strtol(temp_p, NULL, 10);
-            }
+            button_start_index = parse_number(temp_p, 10, 0);
 
             temp_p = strsep(&pText, ",");
-            if (temp_p == NULL || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {
-                io_skip_count = 0;
-            } else {
-                io_skip_count = simple_strtol(temp_p, NULL, 10);
-            }
-        } else if(strcmp(cfgtype_p, "custom") == 0){
-            char* keycode_p;
+            io_skip_count = parse_number(temp_p, 10, 0);
+        } else if (strcmp(cfgtype_p, "custom") == 0){
+            temp_p = strsep(&pText, ",");
+            io_skip_count = parse_number(temp_p, 10, 0);
 
             temp_p = strsep(&pText, ",");
-            if (temp_p == NULL || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {
-                io_skip_count = 0;
+            if (temp_p == NULL || strcmp(temp_p, "keycode") == 0 || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {
+                code_mode = INPUT_CODE_TYPE_KEYCODE;
+            } else if (strcmp(temp_p, "index") == 0 || strcmp(temp_p, "1") == 0) {
+                code_mode = INPUT_CODE_TYPE_INDEX;
             } else {
-                io_skip_count = simple_strtol(temp_p, NULL, 10);
-            }
-
-            keycode_p = strsep(&pText, ",");
-            if (temp_p == NULL || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {
-                code_mode = 0;
-            } else {
-                code_mode = simple_strtol(keycode_p, NULL, 10);
+                code_mode = INPUT_CODE_TYPE_NONE;
             }
 
             button_start_index = 0;
-            button_count = 0;
+            pin_count = 0;
             src = &user_data->button_cfgs[i];
-            while (pText != NULL && button_count < MAX_INPUT_BUTTON_COUNT) {
+            while (pText != NULL && pin_count < MAX_INPUT_BUTTON_COUNT) {
                 char *block_p, *button_p, *value_p;
                 int button, value;
 
@@ -209,38 +183,32 @@ static int __parse_endpoint_param_for_mcp23017(device_mcp23017_data_t* user_data
 
                 // 키 설정 추가
                 if (button >= 0) {
-                    src->buttondef[button_count].button = button;
-                    src->buttondef[button_count].value = value;
-                    button_count++;
+                    src->buttondef[pin_count].button = button;
+                    src->buttondef[pin_count].value = value;
+                    pin_count++;
                 }
             }
         } else {
             continue;
         }
 
-        if (code_mode == 0) {
-            // if (button_count > ep->button_count) button_count = ep->button_count;
-            for (j = 0; j < button_count; j++) {
-                int k;
-                int code = src->buttondef[j].button;
-                for (k = 0; k < ep->target_buttonset->button_count; k++) {
-                    if (code == ep->target_buttonset->button_data[k].button_code) {
-                        des->buttondef[j].button = k;
-                        des->buttondef[j].value = src->buttondef[j].value;
-                        break;
-                    }
+        if (code_mode == INPUT_CODE_TYPE_KEYCODE) {
+            for (j = 0; j < pin_count; j++) {
+                int idx = find_input_button_data(ep, src->buttondef[j].button, NULL);
+                des->buttondef[j].button = idx;
+                if (idx != -1) {
+                    des->buttondef[j].value = src->buttondef[j].value;
                 }
             }
-            des->button_count = button_count;
+            des->pin_count = pin_count;
             des->button_start_index = button_start_index;
             des->io_skip_count = io_skip_count;
-        } else if (code_mode == 1) {
-            // if (button_count > ep->button_count) button_count = ep->button_count;
-            for (j = 0; j < button_count; j++) {
+        } else if (code_mode == INPUT_CODE_TYPE_INDEX) {
+            for (j = 0; j < pin_count; j++) {
                 des->buttondef[j].button = src->buttondef[j].button;
                 des->buttondef[j].value = src->buttondef[j].value;
             }
-            des->button_count = button_count;
+            des->pin_count = pin_count;
             des->button_start_index = button_start_index;
             des->io_skip_count = io_skip_count;
         }
@@ -254,7 +222,7 @@ static int __parse_endpoint_param_for_mcp23017(device_mcp23017_data_t* user_data
 
 // device_config_str : i2c_addr, io_count
 // endpoint_config_str : endpoint, config_type (default | custom), ...
-//        default: button_count, start_index, io_skip_count
+//        default: pin_count, start_index, io_skip_count
 //        custom: io_skip_count, code_type (0|1), n * {button, value}
 //            code_type = 0 : key code
 //            code_type = 1 : index
@@ -343,7 +311,7 @@ static void check_input_device_for_mcp23017(input_device_data_t *device_data)
         device_mcp23017_index_table_t* table = &user_data->button_cfgs[i];
         device_mcp23017_index_item_t* btndef = &table->buttondef[table->button_start_index];
 
-        cnt = table->button_count;
+        cnt = table->pin_count;
         if (cnt > io_count) cnt = io_count;
         io_count -= cnt;
 

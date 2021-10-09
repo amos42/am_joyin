@@ -5,9 +5,10 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 
-
 #include "indev_type.h"
 #include "am_joyin.h"
+
+#include "parse_util.h"
 
 /*
 #include <stdlib.h>
@@ -114,11 +115,9 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
         pText = szText;
 
         timer_period_p = strsep(&pText, ",");
-        debug_p = strsep(&pText, ",");
+        a_input->timer_period = parse_number(timer_period_p, 10, 0);
 
-        if (timer_period_p != NULL) {
-            a_input->timer_period = simple_strtol(timer_period_p, NULL, 10);
-        }
+        debug_p = strsep(&pText, ",");
         if (debug_p != NULL && strcmp(debug_p, "debug") == 0) {
             a_input->is_debug = TRUE;
         }
@@ -178,27 +177,15 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
             if (name_p == NULL || strcmp(name_p, "") == 0 || strcmp(name_p, "default") == 0) {
                 name_p = NULL;
             }
-            if (keycfg_p == NULL || strcmp(keycfg_p, "default") == 0 || strcmp(keycfg_p, "") == 0) {
-                keycfg_idx = 0;
-            }
-            else {
-                keycfg_idx = simple_strtol(keycfg_p, NULL, 10);
-            }
+
+            keycfg_idx = parse_number(keycfg_p, 10, 0);
 
             btncfg_item = &a_input->buttonset_list[keycfg_idx];
 
-            if (buttoncnt_p == NULL || strcmp(buttoncnt_p, "default") == 0 || strcmp(buttoncnt_p, "") == 0) {
-                button_cnt = 0;
-            }
-            else {
-                button_cnt = simple_strtol(buttoncnt_p, NULL, 10);
-            }
-            if (button_cnt <= 0) {
-                button_cnt = btncfg_item->button_count;
-            }
+            button_cnt = parse_number(buttoncnt_p, 10, btncfg_item->button_count);
 
             // endpoint 추가
-            if (name_p != NULL) {
+            if (name_p != NULL && strcmp(name_p, "") != 0) {
                 strncpy(a_input->endpoint_list[idx].endpoint_name, name_p, 31);
             } else {
                 snprintf(a_input->endpoint_list[idx].endpoint_name, 31, "AmosJoystick_%d", idx + 1);

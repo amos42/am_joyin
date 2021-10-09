@@ -41,6 +41,10 @@ typedef int BOOL;
 #define MAX_INPUT_DEVICE_TYPE_DESC_COUNT      (10)
 #define MAX_INPUT_DEVICE_COUNT                (4)
 
+#define INPUT_CODE_TYPE_NONE                  (-1)
+#define INPUT_CODE_TYPE_KEYCODE               (0)
+#define INPUT_CODE_TYPE_INDEX                 (1)
+
 #define DEFAULT_INPUT_BUTTON_COUNT            (14)
 #define DEFAULT_INPUT_ABS_MAX_VALUE           (100)
 #define DEFAULT_INPUT_BUTTONS { \
@@ -120,18 +124,6 @@ typedef struct tag_input_device_type_desc {
 
 
 extern const input_button_data_t default_buttonset[DEFAULT_INPUT_BUTTON_COUNT];
-
-// extern input_buttonset_data_t buttonset_list[MAX_INPUT_BUTTONSET_COUNT];
-// extern int input_buttonset_count;
-
-// extern input_endpoint_data_t endpoint_list[MAX_INPUT_ENDPOINT_COUNT];
-// extern int input_endpoint_count;
-
-// extern input_device_type_desc_t device_type_desc_list[MAX_INPUT_DEVICE_TYPE_DESC_COUNT];
-// extern int input_device_type_desc_count;
-
-// extern input_device_data_t device_list[MAX_INPUT_DEVICE_COUNT];
-// extern int input_device_count;
 
 
 int find_input_button_data(input_endpoint_data_t* endpoint, int button_code, input_button_data_t* button_data);

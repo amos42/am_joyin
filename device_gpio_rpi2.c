@@ -7,6 +7,7 @@
 #include <linux/input.h>
 #include <linux/slab.h>
 #include "gpio_util.h"
+#include "parse_util.h"
 
 //#define GPIO_GET(i)   GPIO_READ(i)
 //#define GPIO_GET_VALUE(i)   gpio_get_value(i)
@@ -26,8 +27,8 @@ typedef struct tag_device_gpio_index_item {
 
 typedef struct tag_device_gpio_index_table {
     device_gpio_index_item_t buttondef[MAX_INPUT_BUTTON_COUNT];
+    int pin_count;
     int button_start_index;
-    int button_count;
 } device_gpio_index_table_t;
 
 typedef struct tag_device_gpio_data {
@@ -54,7 +55,8 @@ static const device_gpio_index_table_t default_input1_gpio_config = {
         {23, BTN_TR,     1},
         {2,  BTN_MODE,   1},
     },
-    0, INPUT_GPIO_DEFAULT_KEYCODE_TABLE_ITEM_COUNT
+    INPUT_GPIO_DEFAULT_KEYCODE_TABLE_ITEM_COUNT,
+    0
 };
 
 static const device_gpio_index_table_t default_input2_gpio_config = {
@@ -73,7 +75,8 @@ static const device_gpio_index_table_t default_input2_gpio_config = {
         {8,  BTN_TR,     1},
         {3,  BTN_MODE,   1},
     }, 
-    0, INPUT_GPIO_DEFAULT_KEYCODE_TABLE_ITEM_COUNT
+    INPUT_GPIO_DEFAULT_KEYCODE_TABLE_ITEM_COUNT,
+    0
 };
 
 
@@ -105,7 +108,7 @@ static int __parse_device_param_for_gpio(device_gpio_data_t* user_data, char* de
 // 각 endpoint 파라미터 파싱
 static int __parse_endpoint_param_for_gpio(device_gpio_data_t* user_data, char* endpoint_config_str[], input_endpoint_data_t *endpoint_list[], int endpoint_count)
 {
-    int i;
+    int i, j;
     device_gpio_index_table_t *src, *des;
     int code_mode;
     char szText[512];
@@ -117,7 +120,7 @@ static int __parse_endpoint_param_for_gpio(device_gpio_data_t* user_data, char* 
     for (i = 0; i < endpoint_count; i++ ) {
         input_endpoint_data_t *ep = endpoint_list[i];
         char* cfgtype_p;
-        int button_start_index, button_count;
+        int button_start_index, pin_count;
 
         if (ep == NULL) continue;
 
@@ -133,46 +136,36 @@ static int __parse_endpoint_param_for_gpio(device_gpio_data_t* user_data, char* 
 
         if (cfgtype_p == NULL || strcmp(cfgtype_p, "default1") == 0 || strcmp(cfgtype_p, "default") == 0 || strcmp(cfgtype_p, "") == 0){
             src = (device_gpio_index_table_t *)&default_input1_gpio_config;
-            code_mode = 0;
+            code_mode = INPUT_CODE_TYPE_KEYCODE;
 
             temp_p = strsep(&pText, ",");
-            if (temp_p == NULL || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {
-                button_count = src->button_count;
-            } else {
-                button_count = simple_strtol(temp_p, NULL, 10);
-            }
+            pin_count = parse_number(temp_p, 10, src->pin_count);
 
             temp_p = strsep(&pText, ",");
-            if (temp_p == NULL || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {
-                button_start_index = 0;
-            } else {
-                button_start_index = simple_strtol(temp_p, NULL, 10);
-            }
-        } else if(strcmp(cfgtype_p, "default2") == 0){
+            button_start_index = parse_number(temp_p, 10, 0);
+        } else if (strcmp(cfgtype_p, "default2") == 0){
             src = (device_gpio_index_table_t *)&default_input2_gpio_config;
-            code_mode = 0;
+            code_mode = INPUT_CODE_TYPE_KEYCODE;
 
             temp_p = strsep(&pText, ",");
-            if (temp_p == NULL || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {
-                button_count = src->button_count;
-            } else {
-                button_count = simple_strtol(temp_p, NULL, 10);
-            }
+            pin_count = parse_number(temp_p, 10, src->pin_count);
 
             temp_p = strsep(&pText, ",");
-            if (temp_p == NULL || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {
-                button_start_index = 0;
+            button_start_index = parse_number(temp_p, 10, 0);
+        } else if (strcmp(cfgtype_p, "custom") == 0){
+            temp_p = strsep(&pText, ",");
+            if (temp_p == NULL || strcmp(temp_p, "keycode") == 0 || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {
+                code_mode = INPUT_CODE_TYPE_KEYCODE;
+            } else if (strcmp(temp_p, "index") == 0 || strcmp(temp_p, "1") == 0) {
+                code_mode = INPUT_CODE_TYPE_INDEX;
             } else {
-                button_start_index = simple_strtol(temp_p, NULL, 10);
+                code_mode = INPUT_CODE_TYPE_NONE;
             }
-        } else if(strcmp(cfgtype_p, "custom") == 0){
-            char* keycode_p = strsep(&pText, ",");
-            code_mode = simple_strtol(keycode_p, NULL, 10);
 
             button_start_index = 0;
-            button_count = 0;
+            pin_count = 0;
             src = &user_data->button_cfgs[i];
-            while (pText != NULL && button_count < MAX_INPUT_BUTTON_COUNT) {
+            while (pText != NULL && pin_count < MAX_INPUT_BUTTON_COUNT) {
                 char *block_p, *gpio_p, *button_p, *value_p;
                 int gpio, button, value;
 
@@ -189,41 +182,34 @@ static int __parse_endpoint_param_for_gpio(device_gpio_data_t* user_data, char* 
 
                 // 키 설정 추가
                 if (button >= 0 && gpio >= 0) {
-                    src->buttondef[button_count].gpio = gpio;
-                    src->buttondef[button_count].button = button;
-                    src->buttondef[button_count].value = value;
-                    button_count++;
+                    src->buttondef[pin_count].gpio = gpio;
+                    src->buttondef[pin_count].button = button;
+                    src->buttondef[pin_count].value = value;
+                    pin_count++;
                 }
             }
         } else {
             continue;
         }
 
-        if (code_mode == 0) {
-            int j, k;
-            // if (button_count > ep->button_count) button_count = ep->button_count;
-            for (j = 0; j < button_count; j++) {
-                int code = src->buttondef[j].button;
-                for (k = 0; k < ep->target_buttonset->button_count; k++) {
-                    if (code == ep->target_buttonset->button_data[k].button_code) {
-                        des->buttondef[j].button = k;
-                        des->buttondef[j].gpio = src->buttondef[j].gpio;
-                        des->buttondef[j].value = src->buttondef[j].value;
-                        break;
-                    }
+        if (code_mode == INPUT_CODE_TYPE_KEYCODE) {
+            for (j = 0; j < pin_count; j++) {
+                int idx = find_input_button_data(ep, src->buttondef[j].button, NULL);
+                des->buttondef[j].button = idx;
+                if (idx != -1) {
+                    des->buttondef[j].gpio = src->buttondef[j].gpio;
+                    des->buttondef[j].value = src->buttondef[j].value;
                 }
             }
-            des->button_count = button_count;
+            des->pin_count = pin_count;
             des->button_start_index = button_start_index;
-        } else if (code_mode == 1) {
-            int j;
-            // if (button_count > ep->button_count) button_count = ep->button_count;
-            for (j = 0; j < button_count; j++) {
+        } else if (code_mode == INPUT_CODE_TYPE_INDEX) {
+            for (j = 0; j < pin_count; j++) {
                 des->buttondef[j].button = src->buttondef[j].button;
                 des->buttondef[j].gpio = src->buttondef[j].gpio;
                 des->buttondef[j].value = src->buttondef[j].value;
             }
-            des->button_count = button_count;
+            des->pin_count = pin_count;
             des->button_start_index = button_start_index;
         }
 
@@ -236,8 +222,8 @@ static int __parse_endpoint_param_for_gpio(device_gpio_data_t* user_data, char* 
 
 // device_config_str : 
 // endpoint_config_str : endpoint, config_type (default1 | default2 | custom), ...
-//        default1: button_count, start_index
-//        default2: button_count, start_index
+//        default1: pin_count, start_index
+//        default2: pin_count, start_index
 //        custom = code_type (0|1), n * {gpio, button, value}
 //            code_type = 0 : key code
 //            code_type = 1 : index
@@ -283,7 +269,7 @@ static void start_input_device_for_gpio(input_device_data_t *device_data)
     for (i = 0; i < device_data->target_endpoint_count; i++) {
         device_gpio_index_item_t* item = (device_gpio_index_item_t*)table->buttondef;
 
-        for (j = 0; j < table->button_count; j++) {
+        for (j = 0; j < table->pin_count; j++) {
             if (item->gpio != -1) {
                 gpio_as_input(item->gpio);
                 pull_ups[pull_idx++] = item->gpio;
@@ -312,7 +298,7 @@ static void check_input_device_for_gpio(input_device_data_t* device_data)
         input_endpoint_data_t* endpoint = device_data->target_endpoints[i];
         device_gpio_index_item_t* item = &table->buttondef[table->button_start_index];
 
-        for (j = 0; j < table->button_count; j++) {
+        for (j = 0; j < table->pin_count; j++) {
             if (item->gpio != -1) {    // to avoid unused buttons
                 if (gpio_get_value(item->gpio) == 0) {
                     endpoint->report_button_state[item->button] = item->value;

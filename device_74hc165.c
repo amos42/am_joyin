@@ -9,6 +9,7 @@
 #include <linux/delay.h>
 #include <linux/uaccess.h>
 #include "gpio_util.h"
+#include "parse_util.h"
 
 //#define GPIO_GET(i)   GPIO_READ(i)
 //#define GPIO_GET_VALUE(i)   getGpio(i)
@@ -53,9 +54,9 @@ typedef struct tag_device_74hc165_index_item {
 
 typedef struct tag_device_74hc165_index_table {
     device_74hc165_index_item_t buttondef[MAX_INPUT_BUTTON_COUNT];
-    int io_skip_count;
+    int pin_count;
     int button_start_index;
-    int button_count;
+    int io_skip_count;
 } device_74hc165_index_table_t;
 
 // device.data에 할당 될 구조체
@@ -86,7 +87,8 @@ static const device_74hc165_index_table_t default_input_74hc165_config = {
         {BTN_TR2,     1},
         {BTN_TRIGGER, 1}
     }, 
-    0, 0, INPUT_74HC165_DEFAULT_KEYCODE_TABLE_ITEM_COUNT
+    INPUT_74HC165_DEFAULT_KEYCODE_TABLE_ITEM_COUNT,
+    0, 0
 };
 
 
@@ -111,25 +113,13 @@ static int __parse_device_param_for_74hc165(device_74hc165_data_t* user_data, ch
     user_data->device_cfg.gpio_dt = simple_strtol(temp_p, NULL, 0);
 
     temp_p = strsep(&pText, ",");
-    if (temp_p == NULL || strcmp(temp_p, "") == 0 || strcmp(temp_p, "default") == 0) {
-        user_data->device_cfg.io_count = INPUT_74HC165_DEFAULT_KEYCODE_TABLE_ITEM_COUNT;
-    } else {
-        user_data->device_cfg.io_count = simple_strtol(temp_p, NULL, 10);
-    }
+    user_data->device_cfg.io_count = parse_number(temp_p, 10, INPUT_74HC165_DEFAULT_KEYCODE_TABLE_ITEM_COUNT);
 
     temp_p = strsep(&pText, ",");
-    if (temp_p == NULL || strcmp(temp_p, "") == 0) {
-        user_data->device_cfg.bit_order = 0;
-    } else {
-        user_data->device_cfg.bit_order = simple_strtol(temp_p, NULL, 0);
-    }
+    user_data->device_cfg.bit_order = parse_number(temp_p, 10, 0);
 
     temp_p = strsep(&pText, ",");
-    if (temp_p == NULL || strcmp(temp_p, "") == 0 || strcmp(temp_p, "default") == 0) {
-        user_data->device_cfg.pull_updown = 0;
-    } else {
-        user_data->device_cfg.pull_updown = simple_strtol(temp_p, NULL, 10);
-    }
+    user_data->device_cfg.pull_updown = parse_number(temp_p, 10, 0);
 
     return 0;
 }
@@ -150,7 +140,7 @@ static int __parse_endpoint_param_for_74hc165(device_74hc165_data_t* user_data, 
     for (i = 0; i < endpoint_count; i++ ) {
         input_endpoint_data_t *ep = endpoint_list[i];
         char* cfgtype_p;
-        int io_skip_count, button_start_index, button_count;
+        int pin_count, button_start_index, io_skip_count;
 
         if (ep == NULL) continue;
 
@@ -166,54 +156,38 @@ static int __parse_endpoint_param_for_74hc165(device_74hc165_data_t* user_data, 
 
         if (cfgtype_p == NULL || strcmp(cfgtype_p, "default") == 0 || strcmp(cfgtype_p, "") == 0){
             src = (device_74hc165_index_table_t *)&default_input_74hc165_config;
-            code_mode = 0;            
+            code_mode = INPUT_CODE_TYPE_KEYCODE;
 
             temp_p = strsep(&pText, ",");
-            if (temp_p == NULL || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {
-                button_count = src->button_count;
-            } else {
-                button_count = simple_strtol(temp_p, NULL, 10);
-            }
+            pin_count = parse_number(temp_p, 10, src->pin_count);
 
             temp_p = strsep(&pText, ",");
-            if (temp_p == NULL || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {
-                button_start_index = 0;
-            } else {
-                button_start_index = simple_strtol(temp_p, NULL, 10);
-            }
+            button_start_index = parse_number(temp_p, 10, 0);
 
             temp_p = strsep(&pText, ",");
-            if (temp_p == NULL || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {
-                io_skip_count = 0;
-            } else {
-                io_skip_count = simple_strtol(temp_p, NULL, 10);
-            }
+            io_skip_count = parse_number(temp_p, 10, 0);
 
             // 버튼 갯수를 보정
-            if (button_start_index + button_count > src->button_count) {
-                button_count = src->button_count - button_start_index;
+            if (button_start_index + pin_count > src->pin_count) {
+                pin_count = src->pin_count - button_start_index;
             }
-        } else if(strcmp(cfgtype_p, "custom") == 0){
-            char* keycode_p;
+        } else if (strcmp(cfgtype_p, "custom") == 0){
+            temp_p = strsep(&pText, ",");
+            io_skip_count = parse_number(temp_p, 10, 0);
 
             temp_p = strsep(&pText, ",");
-            if (temp_p == NULL || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {
-                io_skip_count = 0;
+            if (temp_p == NULL || strcmp(temp_p, "keycode") == 0 || strcmp(temp_p, "0") == 0 || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {
+                code_mode = INPUT_CODE_TYPE_KEYCODE;
+            } else if (strcmp(temp_p, "index") == 0 || strcmp(temp_p, "1") == 0) {
+                code_mode = INPUT_CODE_TYPE_INDEX;
             } else {
-                io_skip_count = simple_strtol(temp_p, NULL, 10);
-            }
-
-            keycode_p = strsep(&pText, ",");
-            if (temp_p == NULL || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {
-                code_mode = 0;
-            } else {
-                code_mode = simple_strtol(keycode_p, NULL, 10);
+                code_mode = INPUT_CODE_TYPE_NONE;
             }
 
             button_start_index = 0;
-            button_count = 0;
+            pin_count = 0;
             src = &user_data->button_cfgs[i];
-            while (pText != NULL && button_count < MAX_INPUT_BUTTON_COUNT) {
+            while (pText != NULL && pin_count < MAX_INPUT_BUTTON_COUNT) {
                 char *block_p, *button_p, *value_p;
                 int button, value;
 
@@ -227,39 +201,31 @@ static int __parse_endpoint_param_for_74hc165(device_74hc165_data_t* user_data, 
                 value = (value_p != NULL) ? simple_strtol(value_p, NULL, 0) : 0;
 
                 // 키 설정 추가
-                //if (button >= 0) {
-                    src->buttondef[button_count].button = button;
-                    src->buttondef[button_count].value = value;
-                    button_count++;
-                //}
+                src->buttondef[pin_count].button = button;
+                src->buttondef[pin_count].value = value;
+                pin_count++;
             }
         } else {
             continue;
         }
 
-        if (code_mode == 0) {
-            // if (button_count > ep->button_count) button_count = ep->button_count;
-            for (j = 0; j < button_count; j++) {
-                int k;
-                int code = src->buttondef[j].button;
-                for (k = 0; k < ep->target_buttonset->button_count; k++) {
-                    if (code == ep->target_buttonset->button_data[k].button_code) {
-                        des->buttondef[j].button = k;
-                        des->buttondef[j].value = src->buttondef[j].value;
-                        break;
-                    }
+        if (code_mode == INPUT_CODE_TYPE_KEYCODE) {
+            for (j = 0; j < pin_count; j++) {
+                int idx = find_input_button_data(ep, src->buttondef[j].button, NULL);
+                des->buttondef[j].button = idx;
+                if (idx != -1) {
+                    des->buttondef[j].value = src->buttondef[j].value;
                 }
             }
-            des->button_count = button_count;
+            des->pin_count = pin_count;
             des->button_start_index = button_start_index;
             des->io_skip_count = io_skip_count;
-        } else if (code_mode == 1) {
-            // if (button_count > ep->button_count) button_count = ep->button_count;
-            for (j = 0; j < button_count; j++) {
+        } else if (code_mode == INPUT_CODE_TYPE_INDEX) {
+            for (j = 0; j < pin_count; j++) {
                 des->buttondef[j].button = src->buttondef[j].button;
                 des->buttondef[j].value = src->buttondef[j].value;
             }
-            des->button_count = button_count;
+            des->pin_count = pin_count;
             des->button_start_index = button_start_index;
             des->io_skip_count = io_skip_count;
         }
@@ -273,7 +239,7 @@ static int __parse_endpoint_param_for_74hc165(device_74hc165_data_t* user_data, 
 
 // device_config_str : ck, ld, rd, io_count, bit_order (0 | 1)
 //        bit_order: 0 = assending, 1 = descending
-//        default: button_count, start_index, io_skip_count
+//        default: pin_count, start_index, io_skip_count
 //        custom: io_skip_count, code_type (0|1), n * {button, value}
 //            code_type = 0 : key code
 //            code_type = 1 : index
@@ -362,7 +328,7 @@ static void check_input_device_for_74hc165(input_device_data_t *device_data)
                 if (io_count <= 0) break;
             }
 
-            cnt = table->button_count;
+            cnt = table->pin_count;
             if (cnt > io_count) cnt = io_count;
             io_count -= cnt;
 
@@ -410,9 +376,9 @@ static void check_input_device_for_74hc165(input_device_data_t *device_data)
                 while (cnt--){
                     if (btndef->button >= 0 && data[j] == 0) {
                         endpoint->report_button_state[btndef->button] = btndef->value;
-                    }                
+                    }
                     btndef++;
-                    if (++idx >= table->button_count) {
+                    if (++idx >= table->pin_count) {
                         if (++endpoint_idx >= device_data->target_endpoint_count) break;
                         endpoint = device_data->target_endpoints[endpoint_idx];
                         table = &user_data->button_cfgs[endpoint_idx];
