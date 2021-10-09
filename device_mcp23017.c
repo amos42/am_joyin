@@ -87,20 +87,14 @@ static int __parse_device_param_for_mcp23017(device_mcp23017_data_t* user_data, 
 {
     char szText[512];
     char* pText;
-    char* temp_p;
 
     if (device_config_str != NULL) {
         strcpy(szText, device_config_str); 
         pText = szText;
 
-        temp_p = strsep(&pText, ",");
-        user_data->device_cfg.i2c_addr = parse_number(temp_p, 0, MPC23017_DEFAULT_I2C_ADDR);
-
-        temp_p = strsep(&pText, ",");
-        user_data->device_cfg.io_count = parse_number(temp_p, 10, INPUT_MCP23017_DEFAULT_KEYCODE_TABLE_ITEM_COUNT);
-
-        temp_p = strsep(&pText, ",");
-        user_data->device_cfg.pull_updown = parse_number(temp_p, 10, 0);
+        user_data->device_cfg.i2c_addr = parse_number(&pText, ",", 0, MPC23017_DEFAULT_I2C_ADDR);
+        user_data->device_cfg.io_count = parse_number(&pText, ",", 10, INPUT_MCP23017_DEFAULT_KEYCODE_TABLE_ITEM_COUNT);
+        user_data->device_cfg.pull_updown = parse_number(&pText, ",", 10, 0);
     } else {
         user_data->device_cfg.i2c_addr = MPC23017_DEFAULT_I2C_ADDR;
         user_data->device_cfg.io_count = INPUT_MCP23017_DEFAULT_KEYCODE_TABLE_ITEM_COUNT;
@@ -144,17 +138,11 @@ static int __parse_endpoint_param_for_mcp23017(device_mcp23017_data_t* user_data
             src = (device_mcp23017_index_table_t *)&default_input_mcp23017_config;
             code_mode = INPUT_CODE_TYPE_KEYCODE;
 
-            temp_p = strsep(&pText, ",");
-            pin_count = parse_number(temp_p, 10, src->pin_count);
-
-            temp_p = strsep(&pText, ",");
-            button_start_index = parse_number(temp_p, 10, 0);
-
-            temp_p = strsep(&pText, ",");
-            io_skip_count = parse_number(temp_p, 10, 0);
+            pin_count = parse_number(&pText, ",", 10, src->pin_count);
+            button_start_index = parse_number(&pText, ",", 10, 0);
+            io_skip_count = parse_number(&pText, ",", 10, 0);
         } else if (strcmp(cfgtype_p, "custom") == 0){
-            temp_p = strsep(&pText, ",");
-            io_skip_count = parse_number(temp_p, 10, 0);
+            io_skip_count = parse_number(&pText, ",", 10, 0);
 
             temp_p = strsep(&pText, ",");
             if (temp_p == NULL || strcmp(temp_p, "keycode") == 0 || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {

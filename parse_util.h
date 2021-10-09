@@ -9,7 +9,7 @@
 #include <linux/types.h>
 
 
-int parse_number(char* token, int radix, int default_value);
-
+int parse_number(char** token, char* seps, int radix, int default_value);
+char* parse_string(char *str, int len, char** token, char* seps, char* default_value);
 
 #endif

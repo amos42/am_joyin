@@ -109,13 +109,12 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
 
     // 드라이버 설정
     if (am_driver_cfg != NULL) {
-        char *timer_period_p, *debug_p;
+        char* debug_p;
 
         strcpy(szText, am_driver_cfg);
         pText = szText;
 
-        timer_period_p = strsep(&pText, ",");
-        a_input->timer_period = parse_number(timer_period_p, 10, 0);
+        a_input->timer_period = parse_number(&pText, ",", 10, 0);
 
         debug_p = strsep(&pText, ",");
         if (debug_p != NULL && strcmp(debug_p, "debug") == 0) {
@@ -165,34 +164,22 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
         idx = 0;
         while (pText != NULL && idx < MAX_INPUT_ENDPOINT_COUNT) {
             input_buttonset_data_t* btncfg_item;
-            char *ptr, *name_p, *keycfg_p, *buttoncnt_p;
-            int keycfg_idx, button_cnt;
+            char *ptr;
+            int keycfg_idx;
 
             ptr = strsep(&pText, ";");
 
-            name_p = strsep(&ptr, ",");
-            keycfg_p = strsep(&ptr, ",");
-            buttoncnt_p = strsep(&ptr, ",");
-
-            if (name_p == NULL || strcmp(name_p, "") == 0 || strcmp(name_p, "default") == 0) {
-                name_p = NULL;
-            }
-
-            keycfg_idx = parse_number(keycfg_p, 10, 0);
-
-            btncfg_item = &a_input->buttonset_list[keycfg_idx];
-
-            button_cnt = parse_number(buttoncnt_p, 10, btncfg_item->button_count);
-
-            // endpoint 추가
-            if (name_p != NULL && strcmp(name_p, "") != 0) {
-                strncpy(a_input->endpoint_list[idx].endpoint_name, name_p, 31);
-            } else {
+            if (parse_string(a_input->endpoint_list[idx].endpoint_name, 31, &ptr, ",", NULL) == NULL) {;
                 snprintf(a_input->endpoint_list[idx].endpoint_name, 31, "AmosJoystick_%d", idx + 1);
             }
+
             a_input->endpoint_list[idx].endpoint_id = idx;
+
+            keycfg_idx = parse_number(&ptr, ",", 10, 0);
+            btncfg_item = &a_input->buttonset_list[keycfg_idx];
+
             a_input->endpoint_list[idx].target_buttonset = btncfg_item;
-            a_input->endpoint_list[idx].button_count = button_cnt;
+            a_input->endpoint_list[idx].button_count = parse_number(&ptr, ",", 10, btncfg_item->button_count);
 
             idx++;
         }

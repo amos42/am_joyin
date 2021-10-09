@@ -138,20 +138,14 @@ static int __parse_endpoint_param_for_gpio(device_gpio_data_t* user_data, char* 
             src = (device_gpio_index_table_t *)&default_input1_gpio_config;
             code_mode = INPUT_CODE_TYPE_KEYCODE;
 
-            temp_p = strsep(&pText, ",");
-            pin_count = parse_number(temp_p, 10, src->pin_count);
-
-            temp_p = strsep(&pText, ",");
-            button_start_index = parse_number(temp_p, 10, 0);
+            pin_count = parse_number(&pText, ",", 10, src->pin_count);
+            button_start_index = parse_number(&pText, ",", 10, 0);
         } else if (strcmp(cfgtype_p, "default2") == 0){
             src = (device_gpio_index_table_t *)&default_input2_gpio_config;
             code_mode = INPUT_CODE_TYPE_KEYCODE;
 
-            temp_p = strsep(&pText, ",");
-            pin_count = parse_number(temp_p, 10, src->pin_count);
-
-            temp_p = strsep(&pText, ",");
-            button_start_index = parse_number(temp_p, 10, 0);
+            pin_count = parse_number(&pText, ",", 10, src->pin_count);
+            button_start_index = parse_number(&pText, ",", 10, 0);
         } else if (strcmp(cfgtype_p, "custom") == 0){
             temp_p = strsep(&pText, ",");
             if (temp_p == NULL || strcmp(temp_p, "keycode") == 0 || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {

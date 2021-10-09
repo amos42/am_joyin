@@ -112,18 +112,15 @@ static int __parse_device_param_for_mux(device_mux_data_t* user_data, char* devi
     strsep(&pText, "{");
     block_p = strsep(&pText, "}");
     for (i = 0; i < MAX_MUX_ADDR_REG_COUNT; i++) {
-        temp_p = strsep(&block_p, ",");
-        if (temp_p == NULL || strcmp(temp_p, "") == 0) break;
-        user_data->device_cfg.addr_gpio[user_data->device_cfg.addr_bit_count++] = simple_strtol(temp_p, NULL, 0);
+        int gpio = parse_number(&block_p, ",", 10, -1);
+        if (gpio < 0) break;
+        user_data->device_cfg.addr_gpio[user_data->device_cfg.addr_bit_count++] = gpio;
     }
     if (user_data->device_cfg.addr_bit_count <= 0) return -EINVAL;
     strsep(&pText, ",");
 
-    temp_p = strsep(&pText, ",");
-    user_data->device_cfg.io_count = parse_number(temp_p, 10, INPUT_MUX_DEFAULT_KEYCODE_TABLE_ITEM_COUNT);
-
-    temp_p = strsep(&pText, ",");
-    user_data->device_cfg.pull_updown = parse_number(temp_p, 10, 0);
+    user_data->device_cfg.io_count = parse_number(&pText, ",", 10, INPUT_MUX_DEFAULT_KEYCODE_TABLE_ITEM_COUNT);
+    user_data->device_cfg.pull_updown = parse_number(&pText, ",", 10, 0);
 
     return 0;
 }
@@ -162,17 +159,11 @@ static int __parse_endpoint_param_for_mux(device_mux_data_t* user_data, char* en
             src = (device_mux_index_table_t *)&default_input_mux_config;
             code_mode = INPUT_CODE_TYPE_KEYCODE;
 
-            temp_p = strsep(&pText, ",");
-            pin_count = parse_number(temp_p, 10, src->pin_count);
-
-            temp_p = strsep(&pText, ",");
-            button_start_index = parse_number(temp_p, 10, 0);
-
-            temp_p = strsep(&pText, ",");
-            io_skip_count = parse_number(temp_p, 10, 0);
+            pin_count = parse_number(&pText, ",", 10, src->pin_count);
+            button_start_index = parse_number(&pText, ",", 10, 0);
+            io_skip_count = parse_number(&pText, ",", 10, 0);
         } else if (strcmp(cfgtype_p, "custom") == 0){
-            temp_p = strsep(&pText, ",");
-            io_skip_count = parse_number(temp_p, 10, 0);
+            io_skip_count = parse_number(&pText, ",", 10, 0);
 
             temp_p = strsep(&pText, ",");
             if (temp_p == NULL || strcmp(temp_p, "keycode") == 0 || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {

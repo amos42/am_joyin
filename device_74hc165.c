@@ -97,29 +97,22 @@ static int __parse_device_param_for_74hc165(device_74hc165_data_t* user_data, ch
 {
     char szText[512];
     char* pText;
-    char* temp_p;
 
     strcpy(szText, device_config_str); 
     pText = szText;
 
-    temp_p = strsep(&pText, ",");
-    if (temp_p == NULL || strcmp(temp_p, "") == 0) return -EINVAL;
-    user_data->device_cfg.gpio_ld = simple_strtol(temp_p, NULL, 0);
-    temp_p = strsep(&pText, ",");
-    if (temp_p == NULL || strcmp(temp_p, "") == 0) return -EINVAL;
-    user_data->device_cfg.gpio_ck = simple_strtol(temp_p, NULL, 0);
-    temp_p = strsep(&pText, ",");
-    if (temp_p == NULL || strcmp(temp_p, "") == 0) return -EINVAL;
-    user_data->device_cfg.gpio_dt = simple_strtol(temp_p, NULL, 0);
+    user_data->device_cfg.gpio_ld = parse_number(&pText, ",", 0, -1);
+    if (user_data->device_cfg.gpio_ld < 0) return -EINVAL;
 
-    temp_p = strsep(&pText, ",");
-    user_data->device_cfg.io_count = parse_number(temp_p, 10, INPUT_74HC165_DEFAULT_KEYCODE_TABLE_ITEM_COUNT);
+    user_data->device_cfg.gpio_ck = parse_number(&pText, ",", 0, -1);
+    if (user_data->device_cfg.gpio_ck < 0) return -EINVAL;
 
-    temp_p = strsep(&pText, ",");
-    user_data->device_cfg.bit_order = parse_number(temp_p, 10, 0);
+    user_data->device_cfg.gpio_dt = parse_number(&pText, ",", 0, -1);
+    if (user_data->device_cfg.gpio_dt < 0) return -EINVAL;
 
-    temp_p = strsep(&pText, ",");
-    user_data->device_cfg.pull_updown = parse_number(temp_p, 10, 0);
+    user_data->device_cfg.io_count = parse_number(&pText, ",", 10, INPUT_74HC165_DEFAULT_KEYCODE_TABLE_ITEM_COUNT);
+    user_data->device_cfg.bit_order = parse_number(&pText, ",", 10, 0);
+    user_data->device_cfg.pull_updown = parse_number(&pText, ",", 10, 0);
 
     return 0;
 }
@@ -158,22 +151,16 @@ static int __parse_endpoint_param_for_74hc165(device_74hc165_data_t* user_data, 
             src = (device_74hc165_index_table_t *)&default_input_74hc165_config;
             code_mode = INPUT_CODE_TYPE_KEYCODE;
 
-            temp_p = strsep(&pText, ",");
-            pin_count = parse_number(temp_p, 10, src->pin_count);
-
-            temp_p = strsep(&pText, ",");
-            button_start_index = parse_number(temp_p, 10, 0);
-
-            temp_p = strsep(&pText, ",");
-            io_skip_count = parse_number(temp_p, 10, 0);
+            pin_count = parse_number(&pText, ",", 10, src->pin_count);
+            button_start_index = parse_number(&pText, ",", 10, 0);
+            io_skip_count = parse_number(&pText, ",", 10, 0);
 
             // 버튼 갯수를 보정
             if (button_start_index + pin_count > src->pin_count) {
                 pin_count = src->pin_count - button_start_index;
             }
         } else if (strcmp(cfgtype_p, "custom") == 0){
-            temp_p = strsep(&pText, ",");
-            io_skip_count = parse_number(temp_p, 10, 0);
+            io_skip_count = parse_number(&pText, ",", 10, 0);
 
             temp_p = strsep(&pText, ",");
             if (temp_p == NULL || strcmp(temp_p, "keycode") == 0 || strcmp(temp_p, "0") == 0 || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {
