@@ -65,19 +65,19 @@ am_joyin은 라즈베리파이를 이용하여 아케이드 게임기를 제작�
 
 **1. 패키지 업데이트**
 
-```bash
+```shell
 sudo apt update
 ```
 
 **2. 개발툴 설치**
 
-```bash
+```shell
 sudo apt install -y --force-yes dkms cpp-4.7 gcc-4.7 git joystick
 ```
 
 **3. 커널 헤더 설치**
 
-```bash
+```shell
 sudo apt install -y --force-yes raspberrypi-kernel-headers
 ```
 
@@ -88,7 +88,7 @@ sudo apt install -y --force-yes raspberrypi-kernel-headers
 
 #### wget 사용시
 
-```bash
+```shell
 wget https://github.com/amos42/am_joyin/releases/download/v0.1.0-alpha03/am_joyin-0.1.0.deb
 sudo dpkg -i am_joyin-0.1.0.deb
 ```
@@ -97,13 +97,13 @@ sudo dpkg -i am_joyin-0.1.0.deb
 
 1. 드라이버 소스를 받는다.
 
-```bash
+```shell
 git clone https://github.com/amos42/am_joyin.git
 ```
 
 2. deb 패키지를 생성 후 설치한다.
 
-```bash
+```shell
 cd am_joyin
 ./utils/makepackage.sh 0.1.0 
 sudo dpkg -i build/am_joyin-0.1.0.deb
@@ -121,7 +121,7 @@ sudo dpkg -i build/am_joyin-0.1.0.deb
 
 텍스트 에디터로 설정 파일을 연다.
 
-```bash
+```shell
 sudo nano /etc/modprobe.d/am_joyin.conf
 ```
 
@@ -142,7 +142,7 @@ options am_joyin device1="gpio;;0,default1"
 
 드라이버 모듈 설정 파일을 연다.
 
-```bash
+```shell
 sudo nano /etc/modules-load.d/modules.conf
 ```
 
@@ -171,7 +171,7 @@ am_joyin은 설정을 통해 다양한 조합의 장치들을 이용할 수 있�
 
 즉, 기본 형태는 다음과 같다.
 
-```bash
+```shell
 parameter1="section1;section2;..." parameter2="section1;section2;..."
 ```
 
@@ -188,7 +188,7 @@ section은 1개 이상의 값으로 구성되어 있으며, 각 값들은 ,(comm
 
 즉, 최종적으로 다음과 같은 형태로 기술되게 된다.
 
-```bash
+```shell
 param1="text1;default,10;test,1,{1,a},{2,b}" param2="text1;;test,,{2,b,0},{3,,0}"
 ```
 
@@ -234,7 +234,7 @@ am_joyin의 파라미터는 다음과 같다.
 
 실제 사용 예
 
-```bash
+```shell
 buttonset1_cfg="{0x01,-1,1},{0x00,-1,1},{0x13B,0,1},{0x13A,0,1},{0x130,0,1},{0x103,0,1},{0x102,0,1},{0x103,0,1},{0x102,0,1},{0x103,0,1}"
 ```
 
@@ -247,7 +247,7 @@ buttonset1_cfg="{0x01,-1,1},{0x00,-1,1},{0x13B,0,1},{0x13A,0,1},{0x130,0,1},{0x1
 
 실제 사용 예
 
-```bash
+```shell
 endpoints="default,0,default;ext_joystick,1,11;ext_joystick_2,,6"
 ```
 
@@ -264,7 +264,7 @@ endpoints="default,0,default;ext_joystick,1,11;ext_joystick_2,,6"
 
 예를 들어 다음과 같이 지정했다고 가정하자.
 
-```bash
+```shell
 device1="74hc165;16,20,21,24,1;0,default,12;1,default,12"
 ```
 
@@ -311,19 +311,19 @@ device1="74hc165;16,20,21,24,1;0,default,12;1,default,12"
 
 - 1인용 기본 키 설정
 
-```bash
+```shell
 sudo modprobe am_joyin device1="gpio;;0,default1,0,default"
 ```
 
 - 2인용 설정
 
-```bash
+```shell
 sudo modprobe am_joyin endpoints="default,12;default,12" device1="gpio;;0,default1,12;1,default2,12"
 ```
 
 - 커스텀 키 설정
 
-```bash
+```shell
 sudo modprobe am_joyin device1="gpio;;0,custom,1,{4,0x1,-1},{17,0x1,1},{27,0x0,-1},{22,0x0,1},{10,0x13b,1},{9,0x13a,1}"
 ```
 
@@ -368,7 +368,7 @@ sudo modprobe am_joyin device1="gpio;;0,custom,1,{4,0x1,-1},{17,0x1,1},{27,0x0,-
 
 실제 사용 예
 
-```bash
+```shell
 sudo modprobe am_joyin device1="74hc165;16,20,21,24,1;0,default,12;1,default,12"
 ```
 
@@ -396,7 +396,7 @@ I2C 장치이기 때문에 액세스를 위해서는 주소를 알아야 한다.
 
 실제 사용 예
 
-```bash
+```shell
 sudo modprobe am_joyin device1="mcp23017;0x20,13;0,default"
 ```
 
@@ -431,7 +431,7 @@ MUX 모듈은 다음과 같은 형태로 주로 판매되고 있다.
 
 실제 사용 예
 
-```bash
+```shell
 sudo modprobe am_joyin device1="mux;5,{26,19,13,6},13;0,default"
 ```
 
@@ -441,13 +441,13 @@ sudo modprobe am_joyin device1="mux;5,{26,19,13,6},13;0,default"
 
 jstest 유틸리티의 설치 방법은 다음과 같다.
 
-```bash
+```shell
 sudo apt install joystick
 ```
 
 만약 첫번째 설치 된 조이스틱 장치를 테스트 해 보고 싶다면 다음과 같이 입력한다.
 
-```bash
+```shell
 jstest /dev/input/js0
 ```
 
