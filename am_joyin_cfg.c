@@ -82,7 +82,7 @@ void __init prepocess_params(void)
     }
     if (cnt <= 0)
     {
-        am_device_cfg[0] = "gpio;;0,default1,0";
+        am_device_cfg[0] = "gpio;;0,default1";
     }
 }
 
