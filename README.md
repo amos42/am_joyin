@@ -20,7 +20,7 @@ Amos Joystick Input Driver for Raspbrri-pi Arcade (or another SBC)
 
 | 키워드     |   설명                                                         | 최대 갯수          |
 |-----------|----------------------------------------------------------------|-------------------|
-| buttonset | 라즈베리파이에서 인식하는 입력 정보의 집합                        | 개본 1개 + 최대 2개 |
+| buttonset | 라즈베리파이에서 인식하는 입력 정보의 집합                        | 기본 1개 + 최대 2개 |
 | endpoint  | 라즈베리파이에서 액세스 할 단위. /dev/input/js#의 형태로 생성된다. | 최대 4개           |
 | device    | 입출력을 실제로 처리할 장치                                      | 최대 4개           |
 
@@ -225,8 +225,8 @@ am_joyin의 파라미터는 다음과 같다.
 
 
 ### driver 전역 설정
-> 1. timer_period : 타이머 주기. Hz 단위로 기술. default는 100Hz
-> 2. debug : 디버그 모드 여부
+> 1. timer_period : 타이머 주기. Hz 단위로 기술. default는 100Hz. (OS의 인터럽트 세팅에 따라 최대치가 결정된다.)
+> 2. debug : 디버그 모드 여부. Log 출력 내용에 영향을 준다.
 
 ### buttonset 설정
 
@@ -251,7 +251,7 @@ buttonset1_cfg="{0x01,-1,1},{0x00,-1,1},{0x13B,0,1},{0x13A,0,1},{0x130,0,1},{0x1
 실제 사용 예
 
 ```shell
-endpoints="default,0,default;ext_joystick,1,11"
+endpoints="default,0,default;ext_joystick,1,11;ext_joystick_2,,6"
 ```
 
 ## device 설정
@@ -309,7 +309,7 @@ device1="74hc165;16,20,21,24,1;0,default,12;1,default,12"
 
 * 엔드포인트 파라미터
 > 1. config type - 버튼 설정 타입
->    - default : button_count, start_index
+>    - default : pin_count, button_start_index
 >    - custom : code_mode (0: keycode, 1:index), {gpio1, button1, value1}, {gpio2, button2, value2}, ...
 
 - 1인용 기본 키 설정
@@ -366,7 +366,7 @@ sudo modprobe am_joyin device1="gpio;;0,custom,1,{4,0x1,-1},{17,0x1,1},{27,0x0,-
 
 * 엔드포인트 파라미터
 > 1. config type - 버튼 설정 타입
->    - default : button_count, start_index, io_skip_count
+>    - default : pin_count, button_start_index, io_skip_count
 >    - custom : io_skip_count, code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
 
 실제 사용 예
@@ -394,13 +394,13 @@ I2C 장치이기 때문에 액세스를 위해서는 주소를 알아야 한다.
 
 * 엔드포인트 파라미터
 > 1. config type - 버튼 설정 타입
->    - default : button_count, start_index, io_skip_count
+>    - default : pin_count, button_start_index, io_skip_count
 >    - custom : io_skip_count, code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
 
 실제 사용 예
 
 ```shell
-sudo modprobe am_joyin device1="mcp23017;0x20;0,default"
+sudo modprobe am_joyin device1="mcp23017;0x20,13;0,default"
 ```
 
 ### Multiplexer(=MUX) 입력
@@ -429,13 +429,13 @@ MUX 모듈은 다음과 같은 형태로 주로 판매되고 있다.
 
 * 엔드포인트 파라미터
 > 1. config type - 버튼 설정 타입
->    - default : button_count, start_index, io_skip_count
+>    - default : pin_count, button_start_index, io_skip_count
 >    - custom : io_skip_count, code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
 
 실제 사용 예
 
 ```shell
-sudo modprobe am_joyin device1="mux;5,{26,19,13,6},default,0;0,default"
+sudo modprobe am_joyin device1="mux;5,{26,19,13,6},13;0,default"
 ```
 
 ## 드라이버 동작 테스트
@@ -445,24 +445,18 @@ sudo modprobe am_joyin device1="mux;5,{26,19,13,6},default,0;0,default"
 jstest 유틸리티의 설치 방법은 다음과 같다.
 
 ```shell
-> sudo apt install joystick
+sudo apt install joystick
 ```
 
 만약 첫번째 설치 된 조이스틱 장치를 테스트 해 보고 싶다면 다음과 같이 입력한다.
 
 ```shell
-> jstest /dev/input/js0
+jstest /dev/input/js0
 ```
 
 정상적으로 실행되면 콘솔 상에 현재 버튼 상태가 나타난다. 버튼을 누르게 되면 실시간으로 상태가 변경됨을 확인할 수 있다.
 
-```shell
-Driver version is 2.1.0.
-Joystick (AmosJoystick_1) has 2 axes (X, Y)
-and 9 buttons (BtnA, BtnB, BtnX, BtnY, BtnTL, BtnTR, BtnSelect, BtnStart, BtnMode).
-Testing ... (interrupt to exit)
-Axes:  0:     0  1:     0 Buttons:  0:off  1:off  2:off  3:off  4:off  5:off  6:off  7:off  8:off
-```
+![jstest](images/jstest.png)
 
 
 ---
