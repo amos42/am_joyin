@@ -111,8 +111,37 @@ sudo dpkg -i build/am_joyin-0.1.0.deb
 ​
 이 과정까지 거치면 드라이버 설치가 1차적으로 완료된다.
 
+설치가 정상적으로 되었는지를 확인하고 싶다면 modprobe 명령을 사용하면 된다.
 
-### 3. am_joyin 설정
+```shell
+sudo modprobe am_joyin
+```
+
+만약 에러 메시지가 발생하지 않는다면 정상적으로 설치가 완료 된 것이다.
+
+
+### 3. 드라이버 부팅시 자동 로딩
+
+다음은 전원을 켤 때마다 자동으로 am_joyin 드라이버가 로딩되도록 하기 위한 과정이다.
+
+드라이버 모듈 설정 파일을 연다.
+
+```shell
+sudo nano /etc/modules-load.d/modules.conf
+```
+
+마지막 라인에 다음 항목을 추가하고 ctrl-x를 눌러 저장하고 종료한다.
+
+```
+  .
+  .
+  .
+
+am_joyin
+```
+
+
+### 4. am_joyin 설정
 
 다음으로는 드라이버 설정을 진행한다.
 
@@ -136,40 +165,50 @@ options am_joyin device1="gpio;;0,default1"
 > 이는 `mk_arcade_joystick_rpio map=1` 과 같은 동작을 재현한다.
 
 
-### 4. 드라이버 부팅시 자동 로딩
+### 5. 시스템 재부팅
 
-다음은 전원을 켤 때마다 자동으로 am_joyin 드라이버가 로딩되도록 하기 위한 과정이다.
-
-드라이버 모듈 설정 파일을 연다.
+설치 작업이 완료되었다면 시스템을 재부팅하여 버튼의 동작을 확인하면 된다.
 
 ```shell
-sudo nano /etc/modules-load.d/modules.conf
+sudo reboot
 ```
 
-마지막 라인에 다음 항목을 추가하고 ctrl-x를 눌러 저장하고 종료한다.
+### 6. 드라이버 동작 테스트
 
+동작 테스트를 위해서는 jstest 유틸리티를 사용하면 된다.
+
+jstest 유틸리티의 설치 방법은 다음과 같다.
+
+```shell
+sudo apt install joystick
 ```
-  .
-  .
-  .
 
-am_joyin
+만약 첫번째 설치 된 조이스틱 장치를 테스트 해 보고 싶다면 다음과 같이 입력한다.
+
+```shell
+jstest /dev/input/js0
 ```
 
+정상적으로 실행되면 콘솔 상에 현재 버튼 상태가 나타난다. 버튼을 누르거나 뗄 때마다 실시간으로 상태가 변경됨을 확인할 수 있다.
 
-## 설정 파라미터
+![jstest](images/jstest.png)
+
+
+---
+
+## 설정 파라미터의 기본
 
 ### 기본 형식
 
 am_joyin은 설정을 통해 다양한 조합의 장치들을 이용할 수 있다.
 
-기본적으로 전체가 1줄짜리 설정으로 이루어져 있으며, 공백은 허용되지 않는다.
+기본적으로 전체가 1줄짜리 설정으로 이루어져 있으며, 공백은 허용되지 않는다. 줄이 너무 길어져 보기에 불편하다 생각되면 \\(backslash) 문자를 통해 2줄 이상으로 기술할 수도 있다.
 
 설정은 1개 이상의 파라미터(parameter)들로 구성되어 있으며, 각 파라미터들은 특수문자를 포함하기 때문에 "(quotation mark)로 감싼 문자열로 기술한다.
 
 각 파라미터는 1개 이상의 섹션(section)들로 구성되어 있으며, 섹션들은 ;(semicolon)으로 구분한다.
 
-즉, 기본 형태는 다음과 같다.
+즉, 기본 형태는 다음과 같은 형태로 기술되게 된다.
 
 ```shell
 parameter1="section1;section2;..." parameter2="section1;section2;..."
@@ -186,7 +225,7 @@ section은 1개 이상의 값으로 구성되어 있으며, 각 값들은 ,(comm
 | 문자열   | 문자열 값   | hello            |
 | 블럭     | 값들의 집합 | {1,hello,world}  |
 
-즉, 최종적으로 다음과 같은 형태로 기술되게 된다.
+다음은 이를 실제로 기술한 예이다.
 
 ```shell
 param1="text1;default,10;test,1,{1,a},{2,b}" param2="text1;;test,,{2,b,0},{3,,0}"
@@ -222,6 +261,7 @@ am_joyin의 파라미터는 다음과 같다.
 
 
 ### driver 전역 설정
+
 > 1. timer_period : 타이머 주기. Hz 단위로 기술. default는 100Hz. (OS의 인터럽트 세팅에 따라 최대치가 결정된다.)
 > 2. debug : 디버그 모드 여부. Log 출력 내용에 영향을 준다.
 
@@ -266,7 +306,7 @@ endpoints="default,0,default;ext_joystick,1,11;ext_joystick_2,,6"
 >   + 사용 버튼셋 인덱스 : 0 (빈 값을 default, 즉 0으로 해석한다.)
 >   + 사용 버튼 갯수 : 6
 
-## device 설정
+### device 설정
 
 각 장치별로 개별 설정을 갖는다.
 
@@ -297,6 +337,8 @@ device1="74hc165;16,20,21,24,1;0,default,12;1,default,12"
 >   + 엔드포인트 파라미터 : [ default, 12 ]
 
 각각의 파라미터의 의미는 각 장치별로 해석을 달리한다.
+
+## 각 장치별 설정
 
 현재 지원 가능한 장치 타입은 다음과 같다.
 
@@ -340,7 +382,7 @@ sudo modprobe am_joyin endpoints="default,12;default,12" device1="gpio;;0,defaul
 - 커스텀 키 설정
 
 ```shell
-sudo modprobe am_joyin device1="gpio;;0,custom,1,{4,0x1,-1},{17,0x1,1},{27,0x0,-1},{22,0x0,1},{10,0x13b,1},{9,0x13a,1}"
+sudo modprobe am_joyin device1="gpio;;0,custom,0,{4,0x1,-100},{17,0x1,100},{27,0x0,-100},{22,0x0,100},{10,0x13b,1},{9,0x13a,1}"
 ```
 
 ### 74HC165 입력
@@ -371,11 +413,11 @@ sudo modprobe am_joyin device1="gpio;;0,custom,1,{4,0x1,-1},{17,0x1,1},{27,0x0,-
 순서대로 LD, CK, DT 이다.
 
 * 디바이스 파라미터
-> 1. LD - Load 핀 gpio 번호 \
-> 2. CK - Clock 핀 gpio 번호 \
-> 3. DT - Data(Q8) 핀 gpio 번호 \
-> 4. IO Count - 전체 IO 갯수 \
-> 5. Bit Order - IO 데이터 순서. 0은 D7~D0 순서, 1은 D0~D7 순서
+> 1. LD - Load 핀 gpio 번호
+> 2. CK - Clock 핀 gpio 번호
+> 3. DT - Data(Q8) 핀 gpio 번호
+> 4. IO Count - 전체 IO 갯수
+> 5. Bit Order - IO 데이터 순서. 0은 D7\~D0 순서, 1은 D0\~D7 순서
 
 * 엔드포인트 파라미터
 > 1. config type - 버튼 설정 타입
@@ -402,7 +444,7 @@ MCP23017 모듈은 다음과 같은 형태로 주로 판매되고 있다.
 I2C 장치이기 때문에 액세스를 위해서는 주소를 알아야 한다. 판매되는 상품의 경우엔 기본적으로 0x20으로 세팅되어 있으며, 점퍼 및 납땜을 통해 주소를 변경할 수 있다. 2p 이상인 조이스틱 제작을 위해서는 2개의 칩을 사용해야 하기 때문에, 필히 서로 다른 주소를 갖도록 세팅되어 있어야 한다.
 
 * 디바이스 파라미터
-> 1. i2c_addr - I2C 주소. default는 0x20 \
+> 1. i2c_addr - I2C 주소. default는 0x20
 > 2. io_count - 전체 IO 갯수
 
 * 엔드포인트 파라미터
@@ -436,9 +478,9 @@ MUX 모듈은 다음과 같은 형태로 주로 판매되고 있다.
 즉, Adddress 핀을 총 5개 사용하며, 그 중 가장 마지막 핀은 보드의 Chip Enable 핀에 연결하면 된다.
 
 * 디바이스 파라미터
-> 1. rw_gpio - 읽기/쓰기 핀 gpio 번호 \
-> 2. {addr0_gpio, addr1_gpio, ...} - 주소핀의 gpio 주소 리스트 \
-> 3. io_count - 전체 IO 갯수 \
+> 1. rw_gpio - 읽기/쓰기 핀 gpio 번호
+> 2. {addr0_gpio, addr1_gpio, ...} - 주소핀의 gpio 주소 리스트
+> 3. io_count - 전체 IO 갯수
 
 * 엔드포인트 파라미터
 > 1. config type - 버튼 설정 타입
@@ -467,7 +509,7 @@ sudo apt install joystick
 jstest /dev/input/js0
 ```
 
-정상적으로 실행되면 콘솔 상에 현재 버튼 상태가 나타난다. 버튼을 누르게 되면 실시간으로 상태가 변경됨을 확인할 수 있다.
+정상적으로 실행되면 콘솔 상에 현재 버튼 상태가 나타난다. 버튼을 누르거나 뗄 때마다 실시간으로 상태가 변경됨을 확인할 수 있다.
 
 ![jstest](images/jstest.png)
 
