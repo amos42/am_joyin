@@ -493,26 +493,6 @@ MUX 모듈은 다음과 같은 형태로 주로 판매되고 있다.
 sudo modprobe am_joyin device1="mux;5,{26,19,13,6},13;0,default"
 ```
 
-## 드라이버 동작 테스트
-
-동작 테스트를 위해서는 jstest 유틸리티를 사용하면 된다.
-
-jstest 유틸리티의 설치 방법은 다음과 같다.
-
-```shell
-sudo apt install joystick
-```
-
-만약 첫번째 설치 된 조이스틱 장치를 테스트 해 보고 싶다면 다음과 같이 입력한다.
-
-```shell
-jstest /dev/input/js0
-```
-
-정상적으로 실행되면 콘솔 상에 현재 버튼 상태가 나타난다. 버튼을 누르거나 뗄 때마다 실시간으로 상태가 변경됨을 확인할 수 있다.
-
-![jstest](images/jstest.png)
-
 
 ---
 
