@@ -304,7 +304,7 @@ static void check_input_device_for_mcp23017(input_device_data_t *device_data)
         io_count -= cnt;
 
         io_value >>= table->io_skip_count;
-        for (j = table->io_skip_count; j < cnt; j++ ){
+        for (j = 0; j < cnt; j++ ){
             if ((io_value & 0x1) == 0) {
                 endpoint->report_button_state[btndef->button] = btndef->value;
             }
