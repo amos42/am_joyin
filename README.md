@@ -89,7 +89,7 @@ sudo apt install -y --force-yes raspberrypi-kernel-headers
 #### wget 사용시
 
 ```shell
-wget https://github.com/amos42/am_joyin/releases/download/v0.1.0-alpha03/am_joyin-0.1.0.deb
+wget https://github.com/amos42/am_joyin/releases/download/v0.1.0-alpha04/am_joyin-0.1.0.deb
 sudo dpkg -i am_joyin-0.1.0.deb
 ```
 
@@ -192,6 +192,15 @@ jstest /dev/input/js0
 정상적으로 실행되면 콘솔 상에 현재 버튼 상태가 나타난다. 버튼을 누르거나 뗄 때마다 실시간으로 상태가 변경됨을 확인할 수 있다.
 
 ![jstest](images/jstest.png)
+
+
+### 7. 드라이버 삭제
+
+드라이버를 삭제하기 위해선 설치한 순서의 반대로 진행하면 된다.
+
+> 1. /etc/modprobe.d/am_joyin.conf 파일 삭제
+> 2. /etc/modules-load.d/modules.conf 목록에서 am_joyin 제거
+> 3. sudo dpkg -r am-joyin-dkms 명령으로 드라이버 패키지 삭제
 
 
 ---
