@@ -116,12 +116,12 @@ static void am_timer(struct timer_list *t) {
 static void am_timer(unsigned long private) {
     am_joyin_data_t *inp = (void *) private;
 #endif
-    int i, j;
+    int i;
     unsigned long next_timer = jiffies + inp->timer_period; // 다음 타이머 주기를 미리 구해 놓는다.
 
     for (i = 0; i < inp->input_endpoint_count; i++) {
         input_endpoint_data_t *ep = &inp->endpoint_list[i];
-        for (j = 0; j < ep->button_count; j++) ep->report_button_state[j] = 0;
+        memset(ep->report_button_state, 0, sizeof(int) * MAX_INPUT_BUTTON_COUNT);
     }
 
     for (i = 0; i < inp->input_device_count; i++) {

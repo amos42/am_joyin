@@ -70,7 +70,7 @@ void __init prepocess_params(void)
     // endpoint 생략시, 기본 파라미터 세팅
     if (am_endpoints_cfg == NULL)
     {
-        am_endpoints_cfg = "default,default,default";
+        am_endpoints_cfg = "default";
     }
 
     // device 모두 생략시, 기본 파라미터 세팅

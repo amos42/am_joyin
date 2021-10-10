@@ -15,7 +15,7 @@
 //#define GPIO_GET_VALUE(i)   getGpio(i)
 //#define GPIO_SET_VALUE(i,v)   setGpio((i), (v))
 
-static const int default_74hc165_gpio_maps[3] = {16, 20, 21};
+//static const int default_74hc165_gpio_maps[3] = {16, 20, 21};
 
 //#define DEFAULT_74HC165_BUTTON_COUNT  (16)
 
@@ -278,9 +278,12 @@ static void start_input_device_for_74hc165(input_device_data_t *device_data)
 
 static void check_input_device_for_74hc165(input_device_data_t *device_data)
 {
-    int i, j, cnt;
+    int i, j, k;
     int ld, ck, dt, io_count;
     device_74hc165_data_t *user_data = (device_74hc165_data_t *)device_data->data;
+    int skip_cnt, cnt;
+    int idx;
+    unsigned char io_value = 0;
 
     if (user_data == NULL) return;
 
@@ -295,102 +298,73 @@ static void check_input_device_for_74hc165(input_device_data_t *device_data)
     udelay(5);
     gpio_set_value(ld, 1);
 
-    if (user_data->device_cfg.bit_order == 0) {
-        for (i = 0; i < device_data->target_endpoint_count; i++) {
-            input_endpoint_data_t* endpoint = device_data->target_endpoints[i];
-            device_74hc165_index_table_t* table = &user_data->button_cfgs[i];
-            device_74hc165_index_item_t* btndef = &table->buttondef[table->button_start_index];
+    idx = 0;
+    for (i = 0; i < device_data->target_endpoint_count; i++) {
+        input_endpoint_data_t* endpoint = device_data->target_endpoints[i];
+        device_74hc165_index_table_t* table = &user_data->button_cfgs[i];
+        device_74hc165_index_item_t* btndef = &table->buttondef[table->button_start_index];
 
-            cnt = table->io_skip_count;
-            if (cnt > 0) {
-                if (cnt > io_count) cnt = io_count;
-                io_count -= cnt;
+        skip_cnt = table->io_skip_count;
+        if (skip_cnt >= io_count) break;
+        io_count -= skip_cnt;
 
-                for (j = 0; j < cnt; j++ ){
-                    gpio_set_value(ck, 1);
-                    udelay(5);
-                    gpio_set_value(ck, 0);
-                }
+        cnt = table->pin_count;
+        if (cnt > io_count) cnt = io_count;
 
-                if (io_count <= 0) break;
+        if (user_data->device_cfg.bit_order == 0) {
+            for (j = 0; j < skip_cnt; j++ ){
+                gpio_set_value(ck, 1);
+                udelay(5);
+                gpio_set_value(ck, 0);
             }
-
-            cnt = table->pin_count;
-            if (cnt > io_count) cnt = io_count;
-            io_count -= cnt;
 
             for (j = 0; j < cnt; j++ ){
                 if (btndef->button >= 0 && gpio_get_value(dt) == 0) {
                     endpoint->report_button_state[btndef->button] = btndef->value;
                 }
-
-                gpio_set_value(ck, 1);
-                udelay(5);
-                gpio_set_value(ck, 0);
-
                 btndef++;
-            }
-
-            if (io_count <= 0) break;
-        }
-    } else if (user_data->device_cfg.bit_order == 1) {
-        int endpoint_idx = 0;
-        input_endpoint_data_t* endpoint = device_data->target_endpoints[endpoint_idx];
-        device_74hc165_index_table_t* table = &user_data->button_cfgs[endpoint_idx];
-        device_74hc165_index_item_t* btndef = &table->buttondef[table->button_start_index];
-
-        int chips = io_count / 8 + ((io_count % 8)? 1 : 0);
-
-        int io_skip_count = table->io_skip_count;
-
-        int idx = 0;
-        for (i = 0; i < chips; i++ ){
-            int data[8];
-
-            for (j = 0; j < 8; j++ ){
-                data[7 - j] = gpio_get_value(dt);
 
                 gpio_set_value(ck, 1);
                 udelay(5);
                 gpio_set_value(ck, 0);
             }
+        } else {
+            for (j = 0; j < cnt; j++ ){
+                if (idx <= 0) {
+                    idx += 8;
+                    io_value = 0;
+                    for (k = 0; k < idx; k++ ){
+                        int v = gpio_get_value(dt);
+                        io_value = (io_value << 1) | (v == 0 ? 1 : 0);
 
-            cnt = (io_count > 8)? 8 : io_count;
-            io_count -= cnt;
-
-            if (io_skip_count < cnt) {
-                j = io_skip_count;
-                while (cnt--){
-                    if (btndef->button >= 0 && data[j] == 0) {
-                        endpoint->report_button_state[btndef->button] = btndef->value;
+                        gpio_set_value(ck, 1);
+                        udelay(5);
+                        gpio_set_value(ck, 0);
                     }
-                    btndef++;
-                    if (++idx >= table->pin_count) {
-                        if (++endpoint_idx >= device_data->target_endpoint_count) break;
-                        endpoint = device_data->target_endpoints[endpoint_idx];
-                        table = &user_data->button_cfgs[endpoint_idx];
-                        btndef = &table->buttondef[table->button_start_index];
-                        io_skip_count = table->io_skip_count;
-                        idx = 0;
-
-                        if (j + io_skip_count < cnt) {
-                            cnt -= io_skip_count;    
-                            io_skip_count = 0;
-                        } else {
-                            io_skip_count -= cnt - 1 - j;
-                            break;    
-                        }
-                    }
-
-                    j++;
                 }
-                io_skip_count = 0;
-            } else {
-                io_skip_count -= cnt;
+                if (skip_cnt > 0) {
+                    if (skip_cnt > idx) {
+                        skip_cnt -= idx;
+                        idx = 0;
+                    } else {
+                        io_value >>= skip_cnt;
+                        idx -= skip_cnt;
+                        skip_cnt = 0;
+                    }
+                    if (idx <= 0) continue;
+                }
+
+                if (btndef->button >= 0 && (io_value & 0x01)) {
+                    endpoint->report_button_state[btndef->button] = btndef->value;
+                }
+                io_value >>= 1;
+                btndef++;
+
+                idx--;
             }
-            
-            if (io_count <= 0) break;
         }
+
+        if (io_count <= 0) break;
     }
 }
 
