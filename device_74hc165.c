@@ -232,7 +232,7 @@ static int __parse_endpoint_param_for_74hc165(device_74hc165_data_t* user_data, 
 //            code_type = 1 : index
 //
 // ex) device1=74hc165;16,20,21,13,1;0,default,12
-//     device2=74hc165;16,20,21,24,1;0,default,12;1,custom,,0,{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1}
+//     device2=74hc165;16,20,21,24,1;0,default,12;1,custom,,keycode,{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1}
 static int init_input_device_for_74hc165(input_device_data_t *device_data, char* device_config_str, char* endpoint_config_strs[])
 {
     device_74hc165_data_t* user_data;
@@ -282,7 +282,7 @@ static void check_input_device_for_74hc165(input_device_data_t *device_data)
     int ld, ck, dt, io_count;
     device_74hc165_data_t *user_data = (device_74hc165_data_t *)device_data->data;
     int skip_cnt, cnt;
-    int idx;
+    int readed;
     unsigned char io_value = 0;
 
     if (user_data == NULL) return;
@@ -298,7 +298,7 @@ static void check_input_device_for_74hc165(input_device_data_t *device_data)
     udelay(5);
     gpio_set_value(ld, 1);
 
-    idx = 0;
+    readed = 0;
     for (i = 0; i < device_data->target_endpoint_count; i++) {
         input_endpoint_data_t* endpoint = device_data->target_endpoints[i];
         device_74hc165_index_table_t* table = &user_data->button_cfgs[i];
@@ -330,10 +330,10 @@ static void check_input_device_for_74hc165(input_device_data_t *device_data)
             }
         } else {
             for (j = 0; j < cnt; j++ ){
-                if (idx <= 0) {
-                    idx += 8;
+                if (readed <= 0) {
+                    readed += 8;
                     io_value = 0;
-                    for (k = 0; k < idx; k++ ){
+                    for (k = 0; k < readed; k++ ){
                         int v = gpio_get_value(dt);
                         io_value = (io_value << 1) | (v == 0 ? 1 : 0);
 
@@ -343,15 +343,18 @@ static void check_input_device_for_74hc165(input_device_data_t *device_data)
                     }
                 }
                 if (skip_cnt > 0) {
-                    if (skip_cnt > idx) {
-                        skip_cnt -= idx;
-                        idx = 0;
+                    if (skip_cnt >= readed) {
+                        skip_cnt -= readed;
+                        readed = 0;
                     } else {
                         io_value >>= skip_cnt;
-                        idx -= skip_cnt;
+                        readed -= skip_cnt;
                         skip_cnt = 0;
                     }
-                    if (idx <= 0) continue;
+                    if (readed <= 0){
+                        j--;
+                        continue;
+                    }
                 }
 
                 if (btndef->button >= 0 && (io_value & 0x01)) {
@@ -360,7 +363,7 @@ static void check_input_device_for_74hc165(input_device_data_t *device_data)
                 io_value >>= 1;
                 btndef++;
 
-                idx--;
+                readed--;
             }
         }
 
