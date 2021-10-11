@@ -505,6 +505,6 @@ sudo modprobe am_joyin device1="mux;5,{26,19,13,6},13;0,default"
 
 ---
 
-> ***NOTE***
-> am_joyin 드라이버는 라즈베리파이3B, 라즈베리파이3B+, 라즈베리파이4B에서 테스트 되었다.
+> ***NOTE:***
+> am_joyin 드라이버는 Raspberry Pi Zero, Raspberry Pi Zero W, Raspberry Pi 3B, Raspberry Pi 3B+, Raspberry Pi 4B에서 테스트 되었다.
 > 그 이외의 기종에 대한 동작은 보증하지 못 한다.
