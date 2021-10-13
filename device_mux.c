@@ -42,9 +42,9 @@ typedef struct tag_device_mux_config {
     int rw_gpio;
     int addr_gpio[MAX_MUX_ADDR_REG_COUNT];
     int addr_bit_count;
+    int cs_gpio;
 
     int io_count;
-    //int start_offset;
     int pull_updown;
 } device_mux_config_t;
 
@@ -58,7 +58,6 @@ typedef struct tag_device_mux_index_table {
     int pin_count;
     int button_start_index;
     int io_skip_count;
-    int cs_gpio;
 } device_mux_index_table_t;
 
 // device.data에 할당 될 구조체
@@ -120,6 +119,7 @@ static int __parse_device_param_for_mux(device_mux_data_t* user_data, char* devi
     if (user_data->device_cfg.addr_bit_count <= 0) return -EINVAL;
     strsep(&pText, ",");
 
+    user_data->device_cfg.cs_gpio = parse_number(&pText, ",", 0, -1);
     user_data->device_cfg.io_count = parse_number(&pText, ",", 10, INPUT_MUX_DEFAULT_KEYCODE_TABLE_ITEM_COUNT);
     user_data->device_cfg.pull_updown = parse_number(&pText, ",", 10, 0);
 
@@ -142,7 +142,7 @@ static int __parse_endpoint_param_for_mux(device_mux_data_t* user_data, char* en
     for (i = 0; i < endpoint_count; i++ ) {
         input_endpoint_data_t *ep = endpoint_list[i];
         char* cfgtype_p;
-        int pin_count, button_start_index, io_skip_count, cs_gpio;
+        int pin_count, button_start_index, io_skip_count;
 
         if (ep == NULL) continue;
 
@@ -163,10 +163,8 @@ static int __parse_endpoint_param_for_mux(device_mux_data_t* user_data, char* en
             pin_count = parse_number(&pText, ",", 10, src->pin_count);
             button_start_index = parse_number(&pText, ",", 10, 0);
             io_skip_count = parse_number(&pText, ",", 10, 0);
-            cs_gpio = parse_number(&pText, ",", 10, -1);
         } else if (strcmp(cfgtype_p, "custom") == 0){
             io_skip_count = parse_number(&pText, ",", 10, 0);
-            cs_gpio = parse_number(&pText, ",", 10, -1);
 
             temp_p = strsep(&pText, ",");
             if (temp_p == NULL || strcmp(temp_p, "keycode") == 0 || strcmp(temp_p, "default") == 0 || strcmp(temp_p, "") == 0) {
@@ -213,7 +211,6 @@ static int __parse_endpoint_param_for_mux(device_mux_data_t* user_data, char* en
             des->pin_count = pin_count;
             des->button_start_index = button_start_index;
             des->io_skip_count = io_skip_count;
-            des->cs_gpio = cs_gpio;
         } else if (code_mode == INPUT_CODE_TYPE_INDEX) {
             for (j = 0; j < pin_count; j++) {
                 des->buttondef[j].button = src->buttondef[j].button;
@@ -222,7 +219,6 @@ static int __parse_endpoint_param_for_mux(device_mux_data_t* user_data, char* en
             des->pin_count = pin_count;
             des->button_start_index = button_start_index;
             des->io_skip_count = io_skip_count;
-            des->cs_gpio = cs_gpio;
         }
 
         des++;
@@ -232,10 +228,10 @@ static int __parse_endpoint_param_for_mux(device_mux_data_t* user_data, char* en
 }
 
 
-// device_config_str : read_gpio, {addr0_gpio, addr1_gpio, ...}, io_count
+// device_config_str : read_gpio, {addr0_gpio, addr1_gpio, ...}, cs_gpio, io_count
 // endpoint_config_str : endpoint, config_type (default | custom), ...
-//        default: pin_count, start_index, io_skip_count, cs_gpio
-//        custom: io_skip_count, cs_gpio, code_type (0|1), n * {button, value}
+//        default: pin_count, start_index, io_skip_count
+//        custom: io_skip_count, code_type (0|1), n * {button, value}
 //            code_type = 0 : key code
 //            code_type = 1 : index
 //
@@ -283,11 +279,18 @@ static void start_input_device_for_mux(input_device_data_t *device_data)
 {
     device_mux_data_t *user_data = (device_mux_data_t *)device_data->data;
     int i;
+    int gpio;
 
-    for (i = 0; i < 6; i++) {
-        if (user_data->device_cfg.addr_gpio[i] != -1) {
-            gpio_as_output(user_data->device_cfg.addr_gpio[i]);
+    for (i = 0; i < user_data->device_cfg.addr_bit_count; i++) {
+        gpio = user_data->device_cfg.addr_gpio[i];
+        if (gpio != -1) {
+            gpio_as_output(gpio);
         }
+    }
+
+    gpio = user_data->device_cfg.cs_gpio;
+    if (gpio != -1) {
+        gpio_as_output(gpio);
     }
 
     gpio_as_input(user_data->device_cfg.rw_gpio);
@@ -301,7 +304,7 @@ static void check_input_device_for_mux(input_device_data_t *device_data)
 {
     int i, j, k, cnt;
     int addr, io_count;
-    int read_gpio;
+    int read_gpio, cs_gpio;
     device_mux_data_t *user_data = (device_mux_data_t *)device_data->data;
 
     if (user_data == NULL) return;
@@ -311,6 +314,12 @@ static void check_input_device_for_mux(input_device_data_t *device_data)
     if (io_count <= 0) return;
 
     read_gpio = user_data->device_cfg.rw_gpio;
+
+    cs_gpio = user_data->device_cfg.cs_gpio;
+    if (cs_gpio != -1) {
+        gpio_set_value(cs_gpio, 1);
+        udelay(5);
+    }        
 
     //addr = user_data->device_cfg.start_offset;
     addr = 0;
@@ -325,9 +334,6 @@ static void check_input_device_for_mux(input_device_data_t *device_data)
         if (cnt > io_count) cnt = io_count;
         io_count -= cnt;
 
-        if (table->cs_gpio != -1) {
-            gpio_set_value(table->cs_gpio, 1);
-        }        
         for (j = 0; j < cnt; j++ ){
             int addr_reg = addr;
             int *addr_gpio = user_data->device_cfg.addr_gpio;
@@ -347,12 +353,13 @@ static void check_input_device_for_mux(input_device_data_t *device_data)
 
             btndef++;
         }
-        if (table->cs_gpio != -1) {
-            gpio_set_value(table->cs_gpio, 0);
-        }        
 
         if (io_count <= 0) break;
     }
+
+    if (cs_gpio != -1) {
+        gpio_set_value(cs_gpio, 0);
+    }        
 }
 
 
