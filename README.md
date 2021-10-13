@@ -483,8 +483,8 @@ MUX 모듈은 다음과 같은 형태로 주로 판매되고 있다.
 
 이 5개 핀에 해당하는 GPIO 번호가 각각 파라미터로 전달되어야 한다.
 
-만약 2p 이상을 지원하게 하려면 16-bit MUX 2개를 사용하여 32비트로 만들고, 주소의 최상위 비트를 Chip Enable로 연결하면 된다.
-즉, Adddress 핀을 총 5개 사용하며, 그 중 가장 마지막 핀은 보드의 Chip Enable 핀에 연결하면 된다.
+만약 2p 이상을 지원하게 하려면 16-bit MUX 2개를 사용하여 32비트로 만들고, endpoint별 파라미터 중 cs_gpio를 각각 설정해 주면 된다.
+또다른 방법으로는 1-bit MUX를 사용하여 주소의 최상위 비트를 1-bit MUX의 address로 사용하고, 데이터 핀을 각 MUX의 Chip Enable로 연결하도록 하면 된다. 비록 조이스틱 입력용 MUX 외에, 추가적인 MUX 1개를 더 필요로 하긴 하지만 GPIO 소요 갯수를 줄일 수 있고 사용도 더 간편해진다는 장점이 있다.
 
 * 디바이스 파라미터
 > 1. rw_gpio - 읽기/쓰기 핀 gpio 번호
@@ -493,13 +493,19 @@ MUX 모듈은 다음과 같은 형태로 주로 판매되고 있다.
 
 * 엔드포인트 파라미터
 > 1. config type - 버튼 설정 타입
->    - default : pin_count, button_start_index, io_skip_count
->    - custom : io_skip_count, code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
+>    - default : pin_count, button_start_index, io_skip_count, cs_gpio
+>    - custom : io_skip_count, cs_gpio, code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
 
 실제 사용 예
 
 ```shell
 sudo modprobe am_joyin device1="mux;5,{26,19,13,6},13;0,default"
+```
+
+2p 설정의 예 (각 MUX의 Enable 핀이 GPIO 20, GPIO 21에 각각 연결 된 경우)
+
+```shell
+sudo modprobe am_joyin endpoints="default;default" device1="mux;5,{26,19,13,6},13;0,default,,,,20;1,default,,,,21"
 ```
 
 
