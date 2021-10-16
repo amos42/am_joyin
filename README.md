@@ -487,7 +487,7 @@ MUX 모듈은 다음과 같은 형태로 주로 판매되고 있다.
 * 디바이스 파라미터
 > 1. rw_gpio - 읽기/쓰기 핀 gpio 번호
 > 2. {addr0_gpio, addr1_gpio, ...} - 주소핀의 gpio 주소 리스트
-> 3. cs_gpio - Chip enable gpio 번호
+> 3. cs_gpio - Chip enable gpio 번호 (default는 -1)
 > 4. active_high - Chip enable 값이 high active인가 (default는 low active)
 > 5. io_count - 전체 IO 갯수
 
