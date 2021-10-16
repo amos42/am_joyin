@@ -505,7 +505,7 @@ MUX 모듈은 다음과 같은 형태로 주로 판매되고 있다.
 실제 사용 예
 
 ```shell
-sudo modprobe am_joyin device1="mux;5,{26,19,13,6},13;0,default"
+sudo modprobe am_joyin device1="mux;5,{26,19,13,6},,13;0,default"
 ```
 
 2p 설정의 예 (각 MUX의 Enable 핀이 GPIO 20, GPIO 21에 각각 연결 된 경우)
