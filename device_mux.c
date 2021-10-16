@@ -45,6 +45,7 @@ typedef struct tag_device_mux_config {
     int cs_gpio;
 
     int io_count;
+    int enable_high;
     int pull_updown;
 } device_mux_config_t;
 
@@ -121,6 +122,7 @@ static int __parse_device_param_for_mux(device_mux_data_t* user_data, char* devi
 
     user_data->device_cfg.cs_gpio = parse_number(&pText, ",", 0, -1);
     user_data->device_cfg.io_count = parse_number(&pText, ",", 10, INPUT_MUX_DEFAULT_KEYCODE_TABLE_ITEM_COUNT);
+    user_data->device_cfg.enable_high = parse_number(&pText, ",", 10, 0);
     user_data->device_cfg.pull_updown = parse_number(&pText, ",", 10, 0);
 
     return 0;
@@ -291,6 +293,7 @@ static void start_input_device_for_mux(input_device_data_t *device_data)
     gpio = user_data->device_cfg.cs_gpio;
     if (gpio != -1) {
         gpio_as_output(gpio);
+        gpio_set_value(gpio, user_data->device_cfg.enable_high == 0 ? 1 : 0);
     }
 
     gpio_as_input(user_data->device_cfg.rw_gpio);
@@ -317,11 +320,10 @@ static void check_input_device_for_mux(input_device_data_t *device_data)
 
     cs_gpio = user_data->device_cfg.cs_gpio;
     if (cs_gpio != -1) {
-        gpio_set_value(cs_gpio, 1);
+        gpio_set_value(cs_gpio, user_data->device_cfg.enable_high == 0 ? 0 : 1);
         udelay(5);
     }        
 
-    //addr = user_data->device_cfg.start_offset;
     addr = 0;
 
     for (i = 0; i < device_data->target_endpoint_count; i++) {
@@ -358,7 +360,7 @@ static void check_input_device_for_mux(input_device_data_t *device_data)
     }
 
     if (cs_gpio != -1) {
-        gpio_set_value(cs_gpio, 0);
+        gpio_set_value(cs_gpio, user_data->device_cfg.enable_high == 0 ? 1 : 0);
     }        
 }
 
