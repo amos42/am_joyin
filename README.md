@@ -513,7 +513,15 @@ sudo modprobe am_joyin device1="mux;5,{26,19,13,6},13;0,default"
 ```shell
 sudo modprobe am_joyin endpoints="default;default" \
         device1="mux;5,{26,19,13,6},20;0,default" \
-        device2="mux;16,{26,19,13,6},21;1,default"
+        device2="mux;5,{26,19,13,6},21;1,default"
+```
+
+2p 설정의 예 (데이터 핀을 달리 쓰는 경우)
+
+```shell
+sudo modprobe am_joyin endpoints="default;default" \
+        device1="mux;5,{26,19,13,6};0,default" \
+        device2="mux;16,{26,19,13,6};1,default"
 ```
 
 
