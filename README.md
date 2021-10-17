@@ -247,7 +247,7 @@ param1="text1;default,10;test,1,{1,a},{2,b}" param2="text1;;test,,{2,b,0},{3,,0}
   "param1": {
     "section1": [ "text1" ],
     "section2": [ "default", 10 ],
-    "section3": [ "test", 1, [1, 0], [2, "b"]]
+    "section3": [ "test", 1, [1, "a"], [2, "b"]]
   },
   "param2": {
     "section1": [ "text1" ],
@@ -284,7 +284,7 @@ am_joyin의 파라미터는 다음과 같다.
 실제 사용 예
 
 ```shell
-buttonset1_cfg="{0x01,-1,1},{0x00,-1,1},{0x13B,0,1},{0x13A,0,1},{0x130,0,1},{0x103,0,1},{0x102,0,1},{0x103,0,1},{0x102,0,1},{0x103,0,1}"
+buttonset1_cfg="{0x01,-100,100},{0x00,-100,100},{0x13B,0,1},{0x13A,0,1},{0x130,0,1},{0x103,0,1},{0x102,0,1},{0x103,0,1},{0x102,0,1},{0x103,0,1}"
 ```
 
 ### endpoint 설정
@@ -436,8 +436,22 @@ sudo modprobe am_joyin device1="gpio;;0,custom,0,{4,0x1,-100},{17,0x1,100},{27,0
 
 실제 사용 예
 
+1p 사용의 예
+
 ```shell
-sudo modprobe am_joyin device1="74hc165;16,20,21,24,1;0,default,12;1,default,12"
+sudo modprobe am_joyin device1="74hc165;16,20,21,,1;0,default,13"
+```
+
+2p 사용의 예 (74HC165 3개를 썼을 경우)
+
+```shell
+sudo modprobe am_joyin endpoints="default;default" device1="74hc165;16,20,21,24,1;0,default,12;1,default,12"
+```
+
+2p 사용의 예 (74HC165 4개를 썼을 경우)
+
+```shell
+sudo modprobe am_joyin endpoints="default;default" device1="74hc165;16,20,21,32,1;0,default;1,default"
 ```
 
 ### MCP23017 입력
@@ -464,8 +478,18 @@ I2C 장치이기 때문에 액세스를 위해서는 주소를 알아야 한다.
 
 실제 사용 예
 
+1p 설정의 예
+
 ```shell
 sudo modprobe am_joyin device1="mcp23017;0x20,13;0,default"
+```
+
+2p 설정의 예 (첫번째 보드는 0x20, 두번째 보드는 0x21의 I2C 주소로 설정해 놓았을 때)
+
+```shell
+sudo modprobe am_joyin endpoints="default;default" \
+        device1="mcp23017;0x20;0,default" \
+        device2="mcp23017;0x21;1,default"
 ```
 
 ### Multiplexer(=MUX) 입력
@@ -504,11 +528,13 @@ MUX 모듈은 다음과 같은 형태로 주로 판매되고 있다.
 
 실제 사용 예
 
+1p 설정의 예
+
 ```shell
 sudo modprobe am_joyin device1="mux;5,{26,19,13,6},,13;0,default"
 ```
 
-2p 설정의 예 (각 MUX의 Enable 핀이 GPIO 20, GPIO 21에 각각 연결 된 경우)
+2p 설정의 예 (주소핀과 데이터핀을 공유하고, 각 MUX의 Enable 핀이 GPIO 20, GPIO 21에 각각 연결 된 경우)
 
 ```shell
 sudo modprobe am_joyin endpoints="default;default" \
@@ -516,7 +542,7 @@ sudo modprobe am_joyin endpoints="default;default" \
         device2="mux;5,{26,19,13,6},21;1,default"
 ```
 
-2p 설정의 예 (데이터 핀을 달리 쓰는 경우)
+2p 설정의 예 (주소핀을 공유하고 데이터 핀을 달리 쓰는 경우)
 
 ```shell
 sudo modprobe am_joyin endpoints="default;default" \
