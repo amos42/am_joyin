@@ -3,7 +3,7 @@
  ********************************************************************************/
 
 #include <linux/kernel.h>
-#include <linux/module.h>
+//#include <linux/module.h>
 #include <linux/delay.h>
 #include <asm/io.h>
 //#include <linux/ioport.h>
@@ -155,7 +155,7 @@ int gpio_init(u32 peri_base_addr)
 
     /* Set up gpio pointer for direct register access */
     if ((gpio = ioremap(GPIO_BASE, 0xB0)) == NULL) {
-        pr_err("io remap failed\n");
+        pr_err("io remap failed");
         return -EINVAL;
     }
 

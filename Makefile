@@ -7,7 +7,7 @@ ifneq (,$(findstring -v7, $(KVERSION)))
 CFLAGS_am_joyin.o := -DRPI2
 endif
 
-src-ccflags-y := -I src -I src/util -I src/devices
+#src-ccflags-y := -I src -I src/util -I src/devices
 
 all:
 	$(MAKE) -C /lib/modules/$(KVERSION)/build M=$(PWD) modules
