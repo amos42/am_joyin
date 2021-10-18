@@ -3,25 +3,15 @@
  ********************************************************************************/
 
 #include <linux/kernel.h>
-//#include <linux/module.h>
 #include <linux/delay.h>
 #include <asm/io.h>
-//#include <linux/ioport.h>
-//#include <linux/of_platform.h>
 
 #include "gpio_util.h"
+#include "bcm_peri.h"
 
-
-
-#define BCM2708_PERI_BASE (0x3F000000) // RPI 2
-#define BCM2709_PERI_BASE (0x20000000) // abobe RPI 2B v1.2
-#define BCM2711_PERI_BASE (0x7e215000) // abobe RPI 4
 
 //#define PERI_BASE	bcm_peri_base
-#define GPIO_BASE           (PERI_BASE + 0x200000) /* GPIO controller */
-
-#define PERI_BASE           (peri_base)
-
+#define GPIO_BASE           (0x200000) /* GPIO controller */
 
 
 #define INP_GPIO(g) *(gpio+((g)/10)) &= ~(7<<(((g)%10)*3))
@@ -52,8 +42,6 @@
 #define GPIO_PUP_PDN_CNTRL_REG2 (59)      /* Pin pull-up/down for pins 47:32 */
 #define GPIO_PUP_PDN_CNTRL_REG3 (60)      /* Pin pull-up/down for pins 57:48 */
 
-
-static u32 peri_base;
 
 volatile unsigned *gpio = NULL;
 
@@ -147,14 +135,14 @@ void gpio_set_value(int gpio_no, int onoff)
 int gpio_init(u32 peri_base_addr)
 {
     //peri_base = bcm_peri_base_probe();
-    peri_base = peri_base_addr;
-    if (!peri_base) {
+    //peri_base = peri_base_addr;
+    if (!peri_base_addr) {
         pr_err("failed to find peripherals address base via device-tree - not a Raspberry PI board ?\n");
         return -EINVAL;
     }
 
     /* Set up gpio pointer for direct register access */
-    if ((gpio = ioremap(GPIO_BASE, 0xB0)) == NULL) {
+    if ((gpio = ioremap(peri_base_addr + GPIO_BASE, 0xB0)) == NULL) {
         pr_err("io remap failed");
         return -EINVAL;
     }

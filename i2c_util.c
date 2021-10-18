@@ -3,11 +3,11 @@
  ********************************************************************************/
 
 #include <linux/kernel.h>
-#include <linux/module.h>
 #include <linux/delay.h>
 #include <asm/io.h>
 
 #include "i2c_util.h"
+#include "bcm_peri.h"
 #include "gpio_util.h"
 
 
@@ -48,13 +48,16 @@
 static volatile unsigned* bsc1;
 
 
-#define BSC1_BASE		(PERI_BASE + 0x804000)
+//#define BSC1_BASE		(PERI_BASE + 0x804000)
+#define BSC1_BASE		(0x804000)
 
 
-int i2c_init(void) 
+int i2c_init(u32 peri_base_addr, int size)
 {
+    if (size == 0) size = 0xB0;
+
     /* Set up i2c pointer for direct register access */
-    if ((bsc1 = ioremap(BSC1_BASE, 0xB0)) == NULL) {
+    if ((bsc1 = ioremap(peri_base_addr + BSC1_BASE, size)) == NULL) {
         pr_err("io remap failed\n");
         return -EBUSY;
     }

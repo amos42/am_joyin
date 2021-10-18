@@ -37,7 +37,8 @@ MODULE_LICENSE("GPL");
 #include "am_joyin_cfg.c"
 /** parameters (end) **/
 
-#include "bcm_gpio.c"
+//#include "bcm_peri.h"
+#include "bcm_peri.c"
 
 //#include "gpio_util.h"
 #include "gpio_util.c"

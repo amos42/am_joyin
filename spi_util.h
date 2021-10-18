@@ -9,10 +9,18 @@
 #include <linux/types.h>
 
 
-int  spi_init(void);
-void spi_write(char dev_addr, char reg_addr, char *buf, int len);
-void spi_read(char dev_addr, char reg_addr, char *buf, int len);
-void wait_spi_done(void);
+int  bcm2835_spi_init(u32 peri_base_addr, int size);
+void bcm2835_spi_close(void);
+int bcm2835_spi_begin(void);
+void bcm2835_spi_end(void);
+void bcm2835_spi_setClockDivider(uint16_t divider);
+void bcm2835_spi_setDataMode(uint8_t mode);
+uint8_t bcm2835_spi_transfer(uint8_t value);
+void bcm2835_spi_transfernb(char* tbuf, char* rbuf, uint32_t len);
+void bcm2835_spi_writenb(const char* tbuf, uint32_t len);
+void bcm2835_spi_transfern(char* buf, uint32_t len);
+void bcm2835_spi_setChipSelectPolarity(uint8_t cs, uint8_t active);
+void bcm2835_spi_write(uint16_t data);
 
 
 #endif

@@ -3,12 +3,13 @@
  ********************************************************************************/
 
 #include <linux/kernel.h>
-#include <linux/module.h>
+//#include <linux/module.h>
 #include <linux/input.h>
 #include <linux/slab.h>
 #include <linux/delay.h>
 #include <linux/uaccess.h>
 #include "gpio_util.h"
+#include "bcm_peri.h"
 #include "parse_util.h"
 
 //#define GPIO_GET(i)   GPIO_READ(i)
@@ -251,7 +252,7 @@ static void start_input_device_for_mcp23017(input_device_data_t *device_data)
     device_mcp23017_data_t *user_data = (device_mcp23017_data_t *)device_data->data;
     char FF = 0xFF;
 
-    i2c_init();
+    i2c_init(bcm_peri_base_probe(), 0xB0);
     udelay(1000);
     // Put all GPIOA inputs on MCP23017 in INPUT mode
     i2c_write(user_data->device_cfg.i2c_addr, MPC23017_GPIOA_MODE, &FF, 1);
