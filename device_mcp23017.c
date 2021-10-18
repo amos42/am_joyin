@@ -8,8 +8,9 @@
 #include <linux/slab.h>
 #include <linux/delay.h>
 #include <linux/uaccess.h>
-#include "gpio_util.h"
 #include "bcm_peri.h"
+#include "gpio_util.h"
+#include "i2c_util.h"
 #include "parse_util.h"
 
 //#define GPIO_GET(i)   GPIO_READ(i)
@@ -21,15 +22,15 @@
 /*
  * MCP23017 Defines
  */
-#define MPC23017_GPIOA_MODE	            (0x00)
-#define MPC23017_GPIOB_MODE	            (0x01)
-#define MPC23017_GPIOA_PULLUPS_MODE	    (0x0C)
-#define MPC23017_GPIOB_PULLUPS_MODE     (0x0D)
-#define MPC23017_GPIOA_READ             (0x12)
-#define MPC23017_GPIOB_READ             (0x13)
+#define MCP23017_GPIOA_MODE	            (0x00)
+#define MCP23017_GPIOB_MODE	            (0x01)
+#define MCP23017_GPIOA_PULLUPS_MODE	    (0x0C)
+#define MCP23017_GPIOB_PULLUPS_MODE     (0x0D)
+#define MCP23017_GPIOA_READ             (0x12)
+#define MCP23017_GPIOB_READ             (0x13)
 
 // default i2c addr
-#define MPC23017_DEFAULT_I2C_ADDR       (0x20)
+#define MCP23017_DEFAULT_I2C_ADDR       (0x20)
 
 
 typedef struct tag_device_mcp23017_config {
@@ -93,11 +94,11 @@ static int __parse_device_param_for_mcp23017(device_mcp23017_data_t* user_data, 
         strcpy(szText, device_config_str); 
         pText = szText;
 
-        user_data->device_cfg.i2c_addr = parse_number(&pText, ",", 0, MPC23017_DEFAULT_I2C_ADDR);
+        user_data->device_cfg.i2c_addr = parse_number(&pText, ",", 0, MCP23017_DEFAULT_I2C_ADDR);
         user_data->device_cfg.io_count = parse_number(&pText, ",", 10, INPUT_MCP23017_DEFAULT_KEYCODE_TABLE_ITEM_COUNT);
         user_data->device_cfg.pull_updown = parse_number(&pText, ",", 10, 0);
     } else {
-        user_data->device_cfg.i2c_addr = MPC23017_DEFAULT_I2C_ADDR;
+        user_data->device_cfg.i2c_addr = MCP23017_DEFAULT_I2C_ADDR;
         user_data->device_cfg.io_count = INPUT_MCP23017_DEFAULT_KEYCODE_TABLE_ITEM_COUNT;
         user_data->device_cfg.pull_updown = 0;
     }
@@ -255,20 +256,20 @@ static void start_input_device_for_mcp23017(input_device_data_t *device_data)
     i2c_init(bcm_peri_base_probe(), 0xB0);
     udelay(1000);
     // Put all GPIOA inputs on MCP23017 in INPUT mode
-    i2c_write(user_data->device_cfg.i2c_addr, MPC23017_GPIOA_MODE, &FF, 1);
+    i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOA_MODE, &FF, 1);
     udelay(1000);
     // Put all inputs on MCP23017 in pullup mode
-    i2c_write(user_data->device_cfg.i2c_addr, MPC23017_GPIOA_PULLUPS_MODE, &FF, 1);
+    i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOA_PULLUPS_MODE, &FF, 1);
     udelay(1000);
     // Put all GPIOB inputs on MCP23017 in INPUT mode
-    i2c_write(user_data->device_cfg.i2c_addr, MPC23017_GPIOB_MODE, &FF, 1);
+    i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOB_MODE, &FF, 1);
     udelay(1000);
     // Put all inputs on MCP23017 in pullup mode
-    i2c_write(user_data->device_cfg.i2c_addr, MPC23017_GPIOB_PULLUPS_MODE, &FF, 1);
+    i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOB_PULLUPS_MODE, &FF, 1);
     udelay(1000);
     // Put all inputs on MCP23017 in pullup mode a second time
     // Known bug : if you remove this line, you will not have pullups on GPIOB 
-    i2c_write(user_data->device_cfg.i2c_addr, MPC23017_GPIOB_PULLUPS_MODE, &FF, 1);
+    i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOB_PULLUPS_MODE, &FF, 1);
     udelay(1000);
 
     device_data->is_opend = TRUE;
@@ -290,8 +291,8 @@ static void check_input_device_for_mcp23017(input_device_data_t *device_data)
 
     if (io_count <= 0) return;
 
-    i2c_read(i2c_addr, MPC23017_GPIOA_READ, &resultA, 1);
-    i2c_read(i2c_addr, MPC23017_GPIOB_READ, &resultB, 1);
+    i2c_read(i2c_addr, MCP23017_GPIOA_READ, &resultA, 1);
+    i2c_read(i2c_addr, MCP23017_GPIOB_READ, &resultB, 1);
 
     io_value = ((unsigned)resultB << 8) | (unsigned)resultA;
 
@@ -322,6 +323,8 @@ static void check_input_device_for_mcp23017(input_device_data_t *device_data)
 static void stop_input_device_for_mcp23017(input_device_data_t *device_data)
 {
     device_data->is_opend = FALSE;
+
+    i2c_close();
 }
 
 

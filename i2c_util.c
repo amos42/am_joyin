@@ -70,6 +70,16 @@ int i2c_init(u32 peri_base_addr, int size)
     return 0;
 }
 
+
+void i2c_close(void)
+{
+    if (bsc1 != NULL) {
+        iounmap(bsc1);
+        bsc1 = NULL;
+    }
+}
+
+
 void wait_i2c_done(void) 
 {
     while (!(BSC1_S & BSC_S_DONE)) {
