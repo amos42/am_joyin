@@ -63,7 +63,7 @@ AM_PARAM_DEFINE(device3, am_device_cfg[2])
 AM_PARAM_DEFINE(device4, am_device_cfg[3])
 
 
-void __init prepocess_params(void)
+void /*__init*/ prepocess_params(void)
 {
     int i, cnt;
 
@@ -86,6 +86,50 @@ void __init prepocess_params(void)
     }
 }
 
+static input_buttonset_data_t* __find_buttonset(am_joyin_data_t* a_input, char* buttonset_name, int exclude_count)
+{
+    int i;
+    char* endptr;
+
+    int target_buttonset_count = a_input->input_buttonset_count - exclude_count;
+    int buttonset_idx = simple_strtol(buttonset_name, &endptr, 10);
+
+    if (endptr != buttonset_name && buttonset_idx < target_buttonset_count) {
+        return &a_input->buttonset_list[buttonset_idx];
+    } else {
+        for (i = 0; i < target_buttonset_count; i++) {
+            if (strcmp(buttonset_name, a_input->buttonset_list[i].buttonset_name) == 0) {
+                return &a_input->buttonset_list[i];
+            }
+        }
+    }
+
+    return NULL;
+}
+
+static int __append_button(input_buttonset_data_t* target_buttonset, int key_code, int min_value, int max_value)
+{
+    int i;
+    int idx = -1;
+
+    for (i = 0; i < target_buttonset->button_count; i++) {
+        if (key_code == target_buttonset->button_data[i].button_code) {
+            idx = i;
+            break;
+        }
+    }
+    if (idx < 0) {
+        if (target_buttonset->button_count >= MAX_INPUT_BUTTON_COUNT) {
+            return -1;
+        }
+        idx = target_buttonset->button_count++;
+    }
+    target_buttonset->button_data[idx].button_code = key_code;
+    target_buttonset->button_data[idx].min_value = min_value;
+    target_buttonset->button_data[idx].max_value = max_value;
+
+    return idx;
+}
 
 void parsing_device_config_params(am_joyin_data_t* a_input)
 {
@@ -100,12 +144,19 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
     a_input->is_debug = FALSE;
 
     // default buttonset 설정 초기화
-    target_buttonset = a_input->buttonset_list;
+    target_buttonset = &a_input->buttonset_list[0];
+    strcpy(target_buttonset->buttonset_name, "default");
     for (i = 0; i < DEFAULT_INPUT_BUTTON_COUNT; i++) {
         target_buttonset->button_data[i] = default_buttonset[i];
     }
     target_buttonset->button_count = DEFAULT_INPUT_BUTTON_COUNT;
-    a_input->input_buttonset_count = 1;
+    target_buttonset = &a_input->buttonset_list[1];
+    strcpy(target_buttonset->buttonset_name, "default_abs");
+    for (i = 0; i < DEFAULT_INPUT_ABS_STICKS_COUNT; i++) {
+        target_buttonset->button_data[i] = default_abs_buttonset[i];
+    }
+    target_buttonset->button_count = DEFAULT_INPUT_ABS_STICKS_COUNT;
+    a_input->input_buttonset_count = 2;
 
     // 드라이버 설정
     if (am_driver_cfg != NULL) {
@@ -127,33 +178,55 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
         if (am_buttonset_cfg[i] == NULL) continue;
 
         target_buttonset = &a_input->buttonset_list[a_input->input_buttonset_count++];
+        snprintf(target_buttonset->buttonset_name, 31, "buttonset%d", i + 1);
 
         strcpy(szText, am_buttonset_cfg[i]);
         pText = szText;
 
-        idx = 0;
-        while (pText != NULL && idx < MAX_INPUT_BUTTON_COUNT) {
-            char *block_p, *keycode_p, *minvalue_p, *maxvalue_p;
-            int key_code, min_value, max_value;
+        while (pText != NULL) {
+            char *section = strsep(&pText, ";");
+            if(section[0] == '{') {
+                while (section != NULL) {
+                    char *block_p, *keycode_p, *minvalue_p, *maxvalue_p;
+                    int key_code, min_value, max_value;
 
-            strsep(&pText, "{");
-            block_p = strsep(&pText, "}");
-            keycode_p = strsep(&block_p, ",");
-            minvalue_p = strsep(&block_p, ",");
-            maxvalue_p = strsep(&block_p, ",");
-            strsep(&pText, ",");
+                    strsep(&section, "{");
+                    block_p = strsep(&section, "}");
+                    keycode_p = strsep(&block_p, ",");
+                    minvalue_p = strsep(&block_p, ",");
+                    maxvalue_p = strsep(&block_p, ",");
+                    strsep(&section, ",");
 
-            key_code = simple_strtol(keycode_p, NULL, 0);
-            min_value = simple_strtol(minvalue_p, NULL, 0);
-            max_value = simple_strtol(maxvalue_p, NULL, 0);
+                    key_code = simple_strtol(keycode_p, NULL, 0);
+                    min_value = simple_strtol(minvalue_p, NULL, 0);
+                    max_value = simple_strtol(maxvalue_p, NULL, 0);
 
-            // 키 설정 추가
-            target_buttonset->button_data[idx].button_code = key_code;
-            target_buttonset->button_data[idx].min_value = min_value;
-            target_buttonset->button_data[idx].max_value = max_value;
-            idx++;
+                    // 키 설정 추가
+                    if (__append_button(target_buttonset, key_code, min_value, max_value) < 0) {
+                        break;
+                    }
+                }
+            } else {
+                char* parent_name = strsep(&section, ",");
+                int start_idx = parse_number(&section, ",", 10, 0);
+                int count = parse_number(&section, ",", 10, -1);
+
+                input_buttonset_data_t* src_buttonset = __find_buttonset(a_input, parent_name, 1);
+                if (src_buttonset != NULL) {
+                    input_button_data_t *btn;
+                    if (count < 0 || (start_idx + count > src_buttonset->button_count)) {
+                        count = src_buttonset->button_count - start_idx;
+                    }
+                    btn = &src_buttonset->button_data[start_idx];
+                    for (j = 0; j < count; j++ ){
+                        if (__append_button(target_buttonset, btn->button_code, btn->min_value, btn->max_value) < 0) {
+                            break;
+                        }
+                        btn++;
+                    }
+                }
+            }
         }
-        target_buttonset->button_count = idx;
     }
 
     if (am_endpoints_cfg != NULL) {
@@ -164,8 +237,7 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
         idx = 0;
         while (pText != NULL && idx < MAX_INPUT_ENDPOINT_COUNT) {
             input_buttonset_data_t* btncfg_item;
-            char *ptr;
-            int keycfg_idx;
+            char *ptr, *buttonset_name;
 
             ptr = strsep(&pText, ";");
 
@@ -175,8 +247,12 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
 
             a_input->endpoint_list[idx].endpoint_id = idx;
 
-            keycfg_idx = parse_number(&ptr, ",", 10, 0);
-            btncfg_item = &a_input->buttonset_list[keycfg_idx];
+            buttonset_name = strsep(&ptr, ",");
+            btncfg_item = __find_buttonset(a_input, buttonset_name, 0);
+            if (btncfg_item == NULL) {
+                printk(KERN_NOTICE"unknown buttonset \"%s\"", buttonset_name);
+                continue;
+            }
 
             a_input->endpoint_list[idx].target_buttonset = btncfg_item;
             a_input->endpoint_list[idx].button_count = parse_number(&ptr, ",", 10, btncfg_item->button_count);
