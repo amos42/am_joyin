@@ -57,6 +57,7 @@ MODULE_LICENSE("GPL");
 #include "device_mcp23017.c"
 #include "device_mux.c"
 #include "device_adc_mcp3008.c"
+#include "device_adc_ads1115.c"
 
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,15,0)
@@ -364,6 +365,7 @@ static int am_joyin_init(void)
     register_input_device_for_mcp23017(&a_input->device_type_desc_list[a_input->input_device_type_desc_count++]);
     register_input_device_for_mux(&a_input->device_type_desc_list[a_input->input_device_type_desc_count++]);
     register_input_device_for_mcp3008(&a_input->device_type_desc_list[a_input->input_device_type_desc_count++]);
+    register_input_device_for_ads1115(&a_input->device_type_desc_list[a_input->input_device_type_desc_count++]);
 
     // 커맨드 라인 파라미터들을 분석한다.
     parsing_device_config_params(a_input);

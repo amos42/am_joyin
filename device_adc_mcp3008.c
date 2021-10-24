@@ -197,15 +197,15 @@ static int __parse_endpoint_param_for_mcp3008(device_mcp3008_data_t* user_data, 
 }
 
 
-// device_config_str : spi_channel
+// device_config_str : spi_channel, value_weight_percent, sampling_count
 // endpoint_config_str : endpoint, config_type (default | custom), ...
 //        default: pin_count, start_index
-//        custom: code_type (0|1), n * {button, value}
+//        custom: code_type (0|1), n * {adc_channel, button, min_value, max_value, adc_min_value, adc_max_value, adc_mid_value}
 //            code_type = 0 : key code
 //            code_type = 1 : index
 //
-// ex) device1=mcp3008;0x20,16;0,default,12
-//     device2=mcp3008;0x20;1,custom,,0,{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1}
+// ex) device1=mcp3008;0;0,default,12
+//     device2=mcp3008;;1,custom,,0,{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1}
 static int init_input_device_for_mcp3008(input_device_data_t *device_data, char* device_config_str, char* endpoint_config_strs[])
 {
     device_mcp3008_data_t* user_data;
