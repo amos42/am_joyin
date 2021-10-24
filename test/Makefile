@@ -1,4 +1,4 @@
-obj-m := test.o
+obj-m := test_i2c.o
 KVERSION := `uname -r`
 
 all:

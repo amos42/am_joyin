@@ -16,11 +16,6 @@
 /*
  * ADS1115 Defines
  */
-/*=========================================================================
-    I2C ADDRESS/BITS
-    -----------------------------------------------------------------------*/
-#define ADS1X15_ADDRESS (0x48) ///< 1001 000 (ADDR = GND)
-/*=========================================================================*/
 
 /*=========================================================================
     POINTER REGISTER
@@ -83,16 +78,6 @@
 #define ADS1X15_REG_CONFIG_CQUE_NONE (0x0003) ///< Disable the comparator and put ALERT/RDY in high state (default)
 /*=========================================================================*/
 
-/** Gain settings */
-typedef enum {
-  GAIN_TWOTHIRDS = ADS1X15_REG_CONFIG_PGA_6_144V,
-  GAIN_ONE = ADS1X15_REG_CONFIG_PGA_4_096V,
-  GAIN_TWO = ADS1X15_REG_CONFIG_PGA_2_048V,
-  GAIN_FOUR = ADS1X15_REG_CONFIG_PGA_1_024V,
-  GAIN_EIGHT = ADS1X15_REG_CONFIG_PGA_0_512V,
-  GAIN_SIXTEEN = ADS1X15_REG_CONFIG_PGA_0_256V
-} adsGain_t;
-
 /** Data rates */
 #define RATE_ADS1015_128SPS (0x0000)  ///< 128 samples per second
 #define RATE_ADS1015_250SPS (0x0020)  ///< 250 samples per second
@@ -111,18 +96,28 @@ typedef enum {
 #define RATE_ADS1115_475SPS (0x00C0) ///< 475 samples per second
 #define RATE_ADS1115_860SPS (0x00E0) ///< 860 samples per second
 
-
+/** Gain settings */
+static int ads1115_gain_setting[][2] = {
+    {ADS1X15_REG_CONFIG_PGA_6_144V, 6144},  // +/-6.144V range = Gain 2/3
+    {ADS1X15_REG_CONFIG_PGA_4_096V, 4096},  // +/-4.096V range = Gain 1
+    {ADS1X15_REG_CONFIG_PGA_2_048V, 2048},  // +/-2.048V range = Gain 2 (default)
+    {ADS1X15_REG_CONFIG_PGA_1_024V, 1024},  // +/-1.024V range = Gain 4
+    {ADS1X15_REG_CONFIG_PGA_0_512V, 512},   // +/-0.512V range = Gain 8
+    {ADS1X15_REG_CONFIG_PGA_0_256V, 256}    // +/-0.256V range = Gain 16
+};
 
 
 #define MAX_ADS1115_ADC_CHANNEL_COUNT  (4)
-#define MAX_ADS1115_ADC_VALUE          (65535)
+#define MAX_ADS1115_ADC_VALUE          (32767)
 
-// default i2c address
-#define ADS1115_DEFAULT_I2C_ADDR    (0x48)
+// default i2c address (ADDR = GND)
+#define ADS1115_DEFAULT_I2C_ADDR       (0x48)
 
 
 typedef struct tag_device_ads1115_config {
     int i2c_addr;
+    int ref_milli_volt;
+    int ads_gain;
     int value_weight_percent;
     int sampling_count;
 } device_ads1115_config_t;
@@ -156,10 +151,10 @@ typedef struct tag_device_ads1115_data {
 
 static const device_ads1115_index_table_t default_input_ads1115_config = {
     {
-        {0, ABS_X,        -DEFAULT_INPUT_ABS_MAX_VALUE, DEFAULT_INPUT_ABS_MAX_VALUE, 0, MAX_MCP3008_ADC_VALUE, MAX_MCP3008_ADC_VALUE/2},
-        {1, ABS_Y,        -DEFAULT_INPUT_ABS_MAX_VALUE, DEFAULT_INPUT_ABS_MAX_VALUE, 0, MAX_MCP3008_ADC_VALUE, MAX_MCP3008_ADC_VALUE/2},
-        {2, ABS_RX,       -DEFAULT_INPUT_ABS_MAX_VALUE, DEFAULT_INPUT_ABS_MAX_VALUE, 0, MAX_MCP3008_ADC_VALUE, MAX_MCP3008_ADC_VALUE/2},
-        {3, ABS_RY,       -DEFAULT_INPUT_ABS_MAX_VALUE, DEFAULT_INPUT_ABS_MAX_VALUE, 0, MAX_MCP3008_ADC_VALUE, MAX_MCP3008_ADC_VALUE/2}
+        {0, ABS_X,        -DEFAULT_INPUT_ABS_MAX_VALUE, DEFAULT_INPUT_ABS_MAX_VALUE, 0, MAX_ADS1115_ADC_VALUE, MAX_ADS1115_ADC_VALUE/2},
+        {1, ABS_Y,        -DEFAULT_INPUT_ABS_MAX_VALUE, DEFAULT_INPUT_ABS_MAX_VALUE, 0, MAX_ADS1115_ADC_VALUE, MAX_ADS1115_ADC_VALUE/2},
+        {2, ABS_RX,       -DEFAULT_INPUT_ABS_MAX_VALUE, DEFAULT_INPUT_ABS_MAX_VALUE, 0, MAX_ADS1115_ADC_VALUE, MAX_ADS1115_ADC_VALUE/2},
+        {3, ABS_RY,       -DEFAULT_INPUT_ABS_MAX_VALUE, DEFAULT_INPUT_ABS_MAX_VALUE, 0, MAX_ADS1115_ADC_VALUE, MAX_ADS1115_ADC_VALUE/2}
     }, 
     INPUT_ADS1115_DEFAULT_KEYCODE_TABLE_ITEM_COUNT,
     0
@@ -177,10 +172,14 @@ static int __parse_device_param_for_ads1115(device_ads1115_data_t* user_data, ch
         pText = szText;
 
         user_data->device_cfg.i2c_addr = parse_number(&pText, ",", 0, ADS1115_DEFAULT_I2C_ADDR);
+        user_data->device_cfg.ref_milli_volt = parse_number(&pText, ",", 0, 3300);
+        user_data->device_cfg.ads_gain = parse_number(&pText, ",", 0, 1);
         user_data->device_cfg.value_weight_percent = parse_number(&pText, ",", 10, 100);
         user_data->device_cfg.sampling_count = parse_number(&pText, ",", 10, 1);
     } else {
         user_data->device_cfg.i2c_addr = ADS1115_DEFAULT_I2C_ADDR;
+        user_data->device_cfg.ref_milli_volt = 3300;
+        user_data->device_cfg.ads_gain = 1;
         user_data->device_cfg.value_weight_percent = 100;
         user_data->device_cfg.sampling_count = 1;
     }
@@ -293,15 +292,15 @@ static int __parse_endpoint_param_for_ads1115(device_ads1115_data_t* user_data, 
 }
 
 
-// device_config_str : spi_channel
+// device_config_str : i2c_addr, ref_milli_volt, adc_gain, value_weight_percent, sampling_count
 // endpoint_config_str : endpoint, config_type (default | custom), ...
 //        default: pin_count, start_index
-//        custom: code_type (0|1), n * {button, value}
+//        custom: code_type (0|1), n * {adc_channel, button, min_value, max_value, adc_min_value, adc_max_value, adc_mid_value}
 //            code_type = 0 : key code
 //            code_type = 1 : index
 //
-// ex) device1=ads1115;0x20,16;0,default,12
-//     device2=ads1115;0x20;1,custom,,0,{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1}
+// ex) device1=ads1115;0x48,3300,1;0,default,12
+//     device2=ads1115;0x48;1,custom,,0,{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1}
 static int init_input_device_for_ads1115(input_device_data_t *device_data, char* device_config_str, char* endpoint_config_strs[])
 {
     device_ads1115_data_t* user_data;
@@ -337,25 +336,75 @@ static void start_input_device_for_ads1115(input_device_data_t *device_data)
     // device_ads1115_data_t *user_data = (device_ads1115_data_t *)device_data->data;
 
     i2c_init(bcm_peri_base_probe(), 0xB0);
-    // udelay(1000);
-    // // Put all GPIOA inputs on MCP23017 in INPUT mode
-    // i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOA_MODE, &FF, 1);
-    // udelay(1000);
-    // // Put all inputs on MCP23017 in pullup mode
-    // i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOA_PULLUPS_MODE, &FF, 1);
-    // udelay(1000);
-    // // Put all GPIOB inputs on MCP23017 in INPUT mode
-    // i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOB_MODE, &FF, 1);
-    // udelay(1000);
-    // // Put all inputs on MCP23017 in pullup mode
-    // i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOB_PULLUPS_MODE, &FF, 1);
-    // udelay(1000);
-    // // Put all inputs on MCP23017 in pullup mode a second time
-    // // Known bug : if you remove this line, you will not have pullups on GPIOB 
-    // i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOB_PULLUPS_MODE, &FF, 1);
-    // udelay(1000);
 
     device_data->is_opend = TRUE;
+}
+
+
+static uint16_t __readRegister(int i2c_addr, uint8_t reg) 
+{
+    uint8_t buffer[2];
+    i2c_read(i2c_addr, reg, buffer, 2);
+    return ((buffer[0] << 8) | buffer[1]);
+}
+
+static void __writeRegister(int i2c_addr, uint8_t reg, uint16_t value) 
+{
+    uint8_t buffer[2];
+    buffer[0] = value >> 8;
+    buffer[1] = value & 0xFF;
+    i2c_write(i2c_addr, reg, buffer, 2);
+}
+
+
+static int16_t __readADC_SingleEnded(int i2c_addr, uint8_t channel, unsigned gain) 
+{
+  uint16_t config;
+
+  if (channel > 3) {
+    return 0;
+  }
+
+  // Start with default values
+  config = ADS1X15_REG_CONFIG_CQUE_NONE |    // Disable the comparator (default val)
+           ADS1X15_REG_CONFIG_CLAT_NONLAT |  // Non-latching (default val)
+           ADS1X15_REG_CONFIG_CPOL_ACTVLOW | // Alert/Rdy active low   (default val)
+           ADS1X15_REG_CONFIG_CMODE_TRAD |   // Traditional comparator (default val)
+           ADS1X15_REG_CONFIG_MODE_SINGLE;   // Single-shot mode (default)
+
+  // Set PGA/voltage range
+  config |= gain;
+
+  // Set data rate
+  config |= RATE_ADS1015_2400SPS;
+
+  // Set single-ended input channel
+  switch (channel) {
+  case (0):
+    config |= ADS1X15_REG_CONFIG_MUX_SINGLE_0;
+    break;
+  case (1):
+    config |= ADS1X15_REG_CONFIG_MUX_SINGLE_1;
+    break;
+  case (2):
+    config |= ADS1X15_REG_CONFIG_MUX_SINGLE_2;
+    break;
+  case (3):
+    config |= ADS1X15_REG_CONFIG_MUX_SINGLE_3;
+    break;
+  }
+
+  // Set 'start single-conversion' bit
+  config |= ADS1X15_REG_CONFIG_OS_SINGLE;
+
+  // Write config register to the ADC
+  __writeRegister(i2c_addr, ADS1X15_REG_POINTER_CONFIG, config);
+
+  // Wait for the conversion to complete
+  while ((__readRegister(i2c_addr, ADS1X15_REG_POINTER_CONFIG) & 0x8000) == 0) {}
+
+  // Read the conversion results
+  return __readRegister(i2c_addr, ADS1X15_REG_POINTER_CONVERT);
 }
 
 
@@ -363,18 +412,17 @@ static void check_input_device_for_ads1115(input_device_data_t *device_data)
 {
     int i, j, k, cnt;
     int i2c_addr;
-    char resultA, resultB;
-    unsigned io_value;
+    unsigned adc_gain;
+    int adc_gain_milli_volt, ref_milli_volt;
     device_ads1115_data_t *user_data = (device_ads1115_data_t *)device_data->data;
     int sampling_count, value_weight, prev_weight;
 
     if (user_data == NULL) return;
 
     i2c_addr = user_data->device_cfg.i2c_addr;
-
-    io_value = ((unsigned)resultB << 8) | (unsigned)resultA;
-
-    // spi_begin(spi_channel);
+    adc_gain = ads1115_gain_setting[user_data->device_cfg.ads_gain][0]; /* +/- 4.096V range (limited to VDD +0.3V max!) */
+    adc_gain_milli_volt = ads1115_gain_setting[user_data->device_cfg.ads_gain][1];
+    ref_milli_volt = user_data->device_cfg.ref_milli_volt;
 
     sampling_count = user_data->device_cfg.sampling_count;
     value_weight = user_data->device_cfg.value_weight_percent;
@@ -384,26 +432,22 @@ static void check_input_device_for_ads1115(input_device_data_t *device_data)
         input_endpoint_data_t* endpoint = device_data->target_endpoints[i];
         device_ads1115_index_table_t* table = &user_data->button_cfgs[i];
         device_ads1115_index_item_t* btndef = &table->buttondef[table->button_start_index];
-        // unsigned char wrbuf[3] = { 0x01, 0, 0x00 };
-        // unsigned char rdbuf[3];
         int v, v0, md;
 
         cnt = table->pin_count;
 
         for (j = 0; j < cnt; j++ ){
             if (btndef->abs_input >= 0 && btndef->adc_channel >= 0) {
-                // wrbuf[1] = (0x08 | btndef->adc_channel) << 4;
-
                 if (value_weight >= 100) {
-                    // spi_transfernb(wrbuf, rdbuf, 3);
-                    // v = (int)(((unsigned short)rdbuf[1] & 0x3) << 8 | rdbuf[2]);
-v = 0;                    
+                    // 4.096 / 32767 / 3.3 = 4.096 / (32767 * 3.3) = 4096 / (32767 * 3300) = 0 ~ 1
+                    v = __readADC_SingleEnded(i2c_addr, btndef->adc_channel, adc_gain);
+                    v *= adc_gain_milli_volt / ref_milli_volt;
                 } else {
                     v = user_data->currentAdcValue[btndef->adc_channel];
                     for (k = 0; k < sampling_count; k++) {
-                        // spi_transfernb(wrbuf, rdbuf, 3);
-                        // v0 = (int)(((unsigned short)rdbuf[1] & 0x3) << 8 | rdbuf[2]);
-v0  = 0;
+                        // 4.096 / 32767 / 3.3 = 4.096 / (32767 * 3.3) = 4096 / (32767 * 3300) = 0 ~ 1
+                        v0 = __readADC_SingleEnded(i2c_addr, btndef->adc_channel, adc_gain);
+                        v0 *= adc_gain_milli_volt / ref_milli_volt;
                         v = (v0 * value_weight + v * prev_weight) / 100;
                     }
                     user_data->currentAdcValue[btndef->adc_channel] = v;
@@ -422,8 +466,6 @@ v0  = 0;
             btndef++;
         }
     }
-
-    // spi_end(spi_channel);
 }
 
 
