@@ -9,6 +9,7 @@
 #include "i2c_util.h"
 #include "bcm_peri.h"
 #include "gpio_util.h"
+#include "bcm2835.h"
 
 
 /*

@@ -102,8 +102,8 @@ sudo apt install -y --force-yes raspberrypi-kernel-headers
 #### wget 사용시
 
 ```shell
-wget https://github.com/amos42/am_joyin/releases/download/v0.1.0-beta01/am_joyin-0.1.0.deb
-sudo dpkg -i am_joyin-0.1.0.deb
+wget https://github.com/amos42/am_joyin/releases/download/v0.2.0-beta01/am_joyin-0.2.0.deb
+sudo dpkg -i am_joyin-0.2.0.deb
 ```
 
 #### git 사용시
@@ -118,8 +118,8 @@ git clone https://github.com/amos42/am_joyin.git
 
 ```shell
 cd am_joyin
-./utils/makepackage.sh 0.1.0 
-sudo dpkg -i build/am_joyin-0.1.0.deb
+./utils/makepackage.sh 0.2.0 
+sudo dpkg -i build/am_joyin-0.2.0.deb
 ```
 ​
 이 과정까지 거치면 드라이버 설치가 1차적으로 완료된다.
@@ -333,6 +333,8 @@ endpoints="default,default,default;ext_joystick,1,11;ext_joystick_2,,6"
 
 이 설정은 다음과 같은 의미를 갖는다.
 
+![endpoint 파라미터 해석](images/param_ep_sep.png)
+
 > * 첫번째 엔드포인트
 >   + 이름 : default (최종적으로 "AmosJoystick_1" 이름이 부여된다.)
 >   + 사용 버튼셋 인덱스 : 0
@@ -432,7 +434,7 @@ sudo modprobe am_joyin device1="gpio;;0,custom,0,{4,0x1,-100},{17,0x1,100},{27,0
 
 ![74HC165](images/74hc165.jpg)
 
-![74HC165](images/74hc165_pinouts.png)
+![74HC165 Pinouts](images/74hc165_pinouts.png)
 
 74HC165는 8-bit 레지스터이기 때문에, 실제로 사용할 땐 복수개를 사용해야 하는 경우가 많다.
 갯수를 특정하기 힘들어서인지, 이를 모듈화 해 놓은 상품은 그다지 흔히 판매되지 않은 듯 하다.
@@ -581,6 +583,70 @@ sudo modprobe am_joyin endpoints="default;default" \
         device2="mux;16,{26,19,13,6};1,default"
 ```
 
+
+### MCP3008 ADC 입력
+
+아날로그 조이스틱 입력을 위해선 ADC 칩이 필요하다.
+
+MCP3008은 8 channel의 10-bit ADC 칩이다.
+
+섬세한 입력이 필요 없다면 조이스틱의 감도 수준은 10-bit의 해상도로도 충분하며, 8 channel을 지원하기에 1p에 2축 스틱 1개씩을 사용한다면 MCP3008 칩 1개로 총 4p까지 지원이 가능하다.
+
+MCP3008은 모듈 형태로 판매되는 경우가 별로 없어서 칩 패키지를 그대로 이용하게 된다.
+
+![MCP3008](images/mcp3008.jpg)
+
+MCP3008의 Pinout은 다음과 같다.
+
+![MCP3008 Pinouts](images/mcp3008_pinouts.png)
+
+ VDD와 VREF은 라즈베리파이의 3.3v에 연결하면 된다.
+ CS 핀은 사용하고자 하는 SPI 채널에 맞춰 라즈베리파이의 SPI_CE0 혹은 SPI_CE1 중 하나에 연결하면 된다.
+
+* 디바이스 파라미터
+> 1. spi_channel - SPI 채널. 기본값 0
+> 2. value_weight_percent - LPF 가중치. 단위 %, 기본값 100
+> 3. sampling_count - LPF 샘플링 횟수. 기본값 10
+
+* 엔드포인트 파라미터
+> 1. config type - 버튼 설정 타입
+>    - default : pin_count, button_start_index
+>    - custom : code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
+
+실제 사용 예
+
+ADC의 경우엔 단독으로 사용되기보다는 보통은 다른 버튼 입력 장치에 추가적으로 아날로그 스틱을 더해서 설정하는 것이 일반적이다.
+
+다음은 기존의 74HC165 입력에 추가적으로 MCP3008으로 아날로그 스틱을 더해 준 설정이다.
+
+1p 설정의 예 (기본 방향키를 아날로그로 변경)
+
+```shell
+sudo modprobe am_joyin device1="74hc165;16,20,21,16,1;0,default,13,4" \
+        device2="mcp3008;;0,custom,keycode,{0,0x03,-100,100},{1,0x04,-100,100}"
+```
+
+1p 설정의 예 (아날로그 축 Rx,Ry 추가)
+
+```shell
+sudo modprobe am_joyin buttonset1="default,0,12;{0x03,-100,100},{0x04,-100,100}" \
+        endpoints="default,buttonset1" \
+        device1="74hc165;16,20,21,16,1;0,default" \
+        device2="mcp3008;;0,custom,keycode,{0,0x03,-100,100},{1,0x04,-100,100}"
+```
+
+2p 설정의 예 (아날로그 축 Rx,Ry 추가)
+
+```shell
+sudo modprobe am_joyin buttonset1="default,0,11;{0x03,-100,100},{0x04,-100,100}" \
+        endpoints="default,buttonset1;default,buttonset1" \
+        device1="74hc165;16,20,21,32,1;0,default;1,default" \
+        device2="mcp3008;;0,custom,,{0,0x03,-100,100},{1,0x04,-100,100};1,custom,,{0,0x03,-100,100},{1,0x04,-100,100}"
+```
+
+jstest로 테스트 해 보면 새로운 2개 축이 추가되었고, 조이스틱의 기울어짐에 따라 입력 값이 순차적으로 변하는 것을 확인할 수 있다.
+
+![jstest for ADC](images/jstest_adc.png)
 
 ---
 

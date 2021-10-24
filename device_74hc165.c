@@ -3,7 +3,6 @@
  ********************************************************************************/
 
 #include <linux/kernel.h>
-//s#include <linux/module.h>
 #include <linux/input.h>
 #include <linux/slab.h>
 #include <linux/delay.h>
@@ -175,21 +174,19 @@ static int __parse_endpoint_param_for_74hc165(device_74hc165_data_t* user_data, 
             pin_count = 0;
             src = &user_data->button_cfgs[i];
             while (pText != NULL && pin_count < MAX_INPUT_BUTTON_COUNT) {
-                char *block_p, *button_p, *value_p;
-                int button, value;
+                char *block_p;
+                int button;
 
                 strsep(&pText, "{");
                 block_p = strsep(&pText, "}");
-                button_p = strsep(&block_p, ",");
-                value_p = strsep(&block_p, ",");
+                button = parse_number(&block_p, ",", 0, -1);
                 strsep(&pText, ",");
-
-                button = (button_p != NULL) ? simple_strtol(button_p, NULL, 0) : -1;
-                value = (value_p != NULL) ? simple_strtol(value_p, NULL, 0) : 0;
 
                 // 키 설정 추가
                 src->buttondef[pin_count].button = button;
-                src->buttondef[pin_count].value = value;
+                if (button >= 0) {
+                    src->buttondef[pin_count].value = parse_number(&block_p, ",", 0, 0);
+                }
                 pin_count++;
             }
         } else {

@@ -89,10 +89,15 @@ void /*__init*/ prepocess_params(void)
 static input_buttonset_data_t* __find_buttonset(am_joyin_data_t* a_input, char* buttonset_name, int exclude_count)
 {
     int i;
+    int target_buttonset_count, buttonset_idx;
     char* endptr;
 
-    int target_buttonset_count = a_input->input_buttonset_count - exclude_count;
-    int buttonset_idx = simple_strtol(buttonset_name, &endptr, 10);
+    if (buttonset_name == NULL || strcmp(buttonset_name, "default") == 0 || strcmp(buttonset_name, "") == 0) {
+        return &a_input->buttonset_list[0];
+    }
+
+    target_buttonset_count = a_input->input_buttonset_count - exclude_count;
+    buttonset_idx = simple_strtol(buttonset_name, &endptr, 10);
 
     if (endptr != buttonset_name && buttonset_idx < target_buttonset_count) {
         return &a_input->buttonset_list[buttonset_idx];
@@ -111,6 +116,8 @@ static int __append_button(input_buttonset_data_t* target_buttonset, int key_cod
 {
     int i;
     int idx = -1;
+
+    if (key_code < 0) return -1;
 
     for (i = 0; i < target_buttonset->button_count; i++) {
         if (key_code == target_buttonset->button_data[i].button_code) {
@@ -187,19 +194,15 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
             char *section = strsep(&pText, ";");
             if(section[0] == '{') {
                 while (section != NULL) {
-                    char *block_p, *keycode_p, *minvalue_p, *maxvalue_p;
+                    char *block_p;
                     int key_code, min_value, max_value;
 
                     strsep(&section, "{");
                     block_p = strsep(&section, "}");
-                    keycode_p = strsep(&block_p, ",");
-                    minvalue_p = strsep(&block_p, ",");
-                    maxvalue_p = strsep(&block_p, ",");
+                    key_code = parse_number(&block_p, ",", 0, -1);
+                    min_value = parse_number(&block_p, ",", 10, 0);
+                    max_value = parse_number(&block_p, ",", 10, 0);
                     strsep(&section, ",");
-
-                    key_code = simple_strtol(keycode_p, NULL, 0);
-                    min_value = simple_strtol(minvalue_p, NULL, 0);
-                    max_value = simple_strtol(maxvalue_p, NULL, 0);
 
                     // 키 설정 추가
                     if (__append_button(target_buttonset, key_code, min_value, max_value) < 0) {

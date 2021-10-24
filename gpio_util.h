@@ -15,6 +15,8 @@ void gpio_clean(void);
 void gpio_as_input(int gpio_no);
 void gpio_as_output(int gpio_no);
 
+void gpio_fsel(int pin, uint8_t mode);
+
 void gpio_pullups_mask(unsigned pull_ups);
 void gpio_pullups(int gpio_map[], int count);
 unsigned gpio_get_pullup_mask(int gpio_map[], int count);

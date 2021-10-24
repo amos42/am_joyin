@@ -3,7 +3,6 @@
  ********************************************************************************/
 
 #include <linux/kernel.h>
-//#include <linux/module.h>
 #include <linux/input.h>
 #include <linux/slab.h>
 #include "gpio_util.h"
@@ -160,25 +159,20 @@ static int __parse_endpoint_param_for_gpio(device_gpio_data_t* user_data, char* 
             pin_count = 0;
             src = &user_data->button_cfgs[i];
             while (pText != NULL && pin_count < MAX_INPUT_BUTTON_COUNT) {
-                char *block_p, *gpio_p, *button_p, *value_p;
-                int gpio, button, value;
+                char *block_p;
+                int gpio, button;
 
                 strsep(&pText, "{");
                 block_p = strsep(&pText, "}");
-                gpio_p = strsep(&block_p, ",");
-                button_p = strsep(&block_p, ",");
-                value_p = strsep(&block_p, ",");
+                gpio = parse_number(&block_p, ",", 0, -1);
+                button = parse_number(&block_p, ",", 0, -1);
                 strsep(&pText, ",");
-
-                gpio = (button_p != NULL) ? simple_strtol(gpio_p, NULL, 0) : -1;
-                button = (button_p != NULL) ? simple_strtol(button_p, NULL, 0) : -1;
-                value = (value_p != NULL) ? simple_strtol(value_p, NULL, 0) : -1;
 
                 // 키 설정 추가
                 if (button >= 0 && gpio >= 0) {
                     src->buttondef[pin_count].gpio = gpio;
                     src->buttondef[pin_count].button = button;
-                    src->buttondef[pin_count].value = value;
+                    src->buttondef[pin_count].value = parse_number(&block_p, ",", 0, 0);
                     pin_count++;
                 }
             }
@@ -293,7 +287,7 @@ static void check_input_device_for_gpio(input_device_data_t* device_data)
         device_gpio_index_item_t* item = &table->buttondef[table->button_start_index];
 
         for (j = 0; j < table->pin_count; j++) {
-            if (item->gpio != -1) {    // to avoid unused buttons
+            if (item->gpio >= 0 && item->button >= 0) {    // to avoid unused buttons
                 if (gpio_get_value(item->gpio) == 0) {
                     endpoint->report_button_state[item->button] = item->value;
                 }
