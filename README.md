@@ -611,7 +611,7 @@ MCP3008의 Pinout은 다음과 같다.
 * 엔드포인트 파라미터
 > 1. config type - 버튼 설정 타입
 >    - default : pin_count, button_start_index
->    - custom : code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
+>    - custom : code_mode (0: keycode, 1:index), {adc채널1, button1, min_value1, max_value1, adc_min_value1, adc_max_value1, adc_mid_value1}, ...
 
 실제 사용 예
 
