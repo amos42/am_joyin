@@ -641,7 +641,7 @@ sudo modprobe am_joyin buttonset1="default,0,12;{0x03,-100,100},{0x04,-100,100}"
 sudo modprobe am_joyin buttonset1="default,0,11;{0x03,-100,100},{0x04,-100,100}" \
         endpoints="default,buttonset1;default,buttonset1" \
         device1="74hc165;16,20,21,32,1;0,default;1,default" \
-        device2="mcp3008;;0,custom,,{0,0x03,-100,100},{1,0x04,-100,100};1,custom,,{0,0x03,-100,100},{1,0x04,-100,100}"
+        device2="mcp3008;;0,custom,,{0,0x03,-100,100},{1,0x04,-100,100};1,custom,,{2,0x03,-100,100},{3,0x04,-100,100}"
 ```
 
 jstest로 테스트 해 보면 새로운 2개 축이 추가되었고, 조이스틱의 기울어짐에 따라 입력 값이 순차적으로 변하는 것을 확인할 수 있다.
