@@ -229,7 +229,7 @@ static int __parse_endpoint_param_for_mcp23s17(device_mcp23s17_data_t* user_data
 //
 // ex) device1=mcp23s17;0x20,16;0,default,12
 //     device2=mcp23s17;0x20;1,custom,,0,{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1}
-static int init_input_device_for_mcp23s17(input_device_data_t *device_data, char* device_config_str, char* endpoint_config_strs[])
+static int init_input_device_for_mcp23s17(void* device_desc_data, input_device_data_t *device_data, char* device_config_str, char* endpoint_config_strs[])
 {
     device_mcp23s17_data_t* user_data;
     int result;

@@ -234,7 +234,7 @@ static int __parse_endpoint_param_for_mux(device_mux_data_t* user_data, char* en
 //
 // ex) device1=mcp23017;0x20,16;0,default,12
 //     device2=mcp23017;0x20;1,custom,,0,{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1}
-static int init_input_device_for_mux(input_device_data_t *device_data, char* device_config_str, char* endpoint_config_strs[])
+static int init_input_device_for_mux(void* device_desc_data, input_device_data_t *device_data, char* device_config_str, char* endpoint_config_strs[])
 {
     device_mux_data_t* user_data;
     int result;

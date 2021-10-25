@@ -20,6 +20,9 @@
 // default spi channel
 #define MCP3008_DEFAULT_SPI_CHANNEL    (0)
 
+typedef struct tag_device_mcp3008_desc_config {
+    int max_channel_count;
+} device_mcp3008_desc_config_t;
 
 typedef struct tag_device_mcp3008_config {
     int spi_channel;
@@ -47,6 +50,7 @@ typedef struct tag_device_mcp3008_index_table {
 typedef struct tag_device_mcp3008_data {
     int currentAdcValue[MAX_MCP3008_ADC_CHANNEL_COUNT];
 
+    device_mcp3008_desc_config_t    device_desc_data;
     device_mcp3008_config_t         device_cfg;
     device_mcp3008_index_table_t    button_cfgs[1];
 } device_mcp3008_data_t;
@@ -206,13 +210,14 @@ static int __parse_endpoint_param_for_mcp3008(device_mcp3008_data_t* user_data, 
 //
 // ex) device1=mcp3008;0;0,default,12
 //     device2=mcp3008;;1,custom,,0,{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1}
-static int init_input_device_for_mcp3008(input_device_data_t *device_data, char* device_config_str, char* endpoint_config_strs[])
+static int init_input_device_for_mcp3008(void* device_desc_data, input_device_data_t *device_data, char* device_config_str, char* endpoint_config_strs[])
 {
     device_mcp3008_data_t* user_data;
     int result;
     int i;
     
     user_data = (device_mcp3008_data_t *)kzalloc(sizeof(device_mcp3008_data_t) + sizeof(device_mcp3008_index_table_t) * (device_data->target_endpoint_count - 1), GFP_KERNEL);
+    user_data->device_desc_data = *(device_mcp3008_desc_config_t *)device_desc_data;
 
     result = __parse_device_param_for_mcp3008(user_data, device_config_str);
     if (result != 0) {
@@ -324,10 +329,31 @@ static void stop_input_device_for_mcp3008(input_device_data_t *device_data)
 
 int register_input_device_for_mcp3008(input_device_type_desc_t *device_desc)
 {
+    device_mcp3008_desc_config_t* desc = (device_mcp3008_desc_config_t *)device_desc->device_desc_data;
+
     strcpy(device_desc->device_type, "mcp3008");
+    desc->max_channel_count = 8;
+
     device_desc->init_input_dev = init_input_device_for_mcp3008;
     device_desc->start_input_dev = start_input_device_for_mcp3008;
     device_desc->check_input_dev = check_input_device_for_mcp3008;
     device_desc->stop_input_dev = stop_input_device_for_mcp3008;
+
+    return 0;
+}
+
+
+int register_input_device_for_mcp3004(input_device_type_desc_t *device_desc)
+{
+    device_mcp3008_desc_config_t* desc = (device_mcp3008_desc_config_t *)device_desc->device_desc_data;
+
+    strcpy(device_desc->device_type, "mcp3004");
+    desc->max_channel_count = 4;
+
+    device_desc->init_input_dev = init_input_device_for_mcp3008;
+    device_desc->start_input_dev = start_input_device_for_mcp3008;
+    device_desc->check_input_dev = check_input_device_for_mcp3008;
+    device_desc->stop_input_dev = stop_input_device_for_mcp3008;
+
     return 0;
 }

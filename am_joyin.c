@@ -361,13 +361,15 @@ static int am_joyin_init(void)
     initTimer();
 
     // 지원할 장치 목록들을 등록한다.
-    register_input_device_for_gpio(&a_input->device_type_desc_list[a_input->input_device_type_desc_count++]);
-    register_input_device_for_74hc165(&a_input->device_type_desc_list[a_input->input_device_type_desc_count++]);
-    register_input_device_for_mcp23017(&a_input->device_type_desc_list[a_input->input_device_type_desc_count++]);
-    register_input_device_for_mcp23s17(&a_input->device_type_desc_list[a_input->input_device_type_desc_count++]);
-    register_input_device_for_mux(&a_input->device_type_desc_list[a_input->input_device_type_desc_count++]);
-    register_input_device_for_mcp3008(&a_input->device_type_desc_list[a_input->input_device_type_desc_count++]);
-    register_input_device_for_ads1115(&a_input->device_type_desc_list[a_input->input_device_type_desc_count++]);
+    register_input_device_for_gpio(&a_input->device_type_desc_list[a_input->input_device_type_desc_count++]);       // 1
+    register_input_device_for_74hc165(&a_input->device_type_desc_list[a_input->input_device_type_desc_count++]);    // 2
+    register_input_device_for_mcp23017(&a_input->device_type_desc_list[a_input->input_device_type_desc_count++]);   // 3
+    register_input_device_for_mcp23s17(&a_input->device_type_desc_list[a_input->input_device_type_desc_count++]);   // 4
+    register_input_device_for_mux(&a_input->device_type_desc_list[a_input->input_device_type_desc_count++]);        // 5
+    register_input_device_for_mcp3008(&a_input->device_type_desc_list[a_input->input_device_type_desc_count++]);    // 6
+    register_input_device_for_mcp3004(&a_input->device_type_desc_list[a_input->input_device_type_desc_count++]);    // 7
+    register_input_device_for_ads1115(&a_input->device_type_desc_list[a_input->input_device_type_desc_count++]);    // 8
+    register_input_device_for_ads1015(&a_input->device_type_desc_list[a_input->input_device_type_desc_count++]);    // 9
 
     // 커맨드 라인 파라미터들을 분석한다.
     parsing_device_config_params(a_input);

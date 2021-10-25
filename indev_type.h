@@ -38,7 +38,7 @@ typedef int BOOL;
 
 #define MAX_INPUT_ENDPOINT_COUNT              (4)
 
-#define MAX_INPUT_DEVICE_TYPE_DESC_COUNT      (10)
+#define MAX_INPUT_DEVICE_TYPE_DESC_COUNT      (12)
 #define MAX_INPUT_DEVICE_COUNT                (4)
 
 #define INPUT_CODE_TYPE_NONE                  (-1)
@@ -127,8 +127,9 @@ typedef struct tag_input_device_data {
 // 장치 타입 정보 설정
 typedef struct tag_input_device_type_desc {
     char device_type[16];
+    char device_desc_data[64];
 
-    int (*init_input_dev)(input_device_data_t* device_data, char* device_config_str, char* endpoint_config_str[]);
+    int (*init_input_dev)(void* device_desc_data, input_device_data_t* device_data, char* device_config_str, char* endpoint_config_str[]);
     void (*start_input_dev)(input_device_data_t* device_data);
     void (*check_input_dev)(input_device_data_t* device_data);
     void (*stop_input_dev)(input_device_data_t* device_data);

@@ -218,7 +218,7 @@ static int __parse_endpoint_param_for_gpio(device_gpio_data_t* user_data, char* 
 //
 // ex) device1=gpio;;0,default1
 //     device2=gpio;;1,custom,0,{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1}
-static int init_input_device_for_gpio(input_device_data_t *device_data, char* device_config_str, char* endpoint_config_strs[])
+static int init_input_device_for_gpio(void* device_desc_data, input_device_data_t *device_data, char* device_config_str, char* endpoint_config_strs[])
 {
     device_gpio_data_t* user_data;
     int result;

@@ -327,7 +327,7 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
         }
 
         if (type_desc->init_input_dev != NULL) {
-            int err = type_desc->init_input_dev(device, device_params_p, endpoint_params);
+            int err = type_desc->init_input_dev((void *)type_desc->device_desc_data, device, device_params_p, endpoint_params);
             if (err != 0) {
                 printk(KERN_ERR"invalid initialize parameter for %s", typeid_p);
                 continue;
