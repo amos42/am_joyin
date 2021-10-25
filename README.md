@@ -584,7 +584,7 @@ sudo modprobe am_joyin endpoints="default;default" \
 ```
 
 
-### MCP3008 ADC 입력
+### MCP3008/MCP3004 ADC 입력
 
 아날로그 조이스틱 입력을 위해선 ADC 칩이 필요하다. 보통 아날로그 스틱 1개가 2개 축을 갖기에 ADC 역시 최소한 2개 channel을 가져야 한다.
 
