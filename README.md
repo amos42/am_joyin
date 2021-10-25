@@ -431,6 +431,8 @@ sudo modprobe am_joyin device1="gpio;;0,custom,0,{4,0x1,-100},{17,0x1,100},{27,0
 ### 74HC165 입력
 
 부족한 IO를 확장하기 위해 많이 쓰이는 칩이 TI사의 74HC165이다. shift register를 구현한 칩이며, 시리얼 인터페이스로 동작한다.
+74HC165의 가장 큰 장점은, 제어 방법이 무척 단순하고 확장성이 용이하다는 점이다.
+또한 오랜 기간 널리 사용되며 높은 신뢰도를 얻고 있다는 점도 중요한 장점 중 하나라고 할 수 있다.
 
 ![74HC165](images/74hc165.jpg)
 
@@ -469,7 +471,7 @@ sudo modprobe am_joyin device1="gpio;;0,custom,0,{4,0x1,-100},{17,0x1,100},{27,0
 
 실제 사용 예
 
-1p 사용의 예
+1p 사용의 예 (74HC165 2개 사용)
 
 ```shell
 sudo modprobe am_joyin device1="74hc165;16,20,21,,1;0,default,13"
@@ -597,7 +599,7 @@ MCP3008은 모듈 형태로 판매되는 경우가 별로 없어서 칩 패키�
 
 MCP3008의 Pinout은 다음과 같다.
 
-![MCP3008 Pinouts](images/mcp3008_pinouts.png)
+![MCP3008 Pinouts](images/mcp300x_pinouts.png)
 
  VDD와 VREF은 라즈베리파이의 3.3v에 연결하면 된다.
  CS 핀은 사용하고자 하는 SPI 채널에 맞춰 라즈베리파이의 SPI_CE0 혹은 SPI_CE1 중 하나에 연결하면 된다.
