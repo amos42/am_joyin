@@ -57,8 +57,8 @@ MODULE_LICENSE("GPL");
 #include "device_mcp23017.c"
 #include "device_mcp23s17.c"
 #include "device_mux.c"
-#include "device_adc_mcp3008.c"
-#include "device_adc_ads1115.c"
+#include "device_adc_mcp300x.c"
+#include "device_adc_ads1x15.c"
 
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,15,0)
