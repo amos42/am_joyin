@@ -163,7 +163,13 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
         target_buttonset->button_data[i] = default_abs_buttonset[i];
     }
     target_buttonset->button_count = DEFAULT_INPUT_ABS_STICKS_COUNT;
-    a_input->input_buttonset_count = 2;
+    target_buttonset = &a_input->buttonset_list[2];
+    strcpy(target_buttonset->buttonset_name, "default_mouse");
+    for (i = 0; i < DEFAULT_INPUT_MOUSE_COUNT; i++) {
+        target_buttonset->button_data[i] = default_mouse_buttonset[i];
+    }
+    target_buttonset->button_count = DEFAULT_INPUT_MOUSE_COUNT;
+    a_input->input_buttonset_count = MAX_INPUT_DEFAULT_BUTTONSET_COUNT;
 
     // 드라이버 설정
     if (am_driver_cfg != NULL) {
@@ -241,11 +247,24 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
         while (pText != NULL && idx < MAX_INPUT_ENDPOINT_COUNT) {
             input_buttonset_data_t* btncfg_item;
             char *ptr, *buttonset_name;
+            char temp_str[16];
 
             ptr = strsep(&pText, ";");
 
-            if (parse_string(a_input->endpoint_list[idx].endpoint_name, 31, &ptr, ",", NULL) == NULL) {;
+            if (parse_string(a_input->endpoint_list[idx].endpoint_name, 31, &ptr, ",", NULL) == NULL) {
                 snprintf(a_input->endpoint_list[idx].endpoint_name, 31, "AmosJoystick_%d", idx + 1);
+            }
+
+            parse_string(temp_str, 12, &ptr, ",", "joystick");
+
+            if (strcmp(temp_str, "joystick") == 0) {
+                a_input->endpoint_list[idx].endpoint_type = ENDPOINT_TYPE_JOYSTICK;
+            } else if (strcmp(temp_str, "mouse") == 0) {
+                a_input->endpoint_list[idx].endpoint_type = ENDPOINT_TYPE_MOUSE;
+            } else if (strcmp(temp_str, "keyboard") == 0) {
+                a_input->endpoint_list[idx].endpoint_type = ENDPOINT_TYPE_KEYBOARD;
+            } else {
+                continue;
             }
 
             a_input->endpoint_list[idx].endpoint_id = idx;

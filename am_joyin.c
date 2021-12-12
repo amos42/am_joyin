@@ -24,7 +24,6 @@
 #include <linux/mutex.h>
 #include <linux/slab.h>
 
-
 MODULE_AUTHOR("Amos42");
 MODULE_DESCRIPTION("GPIO and Multiplexer and 74HC165 amd MCP23017 Arcade Joystick Driver");
 MODULE_LICENSE("GPL");
@@ -244,15 +243,24 @@ static int __endpoint_register(input_endpoint_data_t *endpoint)
     if (endpoint->indev == NULL) {
         struct input_dev *indev = input_allocate_device();
         indev->name = endpoint->endpoint_name;
-        indev->phys = "joystick";
         indev->id.bustype = BUS_PARPORT;
         indev->id.vendor = VENDOR_ID;
         indev->id.product = PRODUCT_ID;
         indev->id.version = PRODUCT_VERSION;
+
         input_set_drvdata(indev, endpoint);
         indev->open = __open_handler;
         indev->close = __close_handler;
-        indev->evbit[0] = BIT_MASK(EV_KEY) | BIT_MASK(EV_ABS);
+        if (endpoint->endpoint_type == ENDPOINT_TYPE_JOYSTICK) {
+            indev->phys = "joystick";
+            indev->evbit[0] = BIT_MASK(EV_KEY) | BIT_MASK(EV_ABS);
+        } else if (endpoint->endpoint_type == ENDPOINT_TYPE_MOUSE) {
+            indev->phys = "mouse";
+            indev->evbit[0] = BIT_MASK(EV_KEY) | BIT_MASK(EV_REL);
+            __set_bit(BTN_MOUSE, indev->keybit);
+            __set_bit(REL_X, indev->relbit);
+            __set_bit(REL_Y, indev->relbit);
+        }
 
         initButtonConfig(indev, endpoint->target_buttonset, endpoint->button_count);
 

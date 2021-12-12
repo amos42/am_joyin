@@ -57,6 +57,7 @@
 
 const input_button_data_t default_buttonset[DEFAULT_INPUT_BUTTON_COUNT] = DEFAULT_INPUT_BUTTONS;
 const input_button_data_t default_abs_buttonset[DEFAULT_INPUT_ABS_STICKS_COUNT] = DEFAULT_INPUT_ABS_STICKS;
+const input_button_data_t default_mouse_buttonset[DEFAULT_INPUT_MOUSE_COUNT] = DEFAULT_INPUT_MOUSE;
 
 
 /**
