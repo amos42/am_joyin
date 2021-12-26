@@ -58,6 +58,7 @@ MODULE_LICENSE("GPL");
 #include "device_mux.c"
 #include "device_adc_mcp300x.c"
 #include "device_adc_ads1x15.c"
+#include "device_rotary_am_spinin.c"
 
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,15,0)
@@ -90,7 +91,7 @@ static void initButtonConfig(struct input_dev *indev, input_buttonset_data_t *bu
 }
 
 
-static void reportInput(struct input_dev *indev, input_button_data_t *button_data, int button_count, int *data, int *cur_data)
+static void reportInput(struct input_dev *indev, int endpoint_type, input_button_data_t *button_data, int button_count, int *data, int *cur_data)
 {
     int i;
     BOOL is_changed = FALSE;
@@ -99,7 +100,11 @@ static void reportInput(struct input_dev *indev, input_button_data_t *button_dat
         if (data[i] != cur_data[i]){
             unsigned int code = button_data[i].button_code;
             if (code < ABS_MAX) {
-                input_report_abs(indev, code, data[i]);
+                if (endpoint_type == ENDPOINT_TYPE_MOUSE) {
+                    input_report_rel(indev, code, data[i]);
+                } else {
+                    input_report_abs(indev, code, data[i]);
+                }
             } else {
                 input_report_key(indev, code, data[i]);
             }
@@ -138,7 +143,7 @@ static void am_timer(unsigned long private) {
 
     for (i = 0; i < inp->input_endpoint_count; i++) {
         input_endpoint_data_t *ep = &inp->endpoint_list[i];
-        reportInput(ep->indev, ep->target_buttonset->button_data, ep->button_count, ep->report_button_state, ep->current_button_state);
+        reportInput(ep->indev, ep->endpoint_type, ep->target_buttonset->button_data, ep->button_count, ep->report_button_state, ep->current_button_state);
     }
 
     // 만약 키체크 시간이 너무 길어서 다음 타이머 주기를 초과해 버리면 예외 처리
@@ -378,6 +383,7 @@ static int am_joyin_init(void)
     register_input_device_for_mcp3004(&a_input->device_type_desc_list[a_input->input_device_type_desc_count++]);    // 7
     register_input_device_for_ads1115(&a_input->device_type_desc_list[a_input->input_device_type_desc_count++]);    // 8
     register_input_device_for_ads1015(&a_input->device_type_desc_list[a_input->input_device_type_desc_count++]);    // 9
+    register_input_device_for_am_spinin(&a_input->device_type_desc_list[a_input->input_device_type_desc_count++]);  // 10
 
     // 커맨드 라인 파라미터들을 분석한다.
     parsing_device_config_params(a_input);

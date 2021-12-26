@@ -19,15 +19,19 @@
 
 
 static volatile uint32_t* bcm2835_spi0 = NULL;
+static int spi0_ref_count = 0;
 
 
 /* Initialise this library. */
 int spi_init(u32 peri_base_addr, int size)
 {
-    if(size == 0) size = 0x14;
+    if (spi0_ref_count++ > 0) return 0;
+
+    if(size == 0) size = 0xB0;
 
     if ((bcm2835_spi0 = (volatile uint32_t *)ioremap(peri_base_addr + BCM2835_SPI0_BASE, size)) == NULL) {
         pr_err("io remap failed");
+        spi0_ref_count--;
         return -EINVAL;
     }
 
@@ -43,6 +47,8 @@ int spi_init(u32 peri_base_addr, int size)
 /* Close this library and deallocate everything */
 void spi_close(void)
 {
+    if (--spi0_ref_count > 0) return;
+
     // gpio_fsel(RPI_GPIO_P1_26, BCM2835_GPIO_FSEL_INPT); /* CE1 */
     // gpio_fsel(RPI_GPIO_P1_24, BCM2835_GPIO_FSEL_INPT); /* CE0 */
     // gpio_fsel(RPI_GPIO_P1_21, BCM2835_GPIO_FSEL_INPT); /* MISO */
