@@ -14,7 +14,7 @@
 
 
 /*
- * ADS1115 Defines
+ * ADS1X15 Defines
  */
 
 /*=========================================================================
@@ -87,17 +87,17 @@
 #define RATE_ADS1015_2400SPS (0x00A0) ///< 2400 samples per second
 #define RATE_ADS1015_3300SPS (0x00C0) ///< 3300 samples per second
 
-#define RATE_ADS1115_8SPS (0x0000)   ///< 8 samples per second
-#define RATE_ADS1115_16SPS (0x0020)  ///< 16 samples per second
-#define RATE_ADS1115_32SPS (0x0040)  ///< 32 samples per second
-#define RATE_ADS1115_64SPS (0x0060)  ///< 64 samples per second
-#define RATE_ADS1115_128SPS (0x0080) ///< 128 samples per second (default)
-#define RATE_ADS1115_250SPS (0x00A0) ///< 250 samples per second
-#define RATE_ADS1115_475SPS (0x00C0) ///< 475 samples per second
-#define RATE_ADS1115_860SPS (0x00E0) ///< 860 samples per second
+#define RATE_ADS1X15_8SPS (0x0000)   ///< 8 samples per second
+#define RATE_ADS1X15_16SPS (0x0020)  ///< 16 samples per second
+#define RATE_ADS1X15_32SPS (0x0040)  ///< 32 samples per second
+#define RATE_ADS1X15_64SPS (0x0060)  ///< 64 samples per second
+#define RATE_ADS1X15_128SPS (0x0080) ///< 128 samples per second (default)
+#define RATE_ADS1X15_250SPS (0x00A0) ///< 250 samples per second
+#define RATE_ADS1X15_475SPS (0x00C0) ///< 475 samples per second
+#define RATE_ADS1X15_860SPS (0x00E0) ///< 860 samples per second
 
 /** Gain settings */
-static int ads1115_gain_setting[][2] = {
+static int ads1x15_gain_setting[][2] = {
     {ADS1X15_REG_CONFIG_PGA_6_144V, 6144},  // +/-6.144V range = Gain 2/3
     {ADS1X15_REG_CONFIG_PGA_4_096V, 4096},  // +/-4.096V range = Gain 1
     {ADS1X15_REG_CONFIG_PGA_2_048V, 2048},  // +/-2.048V range = Gain 2 (default)
@@ -107,22 +107,27 @@ static int ads1115_gain_setting[][2] = {
 };
 
 
-#define MAX_ADS1115_ADC_CHANNEL_COUNT  (4)
-#define MAX_ADS1115_ADC_VALUE          (32767)
+#define MAX_ADS1X15_ADC_CHANNEL_COUNT  (4)
+#define MAX_ADS1X15_ADC_VALUE          (32767)
 
 // default i2c address (ADDR = GND)
-#define ADS1115_DEFAULT_I2C_ADDR       (0x48)
+#define ADS1X15_DEFAULT_I2C_ADDR       (0x48)
 
 
-typedef struct tag_device_ads1115_config {
+typedef struct tag_device_ads1x15_desc_config {
+    int shift_size;
+    int value_size;
+} device_ads1x15_desc_config_t;
+
+typedef struct tag_device_ads1x15_config {
     int i2c_addr;
     int ref_milli_volt;
     int ads_gain;
     int value_weight_percent;
     int sampling_count;
-} device_ads1115_config_t;
+} device_ads1x15_config_t;
 
-typedef struct tag_device_ads1115_index_item {
+typedef struct tag_device_ads1x15_index_item {
     int adc_channel;
     int abs_input;
     int min_value;
@@ -130,39 +135,40 @@ typedef struct tag_device_ads1115_index_item {
     int min_adc_value;
     int max_adc_value;
     int mid_adc_value;
-} device_ads1115_index_item_t;
+} device_ads1x15_index_item_t;
 
-typedef struct tag_device_ads1115_index_table {
-    device_ads1115_index_item_t buttondef[MAX_INPUT_BUTTON_COUNT];
+typedef struct tag_device_ads1x15_index_table {
+    device_ads1x15_index_item_t buttondef[MAX_INPUT_BUTTON_COUNT];
     int pin_count;
     int button_start_index;
-} device_ads1115_index_table_t;
+} device_ads1x15_index_table_t;
 
 // device.data에 할당 될 구조체
-typedef struct tag_device_ads1115_data {
-    int currentAdcValue[MAX_ADS1115_ADC_CHANNEL_COUNT];
+typedef struct tag_device_ads1x15_data {
+    int currentAdcValue[MAX_ADS1X15_ADC_CHANNEL_COUNT];
 
-    device_ads1115_config_t         device_cfg;
-    device_ads1115_index_table_t    button_cfgs[1];
-} device_ads1115_data_t;
+    device_ads1x15_desc_config_t    device_desc_data;
+    device_ads1x15_config_t         device_cfg;
+    device_ads1x15_index_table_t    button_cfgs[1];
+} device_ads1x15_data_t;
 
 
-#define INPUT_ADS1115_DEFAULT_KEYCODE_TABLE_ITEM_COUNT  (4)
+#define INPUT_ADS1X15_DEFAULT_KEYCODE_TABLE_ITEM_COUNT  (4)
 
-static const device_ads1115_index_table_t default_input_ads1115_config = {
+static const device_ads1x15_index_table_t default_input_ads1x15_config = {
     {
-        {0, ABS_X,        -DEFAULT_INPUT_ABS_MAX_VALUE, DEFAULT_INPUT_ABS_MAX_VALUE, 0, MAX_ADS1115_ADC_VALUE, MAX_ADS1115_ADC_VALUE/2},
-        {1, ABS_Y,        -DEFAULT_INPUT_ABS_MAX_VALUE, DEFAULT_INPUT_ABS_MAX_VALUE, 0, MAX_ADS1115_ADC_VALUE, MAX_ADS1115_ADC_VALUE/2},
-        {2, ABS_RX,       -DEFAULT_INPUT_ABS_MAX_VALUE, DEFAULT_INPUT_ABS_MAX_VALUE, 0, MAX_ADS1115_ADC_VALUE, MAX_ADS1115_ADC_VALUE/2},
-        {3, ABS_RY,       -DEFAULT_INPUT_ABS_MAX_VALUE, DEFAULT_INPUT_ABS_MAX_VALUE, 0, MAX_ADS1115_ADC_VALUE, MAX_ADS1115_ADC_VALUE/2}
+        {0, ABS_X,        -DEFAULT_INPUT_ABS_MAX_VALUE, DEFAULT_INPUT_ABS_MAX_VALUE, 0, MAX_ADS1X15_ADC_VALUE, MAX_ADS1X15_ADC_VALUE/2},
+        {1, ABS_Y,        -DEFAULT_INPUT_ABS_MAX_VALUE, DEFAULT_INPUT_ABS_MAX_VALUE, 0, MAX_ADS1X15_ADC_VALUE, MAX_ADS1X15_ADC_VALUE/2},
+        {2, ABS_RX,       -DEFAULT_INPUT_ABS_MAX_VALUE, DEFAULT_INPUT_ABS_MAX_VALUE, 0, MAX_ADS1X15_ADC_VALUE, MAX_ADS1X15_ADC_VALUE/2},
+        {3, ABS_RY,       -DEFAULT_INPUT_ABS_MAX_VALUE, DEFAULT_INPUT_ABS_MAX_VALUE, 0, MAX_ADS1X15_ADC_VALUE, MAX_ADS1X15_ADC_VALUE/2}
     }, 
-    INPUT_ADS1115_DEFAULT_KEYCODE_TABLE_ITEM_COUNT,
+    INPUT_ADS1X15_DEFAULT_KEYCODE_TABLE_ITEM_COUNT,
     0
 };
 
 
 // device 파라미터 파싱
-static int __parse_device_param_for_ads1115(device_ads1115_data_t* user_data, char* device_config_str)
+static int __parse_device_param_for_ads1x15(device_ads1x15_data_t* user_data, char* device_config_str)
 {
     char szText[512];
     char* pText;
@@ -171,13 +177,13 @@ static int __parse_device_param_for_ads1115(device_ads1115_data_t* user_data, ch
         strcpy(szText, device_config_str); 
         pText = szText;
 
-        user_data->device_cfg.i2c_addr = parse_number(&pText, ",", 0, ADS1115_DEFAULT_I2C_ADDR);
+        user_data->device_cfg.i2c_addr = parse_number(&pText, ",", 0, ADS1X15_DEFAULT_I2C_ADDR);
         user_data->device_cfg.ref_milli_volt = parse_number(&pText, ",", 0, 3300);
         user_data->device_cfg.ads_gain = parse_number(&pText, ",", 0, 1);
         user_data->device_cfg.value_weight_percent = parse_number(&pText, ",", 10, 100);
         user_data->device_cfg.sampling_count = parse_number(&pText, ",", 10, 1);
     } else {
-        user_data->device_cfg.i2c_addr = ADS1115_DEFAULT_I2C_ADDR;
+        user_data->device_cfg.i2c_addr = ADS1X15_DEFAULT_I2C_ADDR;
         user_data->device_cfg.ref_milli_volt = 3300;
         user_data->device_cfg.ads_gain = 1;
         user_data->device_cfg.value_weight_percent = 100;
@@ -189,11 +195,11 @@ static int __parse_device_param_for_ads1115(device_ads1115_data_t* user_data, ch
 
 
 // 각 endpoint 파라미터 파싱
-static int __parse_endpoint_param_for_ads1115(device_ads1115_data_t* user_data, char* endpoint_config_str[], input_endpoint_data_t *endpoint_list[], int endpoint_count)
+static int __parse_endpoint_param_for_ads1x15(device_ads1x15_data_t* user_data, char* endpoint_config_str[], input_endpoint_data_t *endpoint_list[], int endpoint_count)
 {
     int i, j;
     int code_mode;
-    device_ads1115_index_table_t *src, *des;
+    device_ads1x15_index_table_t *src, *des;
     char szText[512];
     char* pText;
     char* temp_p;
@@ -218,7 +224,7 @@ static int __parse_endpoint_param_for_ads1115(device_ads1115_data_t* user_data, 
         }
 
         if (cfgtype_p == NULL || strcmp(cfgtype_p, "default") == 0 || strcmp(cfgtype_p, "") == 0){
-            src = (device_ads1115_index_table_t *)&default_input_ads1115_config;
+            src = (device_ads1x15_index_table_t *)&default_input_ads1x15_config;
             code_mode = INPUT_CODE_TYPE_KEYCODE;
 
             pin_count = parse_number(&pText, ",", 10, src->pin_count);
@@ -247,14 +253,14 @@ static int __parse_endpoint_param_for_ads1115(device_ads1115_data_t* user_data, 
                 strsep(&pText, ",");
 
                 // 키 설정 추가
-                if (adc_channel >= 0 && abs_input >= 0 && adc_channel < MAX_ADS1115_ADC_CHANNEL_COUNT) {
+                if (adc_channel >= 0 && abs_input >= 0 && adc_channel < MAX_ADS1X15_ADC_CHANNEL_COUNT) {
                     src->buttondef[pin_count].adc_channel = adc_channel;
                     src->buttondef[pin_count].abs_input = abs_input;
                     src->buttondef[pin_count].min_value = parse_number(&block_p, ",", 10, -DEFAULT_INPUT_ABS_MAX_VALUE);
                     src->buttondef[pin_count].max_value = parse_number(&block_p, ",", 10, DEFAULT_INPUT_ABS_MAX_VALUE);
                     src->buttondef[pin_count].min_adc_value = parse_number(&block_p, ",", 10, 0);
-                    src->buttondef[pin_count].max_adc_value = parse_number(&block_p, ",", 10, MAX_ADS1115_ADC_VALUE);
-                    src->buttondef[pin_count].mid_adc_value = parse_number(&block_p, ",", 10, MAX_ADS1115_ADC_VALUE / 2);
+                    src->buttondef[pin_count].max_adc_value = parse_number(&block_p, ",", 10, MAX_ADS1X15_ADC_VALUE);
+                    src->buttondef[pin_count].mid_adc_value = parse_number(&block_p, ",", 10, MAX_ADS1X15_ADC_VALUE / 2);
                     pin_count++;
                 }
             }
@@ -299,30 +305,31 @@ static int __parse_endpoint_param_for_ads1115(device_ads1115_data_t* user_data, 
 //            code_type = 0 : key code
 //            code_type = 1 : index
 //
-// ex) device1=ads1115;0x48,3300,1;0,default,12
-//     device2=ads1115;0x48;1,custom,,0,{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1}
-static int init_input_device_for_ads1115(input_device_data_t *device_data, char* device_config_str, char* endpoint_config_strs[])
+// ex) device1=ads1x15;0x48,3300,1;0,default,12
+//     device2=ads1x15;0x48;1,custom,,0,{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1}
+static int init_input_device_for_ads1x15(void* device_desc_data, input_device_data_t *device_data, char* device_config_str, char* endpoint_config_strs[])
 {
-    device_ads1115_data_t* user_data;
+    device_ads1x15_data_t* user_data;
     int result;
     int i;
     
-    user_data = (device_ads1115_data_t *)kzalloc(sizeof(device_ads1115_data_t) + sizeof(device_ads1115_index_table_t) * (device_data->target_endpoint_count - 1), GFP_KERNEL);
+    user_data = (device_ads1x15_data_t *)kzalloc(sizeof(device_ads1x15_data_t) + sizeof(device_ads1x15_index_table_t) * (device_data->target_endpoint_count - 1), GFP_KERNEL);
+    user_data->device_desc_data = *(device_ads1x15_desc_config_t *)device_desc_data;
 
-    result = __parse_device_param_for_ads1115(user_data, device_config_str);
+    result = __parse_device_param_for_ads1x15(user_data, device_config_str);
     if (result != 0) {
         kfree(user_data);
         return result;
     }
 
-    result = __parse_endpoint_param_for_ads1115(user_data, endpoint_config_strs, device_data->target_endpoints, device_data->target_endpoint_count);
+    result = __parse_endpoint_param_for_ads1x15(user_data, endpoint_config_strs, device_data->target_endpoints, device_data->target_endpoint_count);
     if (result != 0) {
         kfree(user_data);
         return result;
     }
 
-    for (i = 0; i < MAX_ADS1115_ADC_CHANNEL_COUNT; i++) {
-        user_data->currentAdcValue[i] = MAX_MCP3008_ADC_VALUE / 2;
+    for (i = 0; i < MAX_ADS1X15_ADC_CHANNEL_COUNT; i++) {
+        user_data->currentAdcValue[i] = MAX_ADS1X15_ADC_VALUE / 2;
     }
 
     device_data->data = (void *)user_data;
@@ -331,9 +338,9 @@ static int init_input_device_for_ads1115(input_device_data_t *device_data, char*
 }
 
 
-static void start_input_device_for_ads1115(input_device_data_t *device_data)
+static void start_input_device_for_ads1x15(input_device_data_t *device_data)
 {
-    // device_ads1115_data_t *user_data = (device_ads1115_data_t *)device_data->data;
+    // device_ads1x15_data_t *user_data = (device_ads1x15_data_t *)device_data->data;
 
     i2c_init(bcm_peri_base_probe(), 0xB0);
 
@@ -408,20 +415,20 @@ static int16_t __readADC_SingleEnded(int i2c_addr, uint8_t channel, unsigned gai
 }
 
 
-static void check_input_device_for_ads1115(input_device_data_t *device_data)
+static void check_input_device_for_ads1x15(input_device_data_t *device_data)
 {
     int i, j, k, cnt;
     int i2c_addr;
     unsigned adc_gain;
     int adc_gain_milli_volt, ref_milli_volt;
-    device_ads1115_data_t *user_data = (device_ads1115_data_t *)device_data->data;
+    device_ads1x15_data_t *user_data = (device_ads1x15_data_t *)device_data->data;
     int sampling_count, value_weight, prev_weight;
 
     if (user_data == NULL) return;
 
     i2c_addr = user_data->device_cfg.i2c_addr;
-    adc_gain = ads1115_gain_setting[user_data->device_cfg.ads_gain][0]; /* +/- 4.096V range (limited to VDD +0.3V max!) */
-    adc_gain_milli_volt = ads1115_gain_setting[user_data->device_cfg.ads_gain][1];
+    adc_gain = ads1x15_gain_setting[user_data->device_cfg.ads_gain][0]; /* +/- 4.096V range (limited to VDD +0.3V max!) */
+    adc_gain_milli_volt = ads1x15_gain_setting[user_data->device_cfg.ads_gain][1];
     ref_milli_volt = user_data->device_cfg.ref_milli_volt;
 
     sampling_count = user_data->device_cfg.sampling_count;
@@ -430,8 +437,8 @@ static void check_input_device_for_ads1115(input_device_data_t *device_data)
 
     for (i = 0; i < device_data->target_endpoint_count; i++) {
         input_endpoint_data_t* endpoint = device_data->target_endpoints[i];
-        device_ads1115_index_table_t* table = &user_data->button_cfgs[i];
-        device_ads1115_index_item_t* btndef = &table->buttondef[table->button_start_index];
+        device_ads1x15_index_table_t* table = &user_data->button_cfgs[i];
+        device_ads1x15_index_item_t* btndef = &table->buttondef[table->button_start_index];
         int v, v0, md;
 
         cnt = table->pin_count;
@@ -469,7 +476,7 @@ static void check_input_device_for_ads1115(input_device_data_t *device_data)
 }
 
 
-static void stop_input_device_for_ads1115(input_device_data_t *device_data)
+static void stop_input_device_for_ads1x15(input_device_data_t *device_data)
 {
     device_data->is_opend = FALSE;
 
@@ -479,10 +486,33 @@ static void stop_input_device_for_ads1115(input_device_data_t *device_data)
 
 int register_input_device_for_ads1115(input_device_type_desc_t *device_desc)
 {
+    device_ads1x15_desc_config_t* desc = (device_ads1x15_desc_config_t *)device_desc->device_desc_data;
+
     strcpy(device_desc->device_type, "ads1115");
-    device_desc->init_input_dev = init_input_device_for_ads1115;
-    device_desc->start_input_dev = start_input_device_for_ads1115;
-    device_desc->check_input_dev = check_input_device_for_ads1115;
-    device_desc->stop_input_dev = stop_input_device_for_ads1115;
+    desc->shift_size = 2;
+    desc->value_size = 14;
+
+    device_desc->init_input_dev = init_input_device_for_ads1x15;
+    device_desc->start_input_dev = start_input_device_for_ads1x15;
+    device_desc->check_input_dev = check_input_device_for_ads1x15;
+    device_desc->stop_input_dev = stop_input_device_for_ads1x15;
+
+    return 0;
+}
+
+
+int register_input_device_for_ads1015(input_device_type_desc_t *device_desc)
+{
+    device_ads1x15_desc_config_t* desc = (device_ads1x15_desc_config_t *)device_desc->device_desc_data;
+
+    strcpy(device_desc->device_type, "ads1015");
+    desc->shift_size = 2;
+    desc->value_size = 14;
+
+    device_desc->init_input_dev = init_input_device_for_ads1x15;
+    device_desc->start_input_dev = start_input_device_for_ads1x15;
+    device_desc->check_input_dev = check_input_device_for_ads1x15;
+    device_desc->stop_input_dev = stop_input_device_for_ads1x15;
+
     return 0;
 }

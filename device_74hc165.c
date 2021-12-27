@@ -230,7 +230,7 @@ static int __parse_endpoint_param_for_74hc165(device_74hc165_data_t* user_data, 
 //
 // ex) device1=74hc165;16,20,21,13,1;0,default,12
 //     device2=74hc165;16,20,21,24,1;0,default,12;1,custom,,keycode,{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1}
-static int init_input_device_for_74hc165(input_device_data_t *device_data, char* device_config_str, char* endpoint_config_strs[])
+static int init_input_device_for_74hc165(void* device_desc_data, input_device_data_t *device_data, char* device_config_str, char* endpoint_config_strs[])
 {
     device_74hc165_data_t* user_data;
     int result;

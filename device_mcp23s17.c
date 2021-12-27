@@ -9,7 +9,7 @@
 #include <linux/uaccess.h>
 #include "bcm_peri.h"
 #include "gpio_util.h"
-#include "i2c_util.h"
+#include "spi_util.h"
 #include "parse_util.h"
 
 //#define GPIO_GET(i)   GPIO_READ(i)
@@ -19,47 +19,62 @@
 //#define MAX_ADDR_IO_COUNT   (6)
 
 /*
- * MCP23017 Defines
+ * MCP23S17 Defines
  */
-#define MCP23017_GPIOA_MODE	            (0x00)
-#define MCP23017_GPIOB_MODE	            (0x01)
-#define MCP23017_GPIOA_PULLUPS_MODE	    (0x0C)
-#define MCP23017_GPIOB_PULLUPS_MODE     (0x0D)
-#define MCP23017_GPIOA_READ             (0x12)
-#define MCP23017_GPIOB_READ             (0x13)
+#define MCP23S17_GPIOA_MODE	            (0x00)
+#define MCP23S17_GPIOB_MODE	            (0x01)
+#define MCP23S17_GPIOA_PULLUPS_MODE	    (0x0C)
+#define MCP23S17_GPIOB_PULLUPS_MODE     (0x0D)
+#define MCP23S17_GPIOA_READ             (0x12)
+#define MCP23S17_GPIOB_READ             (0x13)
+
+enum {
+    MCP23S17_IODIRA,     MCP23S17_IODIRB,
+    MCP23S17_IPOLA,      MCP23S17_IPOLB,
+    MCP23S17_GPINTENA,   MCP23S17_GPINTENB,
+    MCP23S17_DEFVALA,    MCP23S17_DEFVALB,
+    MCP23S17_INTCONA,    MCP23S17_INTCONB,
+    MCP23S17_IOCONA,     MCP23S17_IOCONB,
+    MCP23S17_GPPUA,      MCP23S17_GPPUB,
+    MCP23S17_INTFA,      MCP23S17_INTFB,
+    MCP23S17_INTCAPA,    MCP23S17_INTCAPB,
+    MCP23S17_GPIOA,      MCP23S17_GPIOB,
+    MCP23S17_OLATA,      MCP23S17_OLATB
+};
+
 
 // default i2c addr
-#define MCP23017_DEFAULT_I2C_ADDR       (0x20)
+#define MCP23S17_DEFAULT_I2C_ADDR       (0x20)
 
 
-typedef struct tag_device_mcp23017_config {
-    int i2c_addr;
+typedef struct tag_device_mcp23s17_config {
+    int spi_channel;
     int io_count;
     int pull_updown;
-} device_mcp23017_config_t;
+} device_mcp23s17_config_t;
 
-typedef struct tag_device_mcp23017_index_item {
+typedef struct tag_device_mcp23s17_index_item {
     int button;
     int value;
-} device_mcp23017_index_item_t;
+} device_mcp23s17_index_item_t;
 
-typedef struct tag_device_mcp23017_index_table {
-    device_mcp23017_index_item_t buttondef[MAX_INPUT_BUTTON_COUNT];
+typedef struct tag_device_mcp23s17_index_table {
+    device_mcp23s17_index_item_t buttondef[MAX_INPUT_BUTTON_COUNT];
     int pin_count;
     int button_start_index;
     int io_skip_count;
-} device_mcp23017_index_table_t;
+} device_mcp23s17_index_table_t;
 
 // device.data에 할당 될 구조체
-typedef struct tag_device_mcp23017_data {
-    device_mcp23017_config_t         device_cfg;
-    device_mcp23017_index_table_t    button_cfgs[1];
-} device_mcp23017_data_t;
+typedef struct tag_device_mcp23s17_data {
+    device_mcp23s17_config_t         device_cfg;
+    device_mcp23s17_index_table_t    button_cfgs[1];
+} device_mcp23s17_data_t;
 
 
-#define INPUT_MCP23017_DEFAULT_KEYCODE_TABLE_ITEM_COUNT  (16)
+#define INPUT_MCP23S17_DEFAULT_KEYCODE_TABLE_ITEM_COUNT  (16)
 
-static const device_mcp23017_index_table_t default_input_mcp23017_config = {
+static const device_mcp23s17_index_table_t default_input_mcp23s17_config = {
     {
         {ABS_Y,      -DEFAULT_INPUT_ABS_MAX_VALUE},
         {ABS_Y,       DEFAULT_INPUT_ABS_MAX_VALUE},
@@ -78,13 +93,13 @@ static const device_mcp23017_index_table_t default_input_mcp23017_config = {
         {BTN_TR2,     1},
         {BTN_TRIGGER, 1}
     }, 
-    INPUT_MCP23017_DEFAULT_KEYCODE_TABLE_ITEM_COUNT,
+    INPUT_MCP23S17_DEFAULT_KEYCODE_TABLE_ITEM_COUNT,
     0, 0
 };
 
 
 // device 파라미터 파싱
-static int __parse_device_param_for_mcp23017(device_mcp23017_data_t* user_data, char* device_config_str)
+static int __parse_device_param_for_mcp23s17(device_mcp23s17_data_t* user_data, char* device_config_str)
 {
     char szText[512];
     char* pText;
@@ -93,12 +108,12 @@ static int __parse_device_param_for_mcp23017(device_mcp23017_data_t* user_data, 
         strcpy(szText, device_config_str); 
         pText = szText;
 
-        user_data->device_cfg.i2c_addr = parse_number(&pText, ",", 0, MCP23017_DEFAULT_I2C_ADDR);
-        user_data->device_cfg.io_count = parse_number(&pText, ",", 10, INPUT_MCP23017_DEFAULT_KEYCODE_TABLE_ITEM_COUNT);
+        user_data->device_cfg.spi_channel = parse_number(&pText, ",", 0, MCP23S17_DEFAULT_I2C_ADDR);
+        user_data->device_cfg.io_count = parse_number(&pText, ",", 10, INPUT_MCP23S17_DEFAULT_KEYCODE_TABLE_ITEM_COUNT);
         user_data->device_cfg.pull_updown = parse_number(&pText, ",", 10, 0);
     } else {
-        user_data->device_cfg.i2c_addr = MCP23017_DEFAULT_I2C_ADDR;
-        user_data->device_cfg.io_count = INPUT_MCP23017_DEFAULT_KEYCODE_TABLE_ITEM_COUNT;
+        user_data->device_cfg.spi_channel = MCP23S17_DEFAULT_I2C_ADDR;
+        user_data->device_cfg.io_count = INPUT_MCP23S17_DEFAULT_KEYCODE_TABLE_ITEM_COUNT;
         user_data->device_cfg.pull_updown = 0;
     }
 
@@ -107,11 +122,11 @@ static int __parse_device_param_for_mcp23017(device_mcp23017_data_t* user_data, 
 
 
 // 각 endpoint 파라미터 파싱
-static int __parse_endpoint_param_for_mcp23017(device_mcp23017_data_t* user_data, char* endpoint_config_str[], input_endpoint_data_t *endpoint_list[], int endpoint_count)
+static int __parse_endpoint_param_for_mcp23s17(device_mcp23s17_data_t* user_data, char* endpoint_config_str[], input_endpoint_data_t *endpoint_list[], int endpoint_count)
 {
     int i, j;
     int code_mode;
-    device_mcp23017_index_table_t *src, *des;
+    device_mcp23s17_index_table_t *src, *des;
     char szText[512];
     char* pText;
     char* temp_p;
@@ -136,7 +151,7 @@ static int __parse_endpoint_param_for_mcp23017(device_mcp23017_data_t* user_data
         }
 
         if (cfgtype_p == NULL || strcmp(cfgtype_p, "default") == 0 || strcmp(cfgtype_p, "") == 0){
-            src = (device_mcp23017_index_table_t *)&default_input_mcp23017_config;
+            src = (device_mcp23s17_index_table_t *)&default_input_mcp23s17_config;
             code_mode = INPUT_CODE_TYPE_KEYCODE;
 
             pin_count = parse_number(&pText, ",", 10, src->pin_count);
@@ -212,22 +227,22 @@ static int __parse_endpoint_param_for_mcp23017(device_mcp23017_data_t* user_data
 //            code_type = 0 : key code
 //            code_type = 1 : index
 //
-// ex) device1=mcp23017;0x20,16;0,default,12
-//     device2=mcp23017;0x20;1,custom,,0,{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1}
-static int init_input_device_for_mcp23017(void* device_desc_data, input_device_data_t *device_data, char* device_config_str, char* endpoint_config_strs[])
+// ex) device1=mcp23s17;0x20,16;0,default,12
+//     device2=mcp23s17;0x20;1,custom,,0,{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1}
+static int init_input_device_for_mcp23s17(void* device_desc_data, input_device_data_t *device_data, char* device_config_str, char* endpoint_config_strs[])
 {
-    device_mcp23017_data_t* user_data;
+    device_mcp23s17_data_t* user_data;
     int result;
     
-    user_data = (device_mcp23017_data_t *)kzalloc(sizeof(device_mcp23017_data_t) + sizeof(device_mcp23017_index_table_t) * (device_data->target_endpoint_count - 1), GFP_KERNEL);
+    user_data = (device_mcp23s17_data_t *)kzalloc(sizeof(device_mcp23s17_data_t) + sizeof(device_mcp23s17_index_table_t) * (device_data->target_endpoint_count - 1), GFP_KERNEL);
 
-    result = __parse_device_param_for_mcp23017(user_data, device_config_str);
+    result = __parse_device_param_for_mcp23s17(user_data, device_config_str);
     if (result != 0) {
         kfree(user_data);
         return result;
     }
 
-    result = __parse_endpoint_param_for_mcp23017(user_data, endpoint_config_strs, device_data->target_endpoints, device_data->target_endpoint_count);
+    result = __parse_endpoint_param_for_mcp23s17(user_data, endpoint_config_strs, device_data->target_endpoints, device_data->target_endpoint_count);
     if (result != 0) {
         kfree(user_data);
         return result;
@@ -243,58 +258,49 @@ static int init_input_device_for_mcp23017(void* device_desc_data, input_device_d
 }
 
 
-static void start_input_device_for_mcp23017(input_device_data_t *device_data)
+static void start_input_device_for_mcp23s17(input_device_data_t *device_data)
 {
-    device_mcp23017_data_t *user_data = (device_mcp23017_data_t *)device_data->data;
-    char FF = 0xFF;
+    //device_mcp23s17_data_t *user_data = (device_mcp23s17_data_t *)device_data->data;
+    //char FF = 0xFF;
 
-    i2c_init(bcm_peri_base_probe(), 0xB0);
-    udelay(1000);
-    // Put all GPIOA inputs on MCP23017 in INPUT mode
-    i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOA_MODE, &FF, 1);
-    udelay(1000);
-    // Put all inputs on MCP23017 in pullup mode
-    i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOA_PULLUPS_MODE, &FF, 1);
-    udelay(1000);
-    // Put all GPIOB inputs on MCP23017 in INPUT mode
-    i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOB_MODE, &FF, 1);
-    udelay(1000);
-    // Put all inputs on MCP23017 in pullup mode
-    i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOB_PULLUPS_MODE, &FF, 1);
-    udelay(1000);
-    // Put all inputs on MCP23017 in pullup mode a second time
-    // Known bug : if you remove this line, you will not have pullups on GPIOB 
-    i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOB_PULLUPS_MODE, &FF, 1);
-    udelay(1000);
+    spi_init(bcm_peri_base_probe(), 0xB0);
+
+    spi_setClockDivider(256);
 
     device_data->is_opend = TRUE;
 }
 
 
-static void check_input_device_for_mcp23017(input_device_data_t *device_data)
+static void check_input_device_for_mcp23s17(input_device_data_t *device_data)
 {
     int i, j, cnt;
-    int i2c_addr, io_count;
-    char resultA, resultB;
+    int spi_channel, io_count;
+    //char resultA, resultB;
     unsigned io_value;
-    device_mcp23017_data_t *user_data = (device_mcp23017_data_t *)device_data->data;
+    device_mcp23s17_data_t *user_data = (device_mcp23s17_data_t *)device_data->data;
 
     if (user_data == NULL) return;
 
-    i2c_addr = user_data->device_cfg.i2c_addr;
+    spi_channel = user_data->device_cfg.spi_channel;
     io_count = user_data->device_cfg.io_count;
 
     if (io_count <= 0) return;
 
-    i2c_read(i2c_addr, MCP23017_GPIOA_READ, &resultA, 1);
-    i2c_read(i2c_addr, MCP23017_GPIOB_READ, &resultB, 1);
+    spi_begin(spi_channel);
 
-    io_value = ((unsigned)resultB << 8) | (unsigned)resultA;
+    // i2c_read(i2c_addr, MCP23S17_GPIOA_READ, &resultA, 1);
+    // i2c_read(i2c_addr, MCP23S17_GPIOB_READ, &resultB, 1);
+    //spi_transfer();
+
+    //io_value = ((unsigned)resultB << 8) | (unsigned)resultA;
+    io_value = 0;
+
+    spi_end(spi_channel);
 
     for (i = 0; i < device_data->target_endpoint_count; i++) {
         input_endpoint_data_t* endpoint = device_data->target_endpoints[i];
-        device_mcp23017_index_table_t* table = &user_data->button_cfgs[i];
-        device_mcp23017_index_item_t* btndef = &table->buttondef[table->button_start_index];
+        device_mcp23s17_index_table_t* table = &user_data->button_cfgs[i];
+        device_mcp23s17_index_item_t* btndef = &table->buttondef[table->button_start_index];
 
         cnt = table->pin_count;
         if (cnt > io_count) cnt = io_count;
@@ -315,20 +321,20 @@ static void check_input_device_for_mcp23017(input_device_data_t *device_data)
 }
 
 
-static void stop_input_device_for_mcp23017(input_device_data_t *device_data)
+static void stop_input_device_for_mcp23s17(input_device_data_t *device_data)
 {
     device_data->is_opend = FALSE;
-
-    i2c_close();
+    
+    spi_close();
 }
 
 
-int register_input_device_for_mcp23017(input_device_type_desc_t *device_desc)
+int register_input_device_for_mcp23s17(input_device_type_desc_t *device_desc)
 {
-    strcpy(device_desc->device_type, "mcp23017");
-    device_desc->init_input_dev = init_input_device_for_mcp23017;
-    device_desc->start_input_dev = start_input_device_for_mcp23017;
-    device_desc->check_input_dev = check_input_device_for_mcp23017;
-    device_desc->stop_input_dev = stop_input_device_for_mcp23017;
+    strcpy(device_desc->device_type, "mcp23s17");
+    device_desc->init_input_dev = init_input_device_for_mcp23s17;
+    device_desc->start_input_dev = start_input_device_for_mcp23s17;
+    device_desc->check_input_dev = check_input_device_for_mcp23s17;
+    device_desc->stop_input_dev = stop_input_device_for_mcp23s17;
     return 0;
 }

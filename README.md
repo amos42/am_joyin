@@ -20,11 +20,11 @@ am_joyin은 라즈베리파이를 이용하여 아케이드 게임기를 제작�
 
 **키워드 설명**
 
-| 키워드     |   설명                                                         | 최대 갯수          |
-|-----------|----------------------------------------------------------------|-------------------|
-| buttonset | 라즈베리파이에서 인식하는 입력 정보의 집합                        | 기본 1개 + 최대 2개 |
-| endpoint  | 라즈베리파이에서 액세스 할 단위. /dev/input/js#의 형태로 생성된다. | 최대 4개           |
-| device    | 입출력을 실제로 처리할 장치                                      | 최대 4개           |
+| 키워드     |   설명                                                          | 최대 갯수           |
+|-----------|-----------------------------------------------------------------|---------------------|
+| buttonset | 라즈베리파이에서 인식하는 입력 정보의 집합                         | 기본 3개 + 최대 4개 |
+| endpoint  | 라즈베리파이에서 액세스 할 단위. /dev/input/js#의 형태로 생성된다. | 최대 8개            |
+| device    | 입출력을 실제로 처리할 장치                                       | 최대 8개            |
 
 
 **기본 제공 버튼셋 (buttonset id = "default", index = 0)**
@@ -60,6 +60,16 @@ am_joyin은 라즈베리파이를 이용하여 아케이드 게임기를 제작�
 | ABS_WHEEL    | 0x08  | -100   | 100   |
 | ABS_HAT0X    | 0x10  | -100   | 100   |
 | ABS_HAT0Y    | 0x11  | -100   | 100   |
+
+**기본 제공 Mouse 버튼셋 (buttonset id = "default_mouse", index = 2)**
+
+| 키코드        | 코드  | 최소값 | 최대값 |
+|--------------|-------|--------|-------|
+| REL_X        | 0x00  | 0      | 0     |
+| REL_Y        | 0x01  | 0      | 0     |
+| BTN_LEFT     | 0x110 | 0      | 1     |
+| BTN_RIGHT    | 0x111 | 0      | 1     |
+| BTN_MIDDLE   | 0x112 | 0      | 1     |
 
 
 ## 드라이버 설치
@@ -102,8 +112,8 @@ sudo apt install -y --force-yes raspberrypi-kernel-headers
 #### wget 사용시
 
 ```shell
-wget https://github.com/amos42/am_joyin/releases/download/v0.2.0-beta01/am_joyin-0.2.0.deb
-sudo dpkg -i am_joyin-0.2.0.deb
+wget https://github.com/amos42/am_joyin/releases/download/v0.3.0-beta01/am_joyin-0.3.0.deb
+sudo dpkg -i am_joyin-0.3.0.deb
 ```
 
 #### git 사용시
@@ -118,8 +128,8 @@ git clone https://github.com/amos42/am_joyin.git
 
 ```shell
 cd am_joyin
-./utils/makepackage.sh 0.2.0 
-sudo dpkg -i build/am_joyin-0.2.0.deb
+./utils/makepackage.sh 0.3.0 
+sudo dpkg -i build/am_joyin-0.3.0.deb
 ```
 ​
 이 과정까지 거치면 드라이버 설치가 1차적으로 완료된다.
@@ -277,9 +287,9 @@ am_joyin의 파라미터는 다음과 같다.
 | 파라미터                 |  설명              | 
 |-------------------------|--------------------|
 | drivercfg               | 드라이버 전역 설정  |
-| buttonset1 ~ buttonset2 | buttonset 설정     |
+| buttonset1 ~ buttonset4 | buttonset 설정     |
 | endpoints               | endpoint 목록 설정 |
-| device1 ~ device4       | device 설정        |
+| device1 ~ device8       | device 설정        |
 
 
 ### driver 전역 설정
@@ -322,13 +332,14 @@ buttonset2_cfg="default,0,6;buttonset1,0,2;{0x102,0,1},{0x103,0,1}"
 
 * 엔드포인트 파라미터 리스트
 > 1. endpoint_name - 엔드포인트 이름. 이 이름으로 OS에 장치 등록이 된다.
-> 2. buttonset - 사용할 버튼셋 이름 혹은 버튼셋의 index. default는 0
-> 2. button_count - 사용할 버튼 갯수. default는 버튼셋의 버튼 전체
+> 2. endpoint_type - 엔드포인트 타입. Joystick과 Mouse 등을 지정할 수 있다.
+> 3. buttonset - 사용할 버튼셋 이름 혹은 버튼셋의 index. default는 0
+> 4. button_count - 사용할 버튼 갯수. default는 버튼셋의 버튼 전체
 
 실제 사용 예
 
 ```shell
-endpoints="default,default,default;ext_joystick,1,11;ext_joystick_2,,6"
+endpoints="default,,default,default;joystick,ext_joystick,1,11;mouse,,,4"
 ```
 
 이 설정은 다음과 같은 의미를 갖는다.
@@ -336,17 +347,20 @@ endpoints="default,default,default;ext_joystick,1,11;ext_joystick_2,,6"
 ![endpoint 파라미터 해석](images/param_ep_sep.png)
 
 > * 첫번째 엔드포인트
->   + 이름 : default (최종적으로 "AmosJoystick_1" 이름이 부여된다.)
->   + 사용 버튼셋 인덱스 : 0
+>   + 엔드포이트 타입 : default (기본적으로 joystick)
+>   + 이름 : 빈 값은 default로 해석 (최종적으로 "AmosJoystick_1" 이름이 부여)
+>   + 사용 버튼셋 인덱스 : default (기본적으로 joystick 타입의 default인 0)
 >   + 사용 버튼 갯수 : default (버튼셋에서 지정된 갯수)
 > * 두번째 엔드포인트
+>   + 엔드포이트 타입 : joystick
 >   + 이름 : "ext_joystick"
 >   + 사용 버튼셋 인덱스 : 1
 >   + 사용 버튼 갯수 : 11
 > * 세번째 엔드포인트
->   + 이름 : "ext_joystick_2"
->   + 사용 버튼셋 인덱스 : 0 (빈 값을 default, 즉 0으로 해석한다.)
->   + 사용 버튼 갯수 : 6
+>   + 엔드포이트 타입 : mouse
+>   + 이름 : 빈 값은 default로 해석 (최종적으로 "AmosMouse_1" 이름이 부여)
+>   + 사용 버튼셋 인덱스 : 빈 값은 default로 해석 (기본적으로 mouse 타입의 default인 2)
+>   + 사용 버튼 갯수 : 4
 
 ### device 설정
 
@@ -384,12 +398,19 @@ device1="74hc165;16,20,21,24,1;0,default,12;1,default,12"
 
 현재 지원 가능한 장치 타입은 다음과 같다.
 
-| 타입명     |                         |
-|-----------|--------------------------|
-| gpio      | GPIO 다이렉트로 입력      |
-| 74hc165   | 74HC165 시프트 레지스터   |
-| mcp23017  | MCP23017 16비트 I2C 입력  |
-| mux       | Multiplexer 입력         |
+| 타입명    | 장치 설명                         |
+|-----------|----------------------------------|
+| gpio      | GPIO 다이렉트로 입력              |
+| 74hc165   | 74HC165 시프트 레지스터           |
+| mcp23017  | MCP23017 16비트 I2C 입력          |
+| mcp23s17  | MCP23S17 16비트 SPI 입력          |
+| mux       | Multiplexer 입력                  |
+| mcp3004   | MCP3004 4ch 10비트 SPI ADC        |
+| mcp3008   | MCP3008 8ch 10비트 SPI ADC        |
+| ads1015   | ADS1015 4ch 12비트 I2C ADC        |
+| ads1115   | ADS1115 4ch 16비트 I2C ADC        |
+| am_spinin | am_spinin Rotary Encoder 컨트롤러 |
+
 
 ### GPIO 입력
 
@@ -720,6 +741,74 @@ sudo modprobe am_joyin buttonset1="default,0,11;{0x03,-100,100},{0x04,-100,100}"
 jstest로 테스트 해 보면 새로운 2개 축이 추가되었고, 조이스틱의 기울어짐에 따라 입력 값이 순차적으로 변하는 것을 확인할 수 있다.
 
 ![jstest for ADC](images/jstest_adc.png)
+
+
+### am_spiin Rotary Encoder 입력
+
+알카노이드와 같은 게임의 경우, 주입력 장치로 스피너를 사용한다.
+이 스피너를 구현하기 위해서는 Rotary Encoder와 같은 장치를 사용하면 된다. 이때 사용할 Rotary Encoder는 RPM 측정용 단상형이 아니라, 양방향 회전을 위한 2상형 이상을 사용해야 하며, 해상도는 최소 100 P/R 이상이어야 한다. 사실 고전 아케이드 게임이 목적이라면 그 이상의 고해상도를 필요로 하지 않는다.
+
+Rotary Encoder는 다음과 같은 형태로 주로 판매되고 있다.
+
+![Rotary Encoder](images/rotary_encoder.jpg)
+
+출력핀은 총4개로, VCC, GND의 전원핀 외에 A, B 핀이 존재한다. 전원은 보통 5V~24V이며, 라즈베리파이로부터 5V 전원을 공급받으면 된다.
+
+이를 실제로 이용하기 위해서는 Rotary Encoder 컨트롤러가 필요하다. 컨트롤러는 LS7366R과 같은 카운터칩을 사용하는 것이 제일 좋긴 하지만, 별도 모듈로 판매되는 것을 찾기 힘들고, 별도의 엔코더 카운터 보드를 구매할 경우 산업용이라 부담스러운 가격대이기에 게임기에 사용하기엔 부적절하다.
+어차피 사람의 손 움직임을 입력 받는 것이기 때문에 고속, 고정밀 컨트롤러가 필요하진 않기에, Arduino 정도의 성능으로도 충분히 스피너용 컨트롤러를 만들 수 있다.
+
+실제로 컨트롤러로 사용할 보드는 Arduino Pro Mini 5V 버전이다.
+
+![Arduino Pro Mini](images/arduino_pro_mini.jpg)
+
+이 보드용 Rotary Encoder 컨트롤러 펌웨어는 다음의 링크에서 받을 수 있다.
+
+[am_spinin 컨트롤러 펌웨어](https://github.com/amos42/am_spinin)
+
+펌웨어 업로드가 완료 되면 해당 컨트롤 보드에 결선을 시작한다.
+Rotary Encoder의 A, B 핀은 보드의 GPIO 2번과 3번 핀에 각각 연결한다.
+
+컨트롤 보드의 A4, A5핀이 I2C용 핀이며, 각각 SDA, SCL 핀이다. 이를 라즈베리파이의 GPIO2(SDA1)과 GPIO3(SCL1)에 각각 연결하면 된다.
+
+![스피너 연결도](images/spinner_connect.jpg)
+
+드라이버 설정시엔 Rotary Encoder의 P/R과 마우스의 DPI를 주의해서 설정해 주면 된다.
+
+* 디바이스 파라미터
+> 1. i2c_addr - i2c 주소값. 기본값 0x34
+> 2. rotary_ppr - Rotary Encoder의 P/R (1회전 당 펄스 발생수)
+> 3. min_value - 최소 값
+> 4. max_value - 최대 값
+> 5. sample_rate - 절대좌표를 쓸 경우 샘플링 주기. 기본값 50ms
+
+* 엔드포인트 파라미터
+> 1. config type - 버튼 설정 타입
+>    - default : pin_count, button_start_index, mouse_dpi (기본 1000dpi)
+>    - custom : mouse_dpi, code_mode (0: keycode, 1:index), {button1, value1}, ...
+
+실제 사용 예
+
+로터리 엔코더는 아케이드 게임기에서 스피너 지원을 목적으로 주로 사용된다. 때문에 단독으로 사용되기보다는 보통은 다른 버튼 입력 장치에 추가적으로 스피너를 더해서 설정하는 것이 일반적이다.
+
+다음은 기존의 74HC165 입력에 추가적으로 am_spinin으로 스피너를 추가해 준 설정이다.
+
+1p 설정의 예 (마우스 x축을 기본으로 지정)
+
+```shell
+sudo modprobe am_joyin endpoints="joystick;mouse" device1="74hc165;16,20,21,,0;0,default,13" \
+                       device2="am_spinin;0x34,600;1,1"
+```
+
+2p 설정의 예
+
+```shell
+sudo modprobe am_joyin endpoints="joystick;joystick;mouse;mouse" \
+        device1="74hc165;24,20,21,,0;0,default,12;1,default,12" \
+        device2="am_spinin;0x34,600;2,1" \
+        device3="am_spinin;0x35,600;3,1" \
+```
+
+arkanoid 등의 게임은 RetroArch 설정에서, mouse 지원을 추가해 주면 된다.
 
 
 ---

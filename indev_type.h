@@ -32,14 +32,18 @@ typedef int BOOL;
 
 #define MAX_INPUT_BUTTON_COUNT                (32)
 
-#define MAX_INPUT_DEFAULT_BUTTONSET_COUNT     (1)
-#define MAX_INPUT_USERDEF_BUTTONSET_COUNT     (2)
+#define MAX_INPUT_DEFAULT_BUTTONSET_COUNT     (3)
+#define MAX_INPUT_USERDEF_BUTTONSET_COUNT     (4)
 #define MAX_INPUT_BUTTONSET_COUNT             (MAX_INPUT_DEFAULT_BUTTONSET_COUNT + MAX_INPUT_USERDEF_BUTTONSET_COUNT)
 
-#define MAX_INPUT_ENDPOINT_COUNT              (4)
+#define MAX_INPUT_ENDPOINT_COUNT              (8)
 
-#define MAX_INPUT_DEVICE_TYPE_DESC_COUNT      (10)
-#define MAX_INPUT_DEVICE_COUNT                (4)
+#define MAX_INPUT_DEVICE_TYPE_DESC_COUNT      (12)
+#define MAX_INPUT_DEVICE_COUNT                (8)
+
+#define ENDPOINT_TYPE_JOYSTICK                (0)
+#define ENDPOINT_TYPE_MOUSE                   (1)
+#define ENDPOINT_TYPE_KEYBOARD                (2)
 
 #define INPUT_CODE_TYPE_NONE                  (-1)
 #define INPUT_CODE_TYPE_KEYCODE               (0)
@@ -63,7 +67,7 @@ typedef int BOOL;
                                 {BTN_TR2,       0, 1}, \
                                 {BTN_TRIGGER,   0, 1} \
                             }
-#define DEFAULT_INPUT_ABS_STICKS_COUNT            (8)
+#define DEFAULT_INPUT_ABS_STICKS_COUNT        (8)
 #define DEFAULT_INPUT_ABS_STICKS { \
                                 {ABS_X,        -DEFAULT_INPUT_ABS_MAX_VALUE, DEFAULT_INPUT_ABS_MAX_VALUE}, \
                                 {ABS_Y,        -DEFAULT_INPUT_ABS_MAX_VALUE, DEFAULT_INPUT_ABS_MAX_VALUE}, \
@@ -73,6 +77,15 @@ typedef int BOOL;
                                 {ABS_WHEEL,    -DEFAULT_INPUT_ABS_MAX_VALUE, DEFAULT_INPUT_ABS_MAX_VALUE}, \
                                 {ABS_HAT0X,    -DEFAULT_INPUT_ABS_MAX_VALUE, DEFAULT_INPUT_ABS_MAX_VALUE}, \
                                 {ABS_HAT0Y,    -DEFAULT_INPUT_ABS_MAX_VALUE, DEFAULT_INPUT_ABS_MAX_VALUE} \
+                            }
+
+#define DEFAULT_INPUT_MOUSE_COUNT             (5)
+#define DEFAULT_INPUT_MOUSE { \
+                                {REL_X,        -DEFAULT_INPUT_ABS_MAX_VALUE, DEFAULT_INPUT_ABS_MAX_VALUE}, \
+                                {REL_Y,        -DEFAULT_INPUT_ABS_MAX_VALUE, DEFAULT_INPUT_ABS_MAX_VALUE}, \
+                                {BTN_LEFT,     0, 1}, \
+                                {BTN_RIGHT,    0, 1}, \
+                                {BTN_MIDDLE,   0, 1} \
                             }
 
 // 개별 버튼 설정
@@ -93,6 +106,7 @@ typedef struct tag_input_buttonset_data {
 typedef struct tag_input_endpoint_data {
     int endpoint_id;
     char endpoint_name[32];
+    int endpoint_type;
 
     input_buttonset_data_t* target_buttonset;
     int button_count;
@@ -127,8 +141,9 @@ typedef struct tag_input_device_data {
 // 장치 타입 정보 설정
 typedef struct tag_input_device_type_desc {
     char device_type[16];
+    char device_desc_data[64];
 
-    int (*init_input_dev)(input_device_data_t* device_data, char* device_config_str, char* endpoint_config_str[]);
+    int (*init_input_dev)(void* device_desc_data, input_device_data_t* device_data, char* device_config_str, char* endpoint_config_str[]);
     void (*start_input_dev)(input_device_data_t* device_data);
     void (*check_input_dev)(input_device_data_t* device_data);
     void (*stop_input_dev)(input_device_data_t* device_data);
@@ -137,6 +152,7 @@ typedef struct tag_input_device_type_desc {
 
 extern const input_button_data_t default_buttonset[DEFAULT_INPUT_BUTTON_COUNT];
 extern const input_button_data_t default_abs_buttonset[DEFAULT_INPUT_ABS_STICKS_COUNT];
+extern const input_button_data_t default_mouse_buttonset[DEFAULT_INPUT_MOUSE_COUNT];
 
 
 int find_input_button_data(input_endpoint_data_t* endpoint, int button_code, input_button_data_t* button_data);

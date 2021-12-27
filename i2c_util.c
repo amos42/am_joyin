@@ -47,7 +47,7 @@
 #define CLEAR_STATUS	(BSC_S_CLKT | BSC_S_ERR | BSC_S_DONE)
 
 static volatile unsigned* bsc1;
-
+static int bsc1_ref_count = 0;
 
 //#define BSC1_BASE		(PERI_BASE + 0x804000)
 #define BSC1_BASE		(0x804000)
@@ -55,18 +55,21 @@ static volatile unsigned* bsc1;
 
 int i2c_init(u32 peri_base_addr, int size)
 {
+    if (bsc1_ref_count++ > 0) return 0;
+
     if (size == 0) size = 0xB0;
 
     /* Set up i2c pointer for direct register access */
     if ((bsc1 = ioremap(peri_base_addr + BSC1_BASE, size)) == NULL) {
         pr_err("io remap failed\n");
+        bsc1_ref_count--;
         return -EBUSY;
     }
 
     INP_GPIO(2);
     SET_GPIO_ALT(2, 0);
     INP_GPIO(3);
-    SET_GPIO_ALT(3, 0);
+    SET_GPIO_ALT(3, 0);    
 
     return 0;
 }
@@ -74,6 +77,8 @@ int i2c_init(u32 peri_base_addr, int size)
 
 void i2c_close(void)
 {
+    if (--bsc1_ref_count > 0) return;
+
     if (bsc1 != NULL) {
         iounmap(bsc1);
         bsc1 = NULL;
@@ -86,6 +91,48 @@ void wait_i2c_done(void)
     while (!(BSC1_S & BSC_S_DONE)) {
         udelay(100);
     }
+}
+
+// Function to write data to an I2C device via the FIFO.  This doesn't refill the FIFO, so writes are limited to 16 bytes
+// including the register address. len specifies the number of bytes in the buffer.
+void i2c_raw_write(char dev_addr, char *buf, int len) 
+{
+    int i;
+
+    BSC1_A = dev_addr;
+    BSC1_DLEN = len; // one byte for the register address, plus the buffer length
+
+    for (i = 0; i < len; i++) {
+        BSC1_FIFO = buf[i];
+    }
+
+    BSC1_S = CLEAR_STATUS; // Reset status bits (see #define)
+    BSC1_C = START_WRITE; // Start Write (see #define)
+
+    wait_i2c_done();
+}
+
+// Function to read a number of bytes into a  buffer from the FIFO of the I2C controller
+void i2c_raw_read(char dev_addr, char *buf, int len) 
+{
+    int bufidx;
+
+    BSC1_DLEN = (unsigned char)len;
+    BSC1_S = CLEAR_STATUS; // Reset status bits (see #define)
+    BSC1_C = START_READ; // Start Read after clearing FIFO (see #define)
+
+    bufidx = 0;
+    while (!(BSC1_S & BSC_S_DONE)) {
+        // Wait for some data to appear in the FIFO
+        while ((BSC1_S & BSC_S_TA) && !(BSC1_S & BSC_S_RXD));
+
+        // Consume the FIFO
+        while ((BSC1_S & BSC_S_RXD) && (bufidx < len)) {
+            buf[bufidx++] = BSC1_FIFO;
+        }
+    }
+
+    wait_i2c_done();
 }
 
 // Function to write data to an I2C device via the FIFO.  This doesn't refill the FIFO, so writes are limited to 16 bytes
@@ -111,24 +158,54 @@ void i2c_write(char dev_addr, char reg_addr, char *buf, int len)
 // Function to read a number of bytes into a  buffer from the FIFO of the I2C controller
 void i2c_read(char dev_addr, char reg_addr, char *buf, int len) 
 {
-    int bufidx;
+    i2c_raw_write(dev_addr, &reg_addr, sizeof(char));
+    i2c_raw_read(dev_addr, buf, len);
+}
 
-    i2c_write(dev_addr, reg_addr, NULL, 0);
+void i2c_write_1byte(char dev_addr, char reg_addr, char value) 
+{
+    i2c_write(dev_addr, reg_addr, &value, sizeof(char));
+}
 
-    BSC1_DLEN = (unsigned char)len;
-    BSC1_S = CLEAR_STATUS; // Reset status bits (see #define)
-    BSC1_C = START_READ; // Start Read after clearing FIFO (see #define)
+void i2c_write_1word(char dev_addr, char reg_addr, short value) 
+{
+    i2c_write(dev_addr, reg_addr, (char *)&value, sizeof(short));
+}
 
-    bufidx = 0;
-    while (!(BSC1_S & BSC_S_DONE)) {
-        // Wait for some data to appear in the FIFO
-        while ((BSC1_S & BSC_S_TA) && !(BSC1_S & BSC_S_RXD));
+void i2c_raw_write_1byte(char dev_addr, char value) 
+{
+    i2c_raw_write(dev_addr, &value, sizeof(char));
+}
 
-        // Consume the FIFO
-        while ((BSC1_S & BSC_S_RXD) && (bufidx < len)) {
-            buf[bufidx++] = BSC1_FIFO;
-        }
-    }
+void i2c_raw_write_1word(char dev_addr, short value) 
+{
+    i2c_raw_write(dev_addr, (char *)&value, sizeof(short));
+}
 
-    wait_i2c_done();
+char i2c_read_1byte(char dev_addr, char reg_addr) 
+{
+    char value;
+    i2c_read(dev_addr, reg_addr, &value, 1);
+    return value;
+}
+
+short i2c_read_1word(char dev_addr, char reg_addr) 
+{
+    short value;
+    i2c_read(dev_addr, reg_addr, (char *)&value, sizeof(short));
+    return value;
+}
+
+char i2c_raw_read_1byte(char dev_addr) 
+{
+    char value;
+    i2c_raw_read(dev_addr, &value, 1);
+    return value;
+}
+
+short i2c_raw_read_1word(char dev_addr) 
+{
+    short value;
+    i2c_raw_read(dev_addr, (char *)&value, sizeof(short));
+    return value;
 }
