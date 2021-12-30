@@ -743,9 +743,9 @@ jstest로 테스트 해 보면 새로운 2개 축이 추가되었고, 조이스�
 ![jstest for ADC](images/jstest_adc.png)
 
 
-### am_spiin Rotary Encoder 입력
+### am_spinin Rotary Encoder 입력
 
-알카노이드와 같은 게임의 경우, 주입력 장치로 스피너를 사용한다.
+Arkanoid와 같은 게임의 경우, 주입력 장치로 스피너를 사용한다.
 이 스피너를 구현하기 위해서는 Rotary Encoder와 같은 장치를 사용하면 된다. 이때 사용할 Rotary Encoder는 RPM 측정용 단상형이 아니라, 양방향 회전을 위한 2상형 이상을 사용해야 하며, 해상도는 최소 100 P/R 이상이어야 한다. 사실 고전 아케이드 게임이 목적이라면 그 이상의 고해상도를 필요로 하지 않는다.
 
 Rotary Encoder는 다음과 같은 형태로 주로 판매되고 있다.
@@ -775,7 +775,8 @@ Rotary Encoder의 A, B 핀은 보드의 GPIO 2번과 3번 핀에 각각 연결�
 드라이버 설정시엔 Rotary Encoder의 P/R과 마우스의 DPI를 주의해서 설정해 주면 된다.
 
 * 디바이스 파라미터
-> 1. i2c_addr - i2c 주소값. 기본값 0x34
+> 1. comm_type - 통신방식. i2c/spi 중 선택. 기본값 i2c
+> 1. addr - i2c 주소 혹은 spi 채널. 기본값은 i2c의 경우 0x34, spi의 경우 0
 > 2. rotary_ppr - Rotary Encoder의 P/R (1회전 당 펄스 발생수)
 > 3. min_value - 최소 값
 > 4. max_value - 최대 값
@@ -795,8 +796,9 @@ Rotary Encoder의 A, B 핀은 보드의 GPIO 2번과 3번 핀에 각각 연결�
 1p 설정의 예 (마우스 x축을 기본으로 지정)
 
 ```shell
-sudo modprobe am_joyin endpoints="joystick;mouse" device1="74hc165;16,20,21,,0;0,default,13" \
-                       device2="am_spinin;0x34,600;1,1"
+sudo modprobe am_joyin endpoints="joystick;mouse" \
+        device1="74hc165;16,20,21,,0;0,default,13" \
+        device2="am_spinin;i2c,0x34,600;1,1"
 ```
 
 2p 설정의 예
@@ -804,11 +806,11 @@ sudo modprobe am_joyin endpoints="joystick;mouse" device1="74hc165;16,20,21,,0;0
 ```shell
 sudo modprobe am_joyin endpoints="joystick;joystick;mouse;mouse" \
         device1="74hc165;24,20,21,,0;0,default,12;1,default,12" \
-        device2="am_spinin;0x34,600;2,1" \
-        device3="am_spinin;0x35,600;3,1" \
+        device2="am_spinin;i2c,0x34,600;2,1" \
+        device3="am_spinin;i2c,0x35,600;3,1" \
 ```
 
-arkanoid 등의 게임은 RetroArch 설정에서, mouse 지원을 추가해 주면 된다.
+Arkanoid 등의 게임은 RetroArch 설정에서, mouse 지원을 추가해 주면 된다.
 
 
 ---

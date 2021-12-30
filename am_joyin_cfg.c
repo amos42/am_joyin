@@ -70,7 +70,7 @@ void /*__init*/ prepocess_params(void)
     // endpoint 생략시, 기본 파라미터 세팅
     if (am_endpoints_cfg == NULL)
     {
-        am_endpoints_cfg = "default";
+        am_endpoints_cfg = "joystick";
     }
 
     // device 모두 생략시, 기본 파라미터 세팅
@@ -239,32 +239,46 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
     }
 
     if (am_endpoints_cfg != NULL) {
+        int js_idx, mos_idx, kbd_idx;
+
         strcpy(szText, am_endpoints_cfg);
         pText = szText;
 
         // endpoint 설정
         idx = 0;
+        js_idx = mos_idx = kbd_idx = 0;
         while (pText != NULL && idx < MAX_INPUT_ENDPOINT_COUNT) {
             input_buttonset_data_t* btncfg_item;
             char *ptr, *buttonset_name;
             char temp_str[16];
+            int endpoint_type;
 
             ptr = strsep(&pText, ";");
-
-            if (parse_string(a_input->endpoint_list[idx].endpoint_name, 31, &ptr, ",", NULL) == NULL) {
-                snprintf(a_input->endpoint_list[idx].endpoint_name, 31, "AmosJoystick_%d", idx + 1);
-            }
 
             parse_string(temp_str, 12, &ptr, ",", "joystick");
 
             if (strcmp(temp_str, "joystick") == 0) {
-                a_input->endpoint_list[idx].endpoint_type = ENDPOINT_TYPE_JOYSTICK;
+                endpoint_type = ENDPOINT_TYPE_JOYSTICK;
+                js_idx++;
             } else if (strcmp(temp_str, "mouse") == 0) {
-                a_input->endpoint_list[idx].endpoint_type = ENDPOINT_TYPE_MOUSE;
+                endpoint_type = ENDPOINT_TYPE_MOUSE;
+                mos_idx++;
             } else if (strcmp(temp_str, "keyboard") == 0) {
-                a_input->endpoint_list[idx].endpoint_type = ENDPOINT_TYPE_KEYBOARD;
+                endpoint_type = ENDPOINT_TYPE_KEYBOARD;
+                kbd_idx++;
             } else {
                 continue;
+            }
+            a_input->endpoint_list[idx].endpoint_type = endpoint_type;
+
+            if (parse_string(a_input->endpoint_list[idx].endpoint_name, 31, &ptr, ",", NULL) == NULL) {
+                if (endpoint_type == ENDPOINT_TYPE_JOYSTICK) {
+                    snprintf(a_input->endpoint_list[idx].endpoint_name, 31, "AmosJoystick_%d", js_idx);
+                } else if (endpoint_type == ENDPOINT_TYPE_MOUSE) {
+                    snprintf(a_input->endpoint_list[idx].endpoint_name, 31, "AmosMouse_%d", mos_idx);
+                } else if (endpoint_type == ENDPOINT_TYPE_KEYBOARD) {
+                    snprintf(a_input->endpoint_list[idx].endpoint_name, 31, "AmosKeyboard_%d", kbd_idx);
+                }
             }
 
             a_input->endpoint_list[idx].endpoint_id = idx;
