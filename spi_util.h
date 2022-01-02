@@ -14,10 +14,11 @@
 
 int  spi_init(u32 peri_base_addr, int size);
 void spi_close(void);
-int  spi_begin(int spi_channel);
-void spi_end(int spi_channel);
+int  spi_begin(void);
+void spi_end(void);
 void spi_setClockDivider(uint16_t divider);
 void spi_setDataMode(uint8_t mode);
+void spi_chipSelect(uint8_t cs);
 void spi_setChipSelectPolarity(uint8_t cs, uint8_t active);
 uint8_t spi_transfer(uint8_t value);
 void spi_transfernb(char* tbuf, char* rbuf, uint32_t len);

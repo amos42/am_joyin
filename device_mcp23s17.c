@@ -17,34 +17,36 @@
 //#define GPIO_SET_VALUE(i,v)   setGpio((i), (v))
 
 //#define MAX_ADDR_IO_COUNT   (6)
+#define MCP23S17_DEFAULT_SPI_CHANNEL    (0)
 
 /*
  * MCP23S17 Defines
  */
-#define MCP23S17_GPIOA_MODE	            (0x00)
-#define MCP23S17_GPIOB_MODE	            (0x01)
-#define MCP23S17_GPIOA_PULLUPS_MODE	    (0x0C)
-#define MCP23S17_GPIOB_PULLUPS_MODE     (0x0D)
-#define MCP23S17_GPIOA_READ             (0x12)
-#define MCP23S17_GPIOB_READ             (0x13)
+#define MCP23S17_ADDRESS_WRITE   (0x40)
+#define MCP23S17_ADDRESS_READ    (0x41)
 
-enum {
-    MCP23S17_IODIRA,     MCP23S17_IODIRB,
-    MCP23S17_IPOLA,      MCP23S17_IPOLB,
-    MCP23S17_GPINTENA,   MCP23S17_GPINTENB,
-    MCP23S17_DEFVALA,    MCP23S17_DEFVALB,
-    MCP23S17_INTCONA,    MCP23S17_INTCONB,
-    MCP23S17_IOCONA,     MCP23S17_IOCONB,
-    MCP23S17_GPPUA,      MCP23S17_GPPUB,
-    MCP23S17_INTFA,      MCP23S17_INTFB,
-    MCP23S17_INTCAPA,    MCP23S17_INTCAPB,
-    MCP23S17_GPIOA,      MCP23S17_GPIOB,
-    MCP23S17_OLATA,      MCP23S17_OLATB
-};
-
-
-// default i2c addr
-#define MCP23S17_DEFAULT_I2C_ADDR       (0x20)
+#define MCP23S17_IODIRA    (0x00)      // MCP23x17 I/O Direction Register
+#define MCP23S17_IODIRB    (0x01)      // 1 = Input (default), 0 = Output
+#define MCP23S17_IPOLA     (0x02)      // MCP23x17 Input Polarity Register
+#define MCP23S17_IPOLB     (0x03)      // 0 = Normal (default)(low reads as 0), 1 = Inverted (low reads as 1)
+#define MCP23S17_GPINTENA  (0x04)      // MCP23x17 Interrupt on Change Pin Assignements
+#define MCP23S17_GPINTENB  (0x05)      // 0 = No Interrupt on Change (default), 1 = Interrupt on Change
+#define MCP23S17_DEFVALA   (0x06)      // MCP23x17 Default Compare Register for Interrupt on Change
+#define MCP23S17_DEFVALB   (0x07)      // Opposite of what is here will trigger an interrupt (default = 0)
+#define MCP23S17_INTCONA   (0x08)      // MCP23x17 Interrupt on Change Control Register
+#define MCP23S17_INTCONB   (0x09)      // 1 = pin is compared to DEFVAL, 0 = pin is compared to previous state (default)
+#define MCP23S17_IOCON     (0x0A)      // MCP23x17 Configuration Register
+//                         (0x0B)      //     Also Configuration Register
+#define MCP23S17_GPPUA     (0x0C)      // MCP23x17 Weak Pull-Up Resistor Register
+#define MCP23S17_GPPUB     (0x0D)      // INPUT ONLY: 0 = No Internal 100k Pull-Up (default) 1 = Internal 100k Pull-Up 
+#define MCP23S17_INTFA     (0x0E)      // MCP23x17 Interrupt Flag Register
+#define MCP23S17_INTFB     (0x0F)      // READ ONLY: 1 = This Pin Triggered the Interrupt
+#define MCP23S17_INTCAPA   (0x10)      // MCP23x17 Interrupt Captured Value for Port Register
+#define MCP23S17_INTCAPB   (0x11)      // READ ONLY: State of the Pin at the Time the Interrupt Occurred
+#define MCP23S17_GPIOA     (0x12)      // MCP23x17 GPIO Port Register
+#define MCP23S17_GPIOB     (0x13)      // Value on the Port - Writing Sets Bits in the Output Latch
+#define MCP23S17_OLATA     (0x14)      // MCP23x17 Output Latch Register
+#define MCP23S17_OLATB     (0x15)      // 1 = Latch High, 0 = Latch Low (default) Reading Returns Latch State, Not Port Value!
 
 
 typedef struct tag_device_mcp23s17_config {
@@ -108,11 +110,11 @@ static int __parse_device_param_for_mcp23s17(device_mcp23s17_data_t* user_data, 
         strcpy(szText, device_config_str); 
         pText = szText;
 
-        user_data->device_cfg.spi_channel = parse_number(&pText, ",", 0, MCP23S17_DEFAULT_I2C_ADDR);
+        user_data->device_cfg.spi_channel = parse_number(&pText, ",", 0, MCP23S17_DEFAULT_SPI_CHANNEL);
         user_data->device_cfg.io_count = parse_number(&pText, ",", 10, INPUT_MCP23S17_DEFAULT_KEYCODE_TABLE_ITEM_COUNT);
         user_data->device_cfg.pull_updown = parse_number(&pText, ",", 10, 0);
     } else {
-        user_data->device_cfg.spi_channel = MCP23S17_DEFAULT_I2C_ADDR;
+        user_data->device_cfg.spi_channel = MCP23S17_DEFAULT_SPI_CHANNEL;
         user_data->device_cfg.io_count = INPUT_MCP23S17_DEFAULT_KEYCODE_TABLE_ITEM_COUNT;
         user_data->device_cfg.pull_updown = 0;
     }
@@ -267,6 +269,9 @@ static void start_input_device_for_mcp23s17(input_device_data_t *device_data)
 
     spi_setClockDivider(256);
 
+    // To-do: 풀업시켜 줘야 한다.
+    // ...
+
     device_data->is_opend = TRUE;
 }
 
@@ -286,16 +291,18 @@ static void check_input_device_for_mcp23s17(input_device_data_t *device_data)
 
     if (io_count <= 0) return;
 
-    spi_begin(spi_channel);
+    spi_begin();
+    spi_chipSelect(spi_channel);
 
-    // i2c_read(i2c_addr, MCP23S17_GPIOA_READ, &resultA, 1);
-    // i2c_read(i2c_addr, MCP23S17_GPIOB_READ, &resultB, 1);
-    //spi_transfer();
+    {
+        unsigned char buf[3] = {0x41, MCP23S17_GPIOA, 0};
+        unsigned char buf2[3] = {0x41, MCP23S17_GPIOB, 0};
+        spi_transfern(buf, 3);
+        spi_transfern(buf2, 3);
+        io_value = buf[2] << 8 | buf2[2];
+    }
 
-    //io_value = ((unsigned)resultB << 8) | (unsigned)resultA;
-    io_value = 0;
-
-    spi_end(spi_channel);
+    spi_end();
 
     for (i = 0; i < device_data->target_endpoint_count; i++) {
         input_endpoint_data_t* endpoint = device_data->target_endpoints[i];
