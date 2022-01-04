@@ -222,7 +222,7 @@ static int __parse_endpoint_param_for_mcp23s17(device_mcp23s17_data_t* user_data
 }
 
 
-// device_config_str : i2c_addr, io_count
+// device_config_str : spi_channel, io_count
 // endpoint_config_str : endpoint, config_type (default | custom), ...
 //        default: pin_count, start_index, io_skip_count
 //        custom: io_skip_count, code_type (0|1), n * {button, value}
