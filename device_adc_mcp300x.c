@@ -268,7 +268,8 @@ static void check_input_device_for_mcp300x(input_device_data_t *device_data)
 
     io_value = ((unsigned)resultB << 8) | (unsigned)resultA;
 
-    spi_begin(spi_channel);
+    spi_begin();
+    spi_chipSelect(spi_channel);
 
     sampling_count = user_data->device_cfg.sampling_count;
     value_weight = user_data->device_cfg.value_weight_percent;
@@ -315,7 +316,7 @@ static void check_input_device_for_mcp300x(input_device_data_t *device_data)
         }
     }
 
-    spi_end(spi_channel);
+    spi_end();
 }
 
 

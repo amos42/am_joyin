@@ -38,8 +38,8 @@
 // };
 
 typedef struct tag_device_74hc165_config {
-    int gpio_ck;
     int gpio_ld;
+    int gpio_ck;
     int gpio_dt;
     int io_count;
     int bit_order;
@@ -221,7 +221,7 @@ static int __parse_endpoint_param_for_74hc165(device_74hc165_data_t* user_data, 
 }
 
 
-// device_config_str : ck, ld, rd, io_count, bit_order (0 | 1)
+// device_config_str : ld, ck, rd, io_count, bit_order (0 | 1)
 //        bit_order: 0 = assending, 1 = descending
 //        default: pin_count, start_index, io_skip_count
 //        custom: io_skip_count, code_type (0|1), n * {button, value}
@@ -265,8 +265,8 @@ static void start_input_device_for_74hc165(input_device_data_t *device_data)
 {
     device_74hc165_data_t *user_data = (device_74hc165_data_t *)device_data->data;
 
-    gpio_as_output(user_data->device_cfg.gpio_ck);
     gpio_as_output(user_data->device_cfg.gpio_ld);
+    gpio_as_output(user_data->device_cfg.gpio_ck);
     gpio_as_input(user_data->device_cfg.gpio_dt);
 
     device_data->is_opend = TRUE;
@@ -284,8 +284,8 @@ static void check_input_device_for_74hc165(input_device_data_t *device_data)
 
     if (user_data == NULL) return;
 
-    ck = user_data->device_cfg.gpio_ck;
     ld = user_data->device_cfg.gpio_ld;
+    ck = user_data->device_cfg.gpio_ck;
     dt = user_data->device_cfg.gpio_dt;
     io_count = user_data->device_cfg.io_count;
 
@@ -311,7 +311,7 @@ static void check_input_device_for_74hc165(input_device_data_t *device_data)
         if (user_data->device_cfg.bit_order == 0) {
             for (j = 0; j < skip_cnt; j++ ){
                 gpio_set_value(ck, 1);
-                udelay(5);
+                ndelay(20);
                 gpio_set_value(ck, 0);
             }
 
@@ -322,7 +322,7 @@ static void check_input_device_for_74hc165(input_device_data_t *device_data)
                 btndef++;
 
                 gpio_set_value(ck, 1);
-                udelay(5);
+                ndelay(20);
                 gpio_set_value(ck, 0);
             }
         } else {
@@ -335,7 +335,7 @@ static void check_input_device_for_74hc165(input_device_data_t *device_data)
                         io_value = (io_value << 1) | (v == 0 ? 1 : 0);
 
                         gpio_set_value(ck, 1);
-                        udelay(5);
+                        ndelay(20);
                         gpio_set_value(ck, 0);
                     }
                 }

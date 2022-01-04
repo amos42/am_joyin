@@ -68,7 +68,7 @@ static int am_test_init(void)
     spi_setClockDivider(0);
     spi_setDataMode(0x00);
 
-    spi_begin(0);
+    spi_begin();
 
     memset(vv2, 0, 3);
     spi_transfernb(vv, vv2, 3);
@@ -82,7 +82,7 @@ static int am_test_init(void)
     v = (unsigned short)(vv2[1] & 0x3) << 8 | vv2[2];
     printk(">>>>>>>>>>>>>> %d (%d %%)", v, v * 100 / 1023);
 
-    spi_end(0);
+    spi_end();
 
     return 0;
 

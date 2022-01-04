@@ -62,7 +62,7 @@ void spi_close(void)
 }    
 
 
-int spi_begin(int spi_channel)
+int spi_begin(void)
 {
     volatile uint32_t* paddr;
 
@@ -79,7 +79,7 @@ int spi_begin(int spi_channel)
     return 0; // OK
 }
 
-void spi_end(int spi_channel)
+void spi_end(void)
 {  
     /* Set all the SPI0 pins back to input */
     // gpio_fsel(RPI_GPIO_P1_26, BCM2835_GPIO_FSEL_INPT); /* CE1 */
