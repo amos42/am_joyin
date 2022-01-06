@@ -770,7 +770,9 @@ Rotary Encoder의 A, B 핀은 보드의 GPIO 2번과 3번 핀에 각각 연결�
 
 컨트롤 보드의 A4, A5핀이 I2C용 핀이며, 각각 SDA, SCL 핀이다. 이를 라즈베리파이의 GPIO2(SDA1)과 GPIO3(SCL1)에 각각 연결하면 된다.
 
-![스피너 연결도](images/spinner_connect.jpg)
+![스피너 연결도](images/spinner_connect_5v.jpg)
+
+![스피너 연결도](images/spinner_connect_3v3.jpg)
 
 드라이버 설정시엔 Rotary Encoder의 P/R과 마우스의 DPI를 주의해서 설정해 주면 된다.
 
