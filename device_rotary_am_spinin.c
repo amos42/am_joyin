@@ -29,7 +29,7 @@
 #define INPUT_AM_SPININ_DEFAULT_PPR         (360)
 #define INPUT_AM_SPININ_DEFAULT_MIN_VALUE   (-5000)
 #define INPUT_AM_SPININ_DEFAULT_MAX_VALUE   (5000)
-#define INPUT_AM_SPININ_DEFAULT_SAMPLE_RATE (50)
+#define INPUT_AM_SPININ_DEFAULT_SAMPLE_RATE (10)
 #define INPUT_MOUSE_DEFAULT_DPI             (1000)
 
 typedef struct tag_device_am_spinin_config {
@@ -297,12 +297,16 @@ static void check_input_device_for_am_spinin(input_device_data_t *device_data)
 
     if (user_data->device_cfg.comm_type == AM_SPININ_COMM_I2C) {
         value = i2c_raw_read_1word(addr);
-        i2c_write_1word(addr, AM_SPININ_WRITE_VALUE, 0);
+        if (value != 0) {
+            i2c_write_1word(addr, AM_SPININ_WRITE_VALUE, 0);
+        }
     } else if (user_data->device_cfg.comm_type == AM_SPININ_COMM_SPI) {
         spi_begin();
         spi_chipSelect(addr);
         value = __spi_trans(AM_SPININ_READ_VALUE, 0);
-        __spi_trans(AM_SPININ_WRITE_VALUE, 0);
+        if (value != 0) {
+            __spi_trans(AM_SPININ_WRITE_VALUE, 0);
+        }
         spi_end();
     } else {
         return;
