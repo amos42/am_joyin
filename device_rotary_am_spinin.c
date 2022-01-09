@@ -12,15 +12,8 @@
 #include "i2c_util.h"
 #include "parse_util.h"
 
-//#define GPIO_GET(i)   GPIO_READ(i)
-//#define GPIO_GET_VALUE(i)   getGpio(i)
-//#define GPIO_SET_VALUE(i,v)   setGpio((i), (v))
 
-//#define MAX_ADDR_IO_COUNT   (6)
-
-/*
- * AM_SPININ Defines
- */
+// AM_SPININ Defines
 #define AM_SPININ_READ_VALUE                (0x00 | 0x00)
 #define AM_SPININ_WRITE_VALUE  	            (0x40 | 0x01)
 #define AM_SPININ_SET_MODE          	    (0x40 | 0x02)
@@ -36,7 +29,7 @@
 #define INPUT_AM_SPININ_DEFAULT_PPR         (360)
 #define INPUT_AM_SPININ_DEFAULT_MIN_VALUE   (-5000)
 #define INPUT_AM_SPININ_DEFAULT_MAX_VALUE   (5000)
-#define INPUT_AM_SPININ_DEFAULT_SAMPLE_RATE (50)
+#define INPUT_AM_SPININ_DEFAULT_SAMPLE_RATE (10)
 #define INPUT_MOUSE_DEFAULT_DPI             (1000)
 
 typedef struct tag_device_am_spinin_config {
@@ -304,12 +297,16 @@ static void check_input_device_for_am_spinin(input_device_data_t *device_data)
 
     if (user_data->device_cfg.comm_type == AM_SPININ_COMM_I2C) {
         value = i2c_raw_read_1word(addr);
-        i2c_write_1word(addr, AM_SPININ_WRITE_VALUE, 0);
+        if (value != 0) {
+            i2c_write_1word(addr, AM_SPININ_WRITE_VALUE, 0);
+        }
     } else if (user_data->device_cfg.comm_type == AM_SPININ_COMM_SPI) {
         spi_begin();
         spi_chipSelect(addr);
         value = __spi_trans(AM_SPININ_READ_VALUE, 0);
-        __spi_trans(AM_SPININ_WRITE_VALUE, 0);
+        if (value != 0) {
+            __spi_trans(AM_SPININ_WRITE_VALUE, 0);
+        }
         spi_end();
     } else {
         return;

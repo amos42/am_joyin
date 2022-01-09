@@ -779,7 +779,7 @@ Rotary Encoder의 A, B 핀은 보드의 GPIO 2번과 3번 핀에 각각 연결�
 * 디바이스 파라미터
 > 1. comm_type - 통신방식. i2c/spi 중 선택. 기본값 i2c
 > 1. addr - i2c 주소 혹은 spi 채널. 기본값은 i2c의 경우 0x34, spi의 경우 0
-> 2. rotary_ppr - Rotary Encoder의 P/R (1회전 당 펄스 발생수)
+> 2. rotary_ppr - Rotary Encoder의 P/R (1회전 당 펄스 발생수). 기본값 360
 > 3. min_value - 최소 값
 > 4. max_value - 최대 값
 > 5. sample_rate - 절대좌표를 쓸 경우 샘플링 주기. 기본값 50ms
@@ -800,7 +800,7 @@ Rotary Encoder의 A, B 핀은 보드의 GPIO 2번과 3번 핀에 각각 연결�
 ```shell
 sudo modprobe am_joyin endpoints="joystick;mouse" \
         device1="74hc165;16,20,21,,0;0,default,13" \
-        device2="am_spinin;i2c,0x34,600;1,1"
+        device2="am_spinin;i2c,0x34,400;1,,1"
 ```
 
 2p 설정의 예
@@ -808,8 +808,8 @@ sudo modprobe am_joyin endpoints="joystick;mouse" \
 ```shell
 sudo modprobe am_joyin endpoints="joystick;joystick;mouse;mouse" \
         device1="74hc165;24,20,21,,0;0,default,12;1,default,12" \
-        device2="am_spinin;i2c,0x34,600;2,1" \
-        device3="am_spinin;i2c,0x35,600;3,1" \
+        device2="am_spinin;i2c,0x34,400;2,,1" \
+        device3="am_spinin;i2c,0x35,400;3,,1" \
 ```
 
 Arkanoid 등의 게임은 RetroArch 설정에서, mouse 지원을 추가해 주면 된다.

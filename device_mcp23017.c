@@ -23,6 +23,7 @@
  */
 #define MCP23017_GPIOA_MODE	            (0x00)
 #define MCP23017_GPIOB_MODE	            (0x01)
+#define MCP23017_IOCON                  (0x0A)
 #define MCP23017_GPIOA_PULLUPS_MODE	    (0x0C)
 #define MCP23017_GPIOB_PULLUPS_MODE     (0x0D)
 #define MCP23017_GPIOA_READ             (0x12)
@@ -246,25 +247,38 @@ static int init_input_device_for_mcp23017(void* device_desc_data, input_device_d
 static void start_input_device_for_mcp23017(input_device_data_t *device_data)
 {
     device_mcp23017_data_t *user_data = (device_mcp23017_data_t *)device_data->data;
-    char FF = 0xFF;
+    char outval;
 
     i2c_init(bcm_peri_base_probe(), 0xB0);
     udelay(1000);
+
+    // outval = 0x00;
+    // i2c_write(user_data->device_cfg.i2c_addr, MCP23017_IOCON, &outval, 1);
+    // udelay(1000);
+
+    outval = 0xFF;
     // Put all GPIOA inputs on MCP23017 in INPUT mode
-    i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOA_MODE, &FF, 1);
+    i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOA_MODE, &outval, 1);
     udelay(1000);
+
+    // read one byte on GPIOA (for dummy)
+    i2c_read_1byte(user_data->device_cfg.i2c_addr, MCP23017_GPIOA_READ);
+    udelay(1000);
+
     // Put all inputs on MCP23017 in pullup mode
-    i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOA_PULLUPS_MODE, &FF, 1);
+    i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOA_PULLUPS_MODE, &outval, 1);
     udelay(1000);
+
     // Put all GPIOB inputs on MCP23017 in INPUT mode
-    i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOB_MODE, &FF, 1);
+    i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOB_MODE, &outval, 1);
     udelay(1000);
+
+    // read one byte on GPIOB (for dummy)
+    i2c_read_1byte(user_data->device_cfg.i2c_addr, MCP23017_GPIOB_READ);
+    udelay(1000);
+
     // Put all inputs on MCP23017 in pullup mode
-    i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOB_PULLUPS_MODE, &FF, 1);
-    udelay(1000);
-    // Put all inputs on MCP23017 in pullup mode a second time
-    // Known bug : if you remove this line, you will not have pullups on GPIOB 
-    i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOB_PULLUPS_MODE, &FF, 1);
+    i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOB_PULLUPS_MODE, &outval, 1);
     udelay(1000);
 
     device_data->is_opend = TRUE;
