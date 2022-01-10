@@ -71,6 +71,7 @@ am_joyin은 라즈베리파이를 이용하여 아케이드 게임기를 제작�
 | BTN_RIGHT    | 0x111 | 0      | 1     |
 | BTN_MIDDLE   | 0x112 | 0      | 1     |
 
+---
 
 ## 드라이버 설치
 
@@ -411,6 +412,7 @@ device1="74hc165;16,20,21,24;0,default,12;1,default,12"
 | ads1115   | ADS1115 4ch 16비트 I2C ADC        |
 | am_spinin | am_spinin Rotary Encoder 컨트롤러 |
 
+---
 
 ### GPIO 입력
 
@@ -448,6 +450,8 @@ sudo modprobe am_joyin endpoints="default,12;default,12" \
 ```shell
 sudo modprobe am_joyin device1="gpio;;0,custom,0,{4,0x1,-100},{17,0x1,100},{27,0x0,-100},{22,0x0,100},{10,0x13b,1},{9,0x13a,1}"
 ```
+
+---
 
 ### 74HC165 입력
 
@@ -513,6 +517,8 @@ sudo modprobe am_joyin endpoints="default;default" device1="74hc165;16,20,21,24;
 sudo modprobe am_joyin endpoints="default;default" device1="74hc165;16,20,21,32;0,default;1,default"
 ```
 
+---
+
 ### MCP23017 입력
 
 I2C를 이용해 키 입력을 받고자 한다면 MCP23017 칩을 사용하면 된다. I2C 인터페이스이기에 많은 배선을 필요로 하지 않고, 복수개를 같은 배선에 묶어서 사용할 수 있기 때문에 확장성도 있다.
@@ -550,6 +556,8 @@ sudo modprobe am_joyin endpoints="default;default" \
         device1="mcp23017;0x20;0,default" \
         device2="mcp23017;0x21;1,default"
 ```
+
+---
 
 ### Multiplexer(=MUX) 입력
 
@@ -609,6 +617,7 @@ sudo modprobe am_joyin endpoints="default;default" \
         device2="mux;16,{26,19,13,6};1,default"
 ```
 
+---
 
 ### MCP3008/MCP3004 ADC 입력
 
@@ -677,6 +686,7 @@ jstest로 테스트 해 보면 새로운 2개 축이 추가되었고, 조이스�
 
 ![jstest for ADC](images/jstest_adc.png)
 
+---
 
 ### ADS1115/ADS1015 ADC 입력
 
@@ -745,6 +755,7 @@ jstest로 테스트 해 보면 새로운 2개 축이 추가되었고, 조이스�
 
 ![jstest for ADC](images/jstest_adc.png)
 
+---
 
 ### am_spinin Rotary Encoder 입력
 
