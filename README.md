@@ -813,7 +813,7 @@ sudo modprobe am_joyin endpoints="joystick;mouse" \
 sudo modprobe am_joyin endpoints="joystick;joystick;mouse;mouse" \
         device1="74hc165;24,20,21,,0;0,default,12;1,default,12" \
         device2="am_spinin;i2c,0x34,400;2,,1" \
-        device3="am_spinin;i2c,0x35,400;3,,1" \
+        device3="am_spinin;i2c,0x35,400;3,,1"
 ```
 
 Arkanoid 등의 게임은 RetroArch 설정에서, mouse 지원을 추가해 주면 된다.
