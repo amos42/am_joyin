@@ -376,7 +376,7 @@ endpoints="default,,default,default;joystick,ext_joystick,1,11;mouse,,,4"
 예를 들어 다음과 같이 지정했다고 가정하자.
 
 ```shell
-device1="74hc165;16,20,21,24,1;0,default,12;1,default,12"
+device1="74hc165;16,20,21,24;0,default,12;1,default,12"
 ```
 
 이 파라미터는 다음과 같이 해석된다.
@@ -651,7 +651,7 @@ ADC의 경우엔 단독으로 사용되기보다는 보통은 다른 버튼 입�
 1p 설정의 예 (기본 방향키를 아날로그로 변경)
 
 ```shell
-sudo modprobe am_joyin device1="74hc165;16,20,21,16,1;0,default,13,4" \
+sudo modprobe am_joyin device1="74hc165;16,20,21,16;0,default,13,4" \
         device2="mcp3008;;0,custom,keycode,{0,0x03,-100,100},{1,0x04,-100,100}"
 ```
 
@@ -660,7 +660,7 @@ sudo modprobe am_joyin device1="74hc165;16,20,21,16,1;0,default,13,4" \
 ```shell
 sudo modprobe am_joyin buttonset1="default,0,12;{0x03,-100,100},{0x04,-100,100}" \
         endpoints="default,buttonset1" \
-        device1="74hc165;16,20,21,16,1;0,default" \
+        device1="74hc165;16,20,21,16;0,default" \
         device2="mcp3008;;0,custom,keycode,{0,0x03,-100,100},{1,0x04,-100,100}"
 ```
 
@@ -669,7 +669,7 @@ sudo modprobe am_joyin buttonset1="default,0,12;{0x03,-100,100},{0x04,-100,100}"
 ```shell
 sudo modprobe am_joyin buttonset1="default,0,11;{0x03,-100,100},{0x04,-100,100}" \
         endpoints="default,buttonset1;default,buttonset1" \
-        device1="74hc165;16,20,21,32,1;0,default;1,default" \
+        device1="74hc165;16,20,21,32;0,default;1,default" \
         device2="mcp3008;;0,custom,,{0,0x03,-100,100},{1,0x04,-100,100};1,custom,,{2,0x03,-100,100},{3,0x04,-100,100}"
 ```
 
@@ -719,7 +719,7 @@ ADC의 경우엔 단독으로 사용되기보다는 보통은 다른 버튼 입�
 1p 설정의 예 (기본 방향키를 아날로그로 변경)
 
 ```shell
-sudo modprobe am_joyin device1="74hc165;16,20,21,16,1;0,default,13,4" \
+sudo modprobe am_joyin device1="74hc165;16,20,21,16;0,default,13,4" \
         device2="ads1115;;0,custom,keycode,{0,0x03,-100,100},{1,0x04,-100,100}"
 ```
 
@@ -728,7 +728,7 @@ sudo modprobe am_joyin device1="74hc165;16,20,21,16,1;0,default,13,4" \
 ```shell
 sudo modprobe am_joyin buttonset1="default,0,12;{0x03,-100,100},{0x04,-100,100}" \
         endpoints="default,buttonset1" \
-        device1="74hc165;16,20,21,16,1;0,default" \
+        device1="74hc165;16,20,21,16;0,default" \
         device2="ads1115;;0,custom,keycode,{0,0x03,-100,100},{1,0x04,-100,100}"
 ```
 
@@ -737,7 +737,7 @@ sudo modprobe am_joyin buttonset1="default,0,12;{0x03,-100,100},{0x04,-100,100}"
 ```shell
 sudo modprobe am_joyin buttonset1="default,0,11;{0x03,-100,100},{0x04,-100,100}" \
         endpoints="default,buttonset1;default,buttonset1" \
-        device1="74hc165;16,20,21,32,1;0,default;1,default" \
+        device1="74hc165;16,20,21,32;0,default;1,default" \
         device2="ads1115;;0,custom,,{0,0x03,-100,100},{1,0x04,-100,100};1,custom,,{2,0x03,-100,100},{3,0x04,-100,100}"
 ```
 
@@ -803,7 +803,7 @@ Rotary Encoder의 A, B 핀은 보드의 GPIO 2번과 3번 핀에 각각 연결�
 
 ```shell
 sudo modprobe am_joyin endpoints="joystick;mouse" \
-        device1="74hc165;16,20,21,,0;0,default,13" \
+        device1="74hc165;16,20,21;0,default,13" \
         device2="am_spinin;i2c,0x34,400;1,,1"
 ```
 
@@ -811,9 +811,9 @@ sudo modprobe am_joyin endpoints="joystick;mouse" \
 
 ```shell
 sudo modprobe am_joyin endpoints="joystick;joystick;mouse;mouse" \
-        device1="74hc165;24,20,21,,0;0,default,12;1,default,12" \
+        device1="74hc165;24,20,21;0,default,12;1,default,12" \
         device2="am_spinin;i2c,0x34,400;2,,1" \
-        device3="am_spinin;i2c,0x35,400;3,,1" \
+        device3="am_spinin;i2c,0x35,400;3,,1"
 ```
 
 Arkanoid 등의 게임은 RetroArch 설정에서, mouse 지원을 추가해 주면 된다.
