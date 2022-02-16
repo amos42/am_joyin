@@ -71,7 +71,7 @@ MODULE_LICENSE("GPL");
 static am_joyin_data_t *a_input;
 
 
-static void initButtonConfig(struct input_dev *indev, input_buttonset_data_t *buttonset_cfg, int button_count)
+static void initButtonConfig(struct input_dev *indev, input_buttonset_data_t *buttonset_cfg, int button_count, int endpoint_type)
 {
     int i;
    
@@ -83,7 +83,9 @@ static void initButtonConfig(struct input_dev *indev, input_buttonset_data_t *bu
         input_button_data_t *btn = &buttonset_cfg->button_data[i];
         unsigned int code = btn->button_code;
         if (code < ABS_MAX) {
-            input_set_abs_params(indev, code, btn->min_value, btn->max_value, 0, 0);
+            if (endpoint_type == ENDPOINT_TYPE_JOYSTICK) {
+                input_set_abs_params(indev, code, btn->min_value, btn->max_value, 0, 0);
+            }
         } else {
             __set_bit(code, indev->keybit);
         }
@@ -146,19 +148,21 @@ static void am_timer(unsigned long private) {
         reportInput(ep->indev, ep->endpoint_type, ep->target_buttonset->button_data, ep->button_count, ep->report_button_state, ep->current_button_state);
     }
 
-    // 만약 키체크 시간이 너무 길어서 다음 타이머 주기를 초과해 버리면 예외 처리
-    if (next_timer <= jiffies) {
-        next_timer = jiffies + inp->timer_period;
-        
-        // 타이머 주기를 초과하는 횟수가 100회를 넘으면 타이머 중단
-        if (++inp->missing_timer_count > 100) {
-            printk(KERN_ERR"Button check time is too late. Terminate the timer.");
-            return;
+    if (inp->timer_activate) {
+        // 만약 키체크 시간이 너무 길어서 다음 타이머 주기를 초과해 버리면 예외 처리
+        if (next_timer <= jiffies) {
+            next_timer = jiffies + inp->timer_period;
+            
+            // 타이머 주기를 초과하는 횟수가 100회를 넘으면 타이머 중단
+            if (++inp->missing_timer_count > 100) {
+                printk(KERN_ERR"Button check time is too late. Terminate the timer.");
+                return;
+            }
         }
-    }
 
-    // 다음 타이머 트리거
-    mod_timer(&inp->timer, next_timer);
+        // 다음 타이머 트리거
+        mod_timer(&inp->timer, next_timer);
+    }
 }
 
 
@@ -176,9 +180,10 @@ static void initTimer(void)
 
 static void startTimer(void)
 {
-    if (a_input != NULL) {
+    if (a_input != NULL && !a_input->timer_activate) {
         if (a_input->input_endpoint_count > 0 && a_input->input_device_count > 0){
             mod_timer(&a_input->timer, jiffies + a_input->timer_period);
+             a_input->timer_activate = TRUE;
             //printk("start dev input timer");
         }
     }
@@ -187,8 +192,9 @@ static void startTimer(void)
 
 static void stopTimer(void)
 {
-    if (a_input != NULL) {
+    if (a_input != NULL && a_input->timer_activate) {
         del_timer_sync(&a_input->timer);
+        a_input->timer_activate = FALSE;
         //printk("stop dev input timer");
     }
 }
@@ -259,15 +265,16 @@ static int __endpoint_register(input_endpoint_data_t *endpoint)
         if (endpoint->endpoint_type == ENDPOINT_TYPE_JOYSTICK) {
             indev->phys = "joystick";
             indev->evbit[0] = BIT_MASK(EV_KEY) | BIT_MASK(EV_ABS);
+            initButtonConfig(indev, endpoint->target_buttonset, endpoint->button_count, endpoint->endpoint_type);
         } else if (endpoint->endpoint_type == ENDPOINT_TYPE_MOUSE) {
             indev->phys = "mouse";
             indev->evbit[0] = BIT_MASK(EV_KEY) | BIT_MASK(EV_REL);
-            __set_bit(BTN_MOUSE, indev->keybit);
             __set_bit(REL_X, indev->relbit);
             __set_bit(REL_Y, indev->relbit);
+            __set_bit(BTN_MOUSE, indev->keybit);
+            __set_bit(BTN_RIGHT, indev->keybit);
+            __set_bit(BTN_MIDDLE, indev->keybit);
         }
-
-        initButtonConfig(indev, endpoint->target_buttonset, endpoint->button_count);
 
         err = input_register_device(indev);
         if (err >= 0){
@@ -437,7 +444,7 @@ err_free_dev:
 static void am_joyin_exit(void)
 {
     cleanup();
-    //printk("unregister input dev");
+    printk(KERN_INFO"am_joyin_exit.");
 }
 
 

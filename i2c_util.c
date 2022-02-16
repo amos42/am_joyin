@@ -89,7 +89,7 @@ void i2c_close(void)
 void wait_i2c_done(void) 
 {
     while (!(BSC1_S & BSC_S_DONE)) {
-        udelay(100);
+        udelay(1);
     }
 }
 
@@ -110,6 +110,8 @@ void i2c_raw_write(char dev_addr, char *buf, int len)
     BSC1_C = START_WRITE; // Start Write (see #define)
 
     wait_i2c_done();
+
+//    BSC1_S = CLEAR_STATUS; // Reset status bits (see #define)
 }
 
 // Function to read a number of bytes into a  buffer from the FIFO of the I2C controller
@@ -133,6 +135,8 @@ void i2c_raw_read(char dev_addr, char *buf, int len)
     }
 
     wait_i2c_done();
+
+//    BSC1_S = CLEAR_STATUS; // Reset status bits (see #define)
 }
 
 // Function to write data to an I2C device via the FIFO.  This doesn't refill the FIFO, so writes are limited to 16 bytes
@@ -153,6 +157,8 @@ void i2c_write(char dev_addr, char reg_addr, char *buf, int len)
     BSC1_C = START_WRITE; // Start Write (see #define)
 
     wait_i2c_done();
+
+//    BSC1_S = CLEAR_STATUS; // Reset status bits (see #define)
 }
 
 // Function to read a number of bytes into a  buffer from the FIFO of the I2C controller

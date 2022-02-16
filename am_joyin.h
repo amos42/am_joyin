@@ -37,6 +37,7 @@ typedef struct tag_am_joyin_data {
     // 런타임 참조 정보
     int used;
     struct mutex mutex;
+    int timer_activate;
     struct timer_list timer;
     int missing_timer_count;
 } am_joyin_data_t;
