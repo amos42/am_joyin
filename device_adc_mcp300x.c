@@ -10,7 +10,11 @@
 #include "indev_type.h"
 #include "bcm_peri.h"
 #include "gpio_util.h"
+#if defined(USE_SPI_DIRECT)
 #include "spi_util.h"
+#else
+#include <linux/spi/spi.h>
+#endif
 #include "parse_util.h"
 
 
@@ -240,14 +244,21 @@ static int init_input_device_for_mcp300x(void* device_desc_data, input_device_da
     return 0;
 }
 
+#if !defined(USE_SPI_DIRECT)
+
+#endif
 
 static void start_input_device_for_mcp300x(input_device_data_t *device_data)
 {
     // device_mcp300x_data_t *user_data = (device_mcp300x_data_t *)device_data->data;
 
+#if defined(USE_SPI_DIRECT)
     spi_init(bcm_peri_base_probe(), 0xB0);
 
     spi_setClockDivider(256);
+#else
+
+#endif
 
     device_data->is_opend = TRUE;
 }
@@ -268,8 +279,12 @@ static void check_input_device_for_mcp300x(input_device_data_t *device_data)
 
     io_value = ((unsigned)resultB << 8) | (unsigned)resultA;
 
+#if defined(USE_SPI_DIRECT)
     spi_begin();
     spi_chipSelect(spi_channel);
+#else
+
+#endif
 
     sampling_count = user_data->device_cfg.sampling_count;
     value_weight = user_data->device_cfg.value_weight_percent;
@@ -290,12 +305,20 @@ static void check_input_device_for_mcp300x(input_device_data_t *device_data)
                 wrbuf[1] = (0x08 | btndef->adc_channel) << 4;
 
                 if (value_weight >= 100) {
+#if defined(USE_SPI_DIRECT)
                     spi_transfernb(wrbuf, rdbuf, 3);
+#else
+
+#endif
                     v = (int)(((unsigned short)rdbuf[1] & 0x3) << 8 | rdbuf[2]);
                 } else {
                     v = user_data->currentAdcValue[btndef->adc_channel];
                     for (k = 0; k < sampling_count; k++) {
+#if defined(USE_SPI_DIRECT)
                         spi_transfernb(wrbuf, rdbuf, 3);
+#else
+
+#endif
                         v0 = (int)(((unsigned short)rdbuf[1] & 0x3) << 8 | rdbuf[2]);
                         v = (v0 * value_weight + v * prev_weight) / 100;
                     }
@@ -316,15 +339,23 @@ static void check_input_device_for_mcp300x(input_device_data_t *device_data)
         }
     }
 
+#if defined(USE_SPI_DIRECT)
     spi_end();
+#else
+
+#endif
 }
 
 
 static void stop_input_device_for_mcp300x(input_device_data_t *device_data)
 {
     device_data->is_opend = FALSE;
-    
+
+#if defined(USE_SPI_DIRECT)
     spi_close();
+#else
+
+#endif
 }
 
 

@@ -342,7 +342,7 @@ static void start_input_device_for_mcp23017(input_device_data_t *device_data)
 	int r = i2c_add_driver(&__mcp23017_driver);
     // printk("i2c_add_driver = %d", r);
 
-    {
+    if (r >= 0) {
         struct i2c_board_info i2c_board_info = {
             I2C_BOARD_INFO("mcp23017", user_data->device_cfg.i2c_addr)
         };

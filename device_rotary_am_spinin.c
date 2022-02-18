@@ -14,6 +14,11 @@
 #else
 #include <linux/i2c.h>
 #endif
+#if defined(USE_SPI_DIRECT)
+#include "spi_util.h"
+#else
+#include <linux/spi/spi.h>
+#endif
 #include "parse_util.h"
 
 
@@ -216,13 +221,17 @@ static int __parse_endpoint_param_for_am_spinin(device_am_spinin_data_t* user_da
 }
 
 
-static short __spi_trans(char cmd, short value) 
+static short __spi_trans_for_am_spinin(char cmd, short value) 
 {
     unsigned char buf[3];
     buf[0] = cmd;
     buf[1] = (value >> 8) & 0xFF;
     buf[2] = value & 0xFF;
+#if defined(USE_SPI_DIRECT)
     spi_transfern(buf, 3);
+#else
+
+#endif
     return (short)((unsigned short)buf[1] << 8 | buf[2]);
 }
 
@@ -330,7 +339,7 @@ static void start_input_device_for_am_spinin(input_device_data_t *device_data)
         int r = i2c_add_driver(&__am_spinin_driver);
         // printk("i2c_add_driver = %d", r);
 
-        {
+        if (r >= 0) {
             struct i2c_board_info i2c_board_info = {
                 I2C_BOARD_INFO("am_spinin", user_data->device_cfg.addr)
             };
@@ -340,25 +349,30 @@ static void start_input_device_for_am_spinin(input_device_data_t *device_data)
             }
             user_data->i2c = i2c_new_client_device(i2c_adap, &i2c_board_info);
             i2c_put_adapter(i2c_adap);
+
+            i2c_smbus_write_word_data(user_data->i2c, AM_SPININ_SET_MODE, 0);
+            i2c_smbus_write_word_data(user_data->i2c, AM_SPININ_WRITE_VALUE, 0);
+            i2c_smbus_write_word_data(user_data->i2c, AM_SPININ_SET_MIN_VALUE, user_data->device_cfg.min_value);
+            i2c_smbus_write_word_data(user_data->i2c, AM_SPININ_SET_MAX_VALUE, user_data->device_cfg.max_value);
+            i2c_smbus_write_word_data(user_data->i2c, AM_SPININ_SET_SAMPLERATE, user_data->device_cfg.sample_rate);
         }
-        i2c_smbus_write_word_data(user_data->i2c, AM_SPININ_SET_MODE, 0);
-        i2c_smbus_write_word_data(user_data->i2c, AM_SPININ_WRITE_VALUE, 0);
-        i2c_smbus_write_word_data(user_data->i2c, AM_SPININ_SET_MIN_VALUE, user_data->device_cfg.min_value);
-        i2c_smbus_write_word_data(user_data->i2c, AM_SPININ_SET_MAX_VALUE, user_data->device_cfg.max_value);
-        i2c_smbus_write_word_data(user_data->i2c, AM_SPININ_SET_SAMPLERATE, user_data->device_cfg.sample_rate);
 #endif        
     } else if (user_data->device_cfg.comm_type == AM_SPININ_COMM_SPI) {
+#if defined(USE_SPI_DIRECT)
         spi_init(bcm_peri_base_probe(), 0xB0);
         spi_setClockDivider(0x01);
         spi_setDataMode(0);
 
         spi_begin();
-        __spi_trans(AM_SPININ_SET_MODE, 0);
-        __spi_trans(AM_SPININ_WRITE_VALUE, 0);
-        __spi_trans(AM_SPININ_SET_MIN_VALUE, user_data->device_cfg.min_value);
-        __spi_trans(AM_SPININ_SET_MAX_VALUE, user_data->device_cfg.max_value);
-        __spi_trans(AM_SPININ_SET_SAMPLERATE, user_data->device_cfg.sample_rate);
+        __spi_trans_for_am_spinin(AM_SPININ_SET_MODE, 0);
+        __spi_trans_for_am_spinin(AM_SPININ_WRITE_VALUE, 0);
+        __spi_trans_for_am_spinin(AM_SPININ_SET_MIN_VALUE, user_data->device_cfg.min_value);
+        __spi_trans_for_am_spinin(AM_SPININ_SET_MAX_VALUE, user_data->device_cfg.max_value);
+        __spi_trans_for_am_spinin(AM_SPININ_SET_SAMPLERATE, user_data->device_cfg.sample_rate);
         spi_end();
+#else
+
+#endif
     } else {
         return;
     }
@@ -387,7 +401,10 @@ static void check_input_device_for_am_spinin(input_device_data_t *device_data)
 #else
         if (!IS_ERR_OR_NULL(user_data->i2c)) {
             value = i2c_smbus_read_word_data(user_data->i2c, AM_SPININ_READ_VALUE);
-            if (value < 0) return;
+            if (value < 0) {
+                // printk(">>>>>>> i2c : %d", value);
+                return;
+            }
             value = (short)value;
             if (value != 0) {
                 i2c_smbus_write_word_data(user_data->i2c, AM_SPININ_WRITE_VALUE, 0);
@@ -397,13 +414,17 @@ static void check_input_device_for_am_spinin(input_device_data_t *device_data)
         }
 #endif        
     } else if (user_data->device_cfg.comm_type == AM_SPININ_COMM_SPI) {
+#if defined(USE_SPI_DIRECT)        
         spi_begin();
         spi_chipSelect(addr);
-        value = __spi_trans(AM_SPININ_READ_VALUE, 0);
+        value = __spi_trans_for_am_spinin(AM_SPININ_READ_VALUE, 0);
         if (value != 0) {
-            __spi_trans(AM_SPININ_WRITE_VALUE, 0);
+            __spi_trans_for_am_spinin(AM_SPININ_WRITE_VALUE, 0);
         }
         spi_end();
+#else
+
+#endif
     } else {
         return;
     }
@@ -435,7 +456,11 @@ static void stop_input_device_for_am_spinin(input_device_data_t *device_data)
     }
 #endif        
     } else if (user_data->device_cfg.comm_type == AM_SPININ_COMM_SPI) {
+#if defined(USE_SPI_DIRECT)
         spi_close();
+#else
+
+#endif
     }    
 }
 

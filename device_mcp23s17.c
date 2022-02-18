@@ -9,7 +9,11 @@
 #include <linux/uaccess.h>
 #include "bcm_peri.h"
 #include "gpio_util.h"
+#if defined(USE_SPI_DIRECT)
 #include "spi_util.h"
+#else
+#include <linux/spi/spi.h>
+#endif
 #include "parse_util.h"
 
 //#define GPIO_GET(i)   GPIO_READ(i)
@@ -259,18 +263,91 @@ static int init_input_device_for_mcp23s17(void* device_desc_data, input_device_d
     return 0;
 }
 
+#if !defined(USE_SPI_DIRECT)
+static int __mcp23s17_spi_probe(struct spi_device *spi)
+{
+	return 0;
+}
+
+static int __mcp23s17_spi_remove(struct spi_device *spi)
+{
+	return 0;
+}
+
+static struct of_device_id __mcp23s17_match_table[] = { 
+    {.compatible = "mcp23s17",},
+    {},
+};
+MODULE_DEVICE_TABLE(of, __mcp23s17_match_table);
+
+static struct spi_driver __mcp23s17_spi_driver = {
+    .driver = {
+        .name = "mcp23s17",
+        .owner = THIS_MODULE,
+        .of_match_table = __mcp23s17_match_table,},
+    .probe = __mcp23s17_spi_probe,
+    .remove = __mcp23s17_spi_remove,
+};
+#endif
+
+static uint8_t __mcp23s17_spi_read(uint8_t cmd)
+{
+#if defined(USE_SPI_DIRECT)
+    unsigned char buf[3] = {0x41, cmd, 0};
+    spi_transfern(buf, 3);
+    return buf[2];
+#else
+
+#endif
+}
+
+static uint8_t __mcp23s17_spi_write(uint8_t cmd, uint8_t value)
+{
+#if defined(USE_SPI_DIRECT)
+    unsigned char buf[3] = {0x40, cmd, value};
+    spi_transfern(buf, 3);
+    return buf[2];
+#else
+
+#endif
+}
 
 static void start_input_device_for_mcp23s17(input_device_data_t *device_data)
 {
-    //device_mcp23s17_data_t *user_data = (device_mcp23s17_data_t *)device_data->data;
+    device_mcp23s17_data_t *user_data = (device_mcp23s17_data_t *)device_data->data;
     //char FF = 0xFF;
 
+#if defined(USE_SPI_DIRECT)
     spi_init(bcm_peri_base_probe(), 0xB0);
-
     spi_setClockDivider(256);
+    udelay(100);
 
-    // To-do: 풀업시켜 줘야 한다.
-    // ...
+    spi_begin();
+    spi_chipSelect(user_data->device_cfg.spi_channel);
+
+    __mcp23s17_spi_write(MCP23017_GPIOA_MODE, 0xFF);
+    //udelay(100);
+
+    // read one byte on GPIOA (for dummy)
+    //__mcp23s17_spi_read(MCP23017_GPIOA_READ);
+    //udelay(100);
+
+    __mcp23s17_spi_write(MCP23017_GPIOA_PULLUPS_MODE, 0xFF);
+    //udelay(100);
+
+    __mcp23s17_spi_write(MCP23017_GPIOB_MODE, 0xFF);
+    //udelay(100);
+
+    // read one byte on GPIOA (for dummy)
+    //__mcp23s17_spi_read(MCP23017_GPIOB_READ);
+    //udelay(100);
+
+    __mcp23s17_spi_write(MCP23017_GPIOB_PULLUPS_MODE, 0xFF);
+
+    spi_end();
+#else
+    spi_register_driver(&__mcp23s17_spi_driver);
+#endif
 
     device_data->is_opend = TRUE;
 }
@@ -280,7 +357,7 @@ static void check_input_device_for_mcp23s17(input_device_data_t *device_data)
 {
     int i, j, cnt;
     int spi_channel, io_count;
-    //char resultA, resultB;
+    uint8_t resultA, resultB;
     unsigned io_value;
     device_mcp23s17_data_t *user_data = (device_mcp23s17_data_t *)device_data->data;
 
@@ -291,18 +368,18 @@ static void check_input_device_for_mcp23s17(input_device_data_t *device_data)
 
     if (io_count <= 0) return;
 
+#if defined(USE_SPI_DIRECT)
     spi_begin();
     spi_chipSelect(spi_channel);
 
-    {
-        unsigned char buf[3] = {0x41, MCP23S17_GPIOA, 0};
-        unsigned char buf2[3] = {0x41, MCP23S17_GPIOB, 0};
-        spi_transfern(buf, 3);
-        spi_transfern(buf2, 3);
-        io_value = buf[2] << 8 | buf2[2];
-    }
+    resultA = __mcp23s17_spi_read(MCP23S17_GPIOA);
+    resultB = __mcp23s17_spi_read(MCP23S17_GPIOB);
 
     spi_end();
+#else
+
+#endif
+    io_value = ((unsigned)resultB << 8) | (unsigned)resultA;
 
     for (i = 0; i < device_data->target_endpoint_count; i++) {
         input_endpoint_data_t* endpoint = device_data->target_endpoints[i];
@@ -332,7 +409,11 @@ static void stop_input_device_for_mcp23s17(input_device_data_t *device_data)
 {
     device_data->is_opend = FALSE;
     
+#if defined(USE_SPI_DIRECT)
     spi_close();
+#else
+
+#endif
 }
 
 

@@ -113,8 +113,8 @@ sudo apt install -y --force-yes raspberrypi-kernel-headers
 #### wget 사용시
 
 ```shell
-wget https://github.com/amos42/am_joyin/releases/download/v0.3.1-beta01/am_joyin-0.3.1.deb
-sudo dpkg -i am_joyin-0.3.1.deb
+wget https://github.com/amos42/am_joyin/releases/download/v0.4.0-beta01/am_joyin-0.4.0.deb
+sudo dpkg -i am_joyin-0.4.0.deb
 ```
 
 #### git 사용시
@@ -129,8 +129,8 @@ git clone https://github.com/amos42/am_joyin.git
 
 ```shell
 cd am_joyin
-./utils/makepackage.sh 0.3.1 
-sudo dpkg -i build/am_joyin-0.3.1.deb
+./utils/makepackage.sh 0.4.0 
+sudo dpkg -i build/am_joyin-0.4.0.deb
 ```
 ​
 이 과정까지 거치면 드라이버 설치가 1차적으로 완료된다.
@@ -246,7 +246,7 @@ jstest /dev/input/js0
 
 ### 7. 드라이버 삭제
 
-드라이버를 삭제하기 위해선 설치한 순서의 반대로 진행하면 된다.
+더이상 am_joyin을 사용하지 않길 원하여 드라이버를 삭제하기 위해선 설치한 순서의 반대로 진행하면 된다.
 
 > 1. /etc/modprobe.d/am_joyin.conf 파일 삭제
 > 2. /etc/modules-load.d/modules.conf 목록에서 am_joyin 제거
@@ -321,7 +321,7 @@ am_joyin의 파라미터는 다음과 같다.
 
 ### driver 전역 설정
 
-> 1. report_period : 키 체크 주기. Hz 단위로 기술. default는 100Hz. (OS의 인터럽트 세팅에 따라 최대치가 결정된다.)
+> 1. report_period : 키 체크 주기. Hz 단위로 기술. default는 100Hz. (최대값은 1000Hz이나, 현실적으로는 권장하지 않는다.)
 > 2. debug : 디버그 모드 여부. Log 출력 내용에 영향을 준다.
 
 ### buttonset 설정

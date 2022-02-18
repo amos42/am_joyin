@@ -43,12 +43,16 @@ MODULE_LICENSE("GPL");
 
 //#include "gpio_util.h"
 #include "gpio_util.c"
+
 #if defined(USE_I2C_DIRECT)
 //#include "i2c_util.h"
 #include "i2c_util.c"
 #endif
+#if defined(USE_SPI_DIRECT)
 //#include "spi_util.h"
 #include "spi_util.c"
+#endif
+
 //#include "parse_util.h"
 #include "parse_util.c"
 

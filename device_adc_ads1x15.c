@@ -411,7 +411,7 @@ static void start_input_device_for_ads1x15(input_device_data_t *device_data)
 	int r = i2c_add_driver(&__ads1x15_driver);
     // printk("i2c_add_driver = %d", r);
 
-    {
+    if (r >= 0) {
         struct i2c_board_info i2c_board_info = {
             I2C_BOARD_INFO("ads1x15", user_data->device_cfg.i2c_addr)
         };
@@ -538,6 +538,9 @@ static void check_input_device_for_ads1x15(input_device_data_t *device_data)
     i2c_addr = user_data->device_cfg.i2c_addr;
 #else
     i2c_addr = user_data->i2c;
+    if (IS_ERR_OR_NULL(i2c_addr)) {
+        return;
+    }
 #endif    
     adc_gain = ads1x15_gain_setting[user_data->device_cfg.ads_gain][0]; /* +/- 4.096V range (limited to VDD +0.3V max!) */
     adc_gain_milli_volt = ads1x15_gain_setting[user_data->device_cfg.ads_gain][1];
