@@ -154,7 +154,7 @@ sudo modprobe am_joyin
 sudo nano /etc/modules-load.d/modules.conf
 ```
 
-마지막 라인에 다음 항목을 추가하고 ctrl-x를 눌러 저장하고 종료한다.
+마지막 라인에 다음 항목을 추가한다.
 
 ```
   .
@@ -164,18 +164,21 @@ sudo nano /etc/modules-load.d/modules.conf
 am_joyin
 ```
 
-만약 mcp23017과 같은 I2C 장치를 사용하고 있다면, 다음의 2개 라인도 함께 포함시킨다.
+만약 mcp23017, ads1x15, am_spinin과 같은 I2C 장치를 사용하고 있다면, 다음의 2개 라인도 함께 포함시킨다.
 
 ```
 i2c-bcm2708 
 i2c-dev
 ```
 
-간혹 해당 모듈들이 블럭되어 있는 경우가 있는 경우도 있기에 블랙리스트에 포함되어 있다면 이를 제거해야 한다.
+필요한 내용를 다 추가했다면 ctrl-x를 눌러 저장하고 종료하면 된다.
+
+간혹 해당 모듈들이 블럭되어 있는 경우가 있기에 블랙리스트도 확인해 보는 것이 좋다. 만약 사용하고자 하는 모듈이 블랙리스트에 포함되어 있다면 이를 찾아 제거해 놔야 한다.
 
 ```bash
 sudo nano /etc/modprobe.d/raspi-blacklist.conf
 ```
+
 
 ### 4. am_joyin 설정
 
@@ -208,6 +211,7 @@ options am_joyin device1="gpio;;0,default1"
 ```shell
 sudo reboot
 ```
+
 
 ### 6. 드라이버 동작 테스트
 

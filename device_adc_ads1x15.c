@@ -9,7 +9,11 @@
 #include <linux/uaccess.h>
 #include "bcm_peri.h"
 #include "gpio_util.h"
+#if defined(USE_I2C_DIRECT)
 #include "i2c_util.h"
+#else
+#include <linux/i2c.h>
+#endif
 #include "parse_util.h"
 
 
@@ -149,6 +153,9 @@ typedef struct tag_device_ads1x15_data {
 
     device_ads1x15_desc_config_t    device_desc_data;
     device_ads1x15_config_t         device_cfg;
+#if !defined(USE_I2C_DIRECT)    
+	struct i2c_client *i2c;
+#endif
     device_ads1x15_index_table_t    button_cfgs[1];
 } device_ads1x15_data_t;
 
@@ -338,28 +345,94 @@ static int init_input_device_for_ads1x15(void* device_desc_data, input_device_da
 }
 
 
+#if !defined(USE_I2C_DIRECT)
+//static struct i2c_client *__ads1x15_i2c = NULL;
+//static int __ads1x15_i2c_refcnt = 0;
+
+static int __ads1x15_probe(struct i2c_client *i2c, const struct i2c_device_id *id)
+{
+    // device_mcp23017_data_t *user_data = (device_ads1x15_data_t *)i2c->dev.platform_data;
+  
+    // if (++__ads1x15_i2c_refcnt == 1) {
+    //     __ads1x15_i2c = i2c;
+    // }
+
+	// i2c_set_clientdata(i2c, user_data);
+	// user_data->i2c = i2c;
+
+	return 0;
+}
+
+static int __ads1x15_remove(struct i2c_client *i2c)
+{
+	// device_ads1x15_data_t* user_data = (device_ads1x15_data_t *)i2c_get_clientdata(i2c);
+  
+    // if (--__ads1x15_i2c_refcnt == 0) {
+    //     __ads1x15_i2c = NULL;
+    // }
+
+	return 0;
+}
+
+static const struct of_device_id __ads1x15_of_ids[] = {
+    { .compatible = "ads1x15" },
+	{} /* sentinel */
+};
+MODULE_DEVICE_TABLE(of, __ads1x15_of_ids);
+
+static const struct i2c_device_id __ads1x15_i2c_ids[] = {
+	{ "ads1x15", 0 },
+	{}
+};
+MODULE_DEVICE_TABLE(i2c, __ads1x15_i2c_ids);
+
+static struct i2c_driver __ads1x15_driver = {
+	.driver = {
+		.name = "ads1x15",
+        .owner = THIS_MODULE,
+		.of_match_table = of_match_ptr(__ads1x15_of_ids)
+	},
+	.probe = __ads1x15_probe,
+	.remove = __ads1x15_remove,
+    .id_table = __ads1x15_i2c_ids,
+};
+#endif
+
 static void start_input_device_for_ads1x15(input_device_data_t *device_data)
 {
-    // device_ads1x15_data_t *user_data = (device_ads1x15_data_t *)device_data->data;
+#if !defined(USE_I2C_DIRECT)
+    device_ads1x15_data_t *user_data = (device_ads1x15_data_t *)device_data->data;
+#endif    
 
 #if defined(USE_I2C_DIRECT)
     i2c_init(bcm_peri_base_probe(), 0xB0);
 #else
+    // add driver
+	int r = i2c_add_driver(&__ads1x15_driver);
+    // printk("i2c_add_driver = %d", r);
 
+    {
+        struct i2c_board_info i2c_board_info = {
+            I2C_BOARD_INFO("ads1x15", user_data->device_cfg.i2c_addr)
+        };
+        struct i2c_adapter* i2c_adap = i2c_get_adapter(1);
+        if (i2c_adap == NULL) {
+            return;
+        }
+        user_data->i2c = i2c_new_client_device(i2c_adap, &i2c_board_info);
+        i2c_put_adapter(i2c_adap);
+    }
 #endif    
 
     device_data->is_opend = TRUE;
 }
 
 
+#if defined(USE_I2C_DIRECT)
 static uint16_t __readRegister(int i2c_addr, uint8_t reg) 
 {
     uint8_t buffer[2];
-#if defined(USE_I2C_DIRECT)
     i2c_read(i2c_addr, reg, buffer, 2);
-#else
-
-#endif
     return ((buffer[0] << 8) | buffer[1]);
 }
 
@@ -368,15 +441,34 @@ static void __writeRegister(int i2c_addr, uint8_t reg, uint16_t value)
     uint8_t buffer[2];
     buffer[0] = value >> 8;
     buffer[1] = value & 0xFF;
-#if defined(USE_I2C_DIRECT)
     i2c_write(i2c_addr, reg, buffer, 2);
+}
 #else
-
-#endif    
+static uint16_t __readRegister(struct i2c_client* i2c, uint8_t reg) 
+{
+    if (!IS_ERR_OR_NULL(i2c)) {
+        int value = i2c_smbus_read_word_data(i2c, reg);
+        return (value < 0) ? 0 : value;
+    } else {
+        return 0;
+    }
 }
 
+static void __writeRegister(struct i2c_client* i2c, uint8_t reg, uint16_t value) 
+{
+    if (!IS_ERR_OR_NULL(i2c)) {
+        i2c_smbus_write_word_data(i2c, reg, value);
+    }
+}
+#endif
 
+
+
+#if defined(USE_I2C_DIRECT)
 static int16_t __readADC_SingleEnded(int i2c_addr, uint8_t channel, unsigned gain) 
+#else
+static int16_t __readADC_SingleEnded(struct i2c_client* i2c_addr, uint8_t channel, unsigned gain) 
+#endif
 {
   uint16_t config;
 
@@ -430,7 +522,11 @@ static int16_t __readADC_SingleEnded(int i2c_addr, uint8_t channel, unsigned gai
 static void check_input_device_for_ads1x15(input_device_data_t *device_data)
 {
     int i, j, k, cnt;
+#if defined(USE_I2C_DIRECT)    
     int i2c_addr;
+#else    
+    struct i2c_client* i2c_addr;
+#endif    
     unsigned adc_gain;
     int adc_gain_milli_volt, ref_milli_volt;
     device_ads1x15_data_t *user_data = (device_ads1x15_data_t *)device_data->data;
@@ -438,7 +534,11 @@ static void check_input_device_for_ads1x15(input_device_data_t *device_data)
 
     if (user_data == NULL) return;
 
+#if defined(USE_I2C_DIRECT)    
     i2c_addr = user_data->device_cfg.i2c_addr;
+#else
+    i2c_addr = user_data->i2c;
+#endif    
     adc_gain = ads1x15_gain_setting[user_data->device_cfg.ads_gain][0]; /* +/- 4.096V range (limited to VDD +0.3V max!) */
     adc_gain_milli_volt = ads1x15_gain_setting[user_data->device_cfg.ads_gain][1];
     ref_milli_volt = user_data->device_cfg.ref_milli_volt;
@@ -490,12 +590,19 @@ static void check_input_device_for_ads1x15(input_device_data_t *device_data)
 
 static void stop_input_device_for_ads1x15(input_device_data_t *device_data)
 {
+#if !defined(USE_I2C_DIRECT)
+    device_ads1x15_data_t *user_data = (device_ads1x15_data_t *)device_data->data;
+#endif    
+
     device_data->is_opend = FALSE;
 
 #if defined(USE_I2C_DIRECT)
     i2c_close();
 #else
-
+	i2c_del_driver(&__ads1x15_driver);
+    if (!IS_ERR_OR_NULL(user_data->i2c)) {
+        i2c_unregister_device(user_data->i2c);
+    }
 #endif    
 }
 

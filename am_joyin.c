@@ -131,7 +131,7 @@ static void reportInput(struct input_dev *indev, int endpoint_type, input_button
 
 
 #if defined(USE_REPORT_TIMER)
-#ifdef HAVE_TIMER_SETUP
+#if defined(HAVE_TIMER_SETUP)
 static void am_timer(struct timer_list *t) {
     am_joyin_data_t *inp = from_timer(inp, t, report_timer);
 #else
@@ -176,8 +176,9 @@ static void am_timer(unsigned long private) {
 static int report_worker(void *data) {
     am_joyin_data_t *inp = (am_joyin_data_t *)data;
 
-printk(">> worker start");
-	while (!kthread_should_stop()) {
+    unsigned long usleeptick = 1000000ul / inp->report_period;
+
+    while (!kthread_should_stop()) {
         int i;
 
         for (i = 0; i < inp->input_endpoint_count; i++) {
@@ -197,27 +198,25 @@ printk(">> worker start");
             reportInput(ep->indev, ep->endpoint_type, ep->target_buttonset->button_data, ep->button_count, ep->report_button_state, ep->current_button_state);
         }
 
-		//fsleep(1000000 / inp->report_period);
-        msleep(1000 / inp->report_period);
-	}
-printk(">> worker end");
+        fsleep(usleeptick);
+    }
 
-	return 0;
+    return 0;
 }
 #endif
 
 static void initTimer(void)
 {
     if (a_input != NULL) {
-#if defined(USE_REPORT_TIMER)        
-#ifdef HAVE_TIMER_SETUP
+#if defined(USE_REPORT_TIMER)
+#if defined(HAVE_TIMER_SETUP)
         timer_setup(&a_input->report_timer, am_timer, 0);
 #else
         setup_timer(&a_input->report_timer, am_timer, (long)a_input);
 #endif
 #else
-	    a_input->report_task = kthread_create(report_worker, a_input, "am_joyin_report_task-%d", current->pid);
-#endif        
+        a_input->report_task = kthread_create(report_worker, a_input, "am_joyin_report_task-%d", current->pid);
+#endif
     }
 }
 
@@ -226,14 +225,13 @@ static void startTimer(void)
 {
     if (a_input != NULL) {
         if (a_input->input_endpoint_count > 0 && a_input->input_device_count > 0){
-#if defined(USE_REPORT_TIMER)            
+#if defined(USE_REPORT_TIMER)
             mod_timer(&a_input->report_timer, jiffies + a_input->timer_period);
 #else
             if (a_input->report_task != NULL) {
-                printk(">> schedule task");
                 wake_up_process(a_input->report_task);
             }
-#endif            
+#endif
             //printk("start dev input timer");
         }
     }
@@ -243,12 +241,12 @@ static void startTimer(void)
 static void stopTimer(void)
 {
     if (a_input != NULL) {
-#if defined(USE_REPORT_TIMER)        
+#if defined(USE_REPORT_TIMER)
         del_timer_sync(&a_input->report_timer);
 #else
         if (a_input->report_task != NULL) {
         }
-#endif        
+#endif
         //printk("stop dev input timer");
     }
 }
@@ -257,14 +255,14 @@ static void stopTimer(void)
 static void removeTimer(void)
 {
     if (a_input != NULL) {
-#if defined(USE_REPORT_TIMER)        
+#if defined(USE_REPORT_TIMER)
         del_timer_sync(&a_input->report_timer);
 #else
         if (a_input->report_task != NULL) {
             kthread_stop(a_input->report_task);
             a_input->report_task = NULL;
         }
-#endif        
+#endif
         //printk("stop dev input timer");
     }
 }

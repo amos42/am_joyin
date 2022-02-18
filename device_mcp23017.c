@@ -247,17 +247,16 @@ static int init_input_device_for_mcp23017(void* device_desc_data, input_device_d
 
 
 #if !defined(USE_I2C_DIRECT)
-static struct i2c_client *__mcp23017_i2c = NULL;
-static int __cmp23017_i2c_refcnt = 0;
+//static struct i2c_client *__mcp23017_i2c = NULL;
+//static int __mcp23017_i2c_refcnt = 0;
 
 static int __mcp23017_probe(struct i2c_client *i2c, const struct i2c_device_id *id)
 {
     // device_mcp23017_data_t *user_data = (device_mcp23017_data_t *)i2c->dev.platform_data;
-    printk(">>>>>>>> probe %p", i2c);
-
-    if (++__cmp23017_i2c_refcnt == 1) {
-        __mcp23017_i2c = i2c;
-    }
+  
+    // if (++__mcp23017_i2c_refcnt == 1) {
+    //     __mcp23017_i2c = i2c;
+    // }
 
 	// i2c_set_clientdata(i2c, user_data);
 	// user_data->i2c = i2c;
@@ -267,12 +266,11 @@ static int __mcp23017_probe(struct i2c_client *i2c, const struct i2c_device_id *
 
 static int __mcp23017_remove(struct i2c_client *i2c)
 {
-	//device_mcp23017_data_t* user_data = (device_mcp23017_data_t *)i2c_get_clientdata(i2c);
-    printk(">>>>>>>> remove %p", i2c);
-
-    if (--__cmp23017_i2c_refcnt == 0) {
-        __mcp23017_i2c = NULL;
-    }
+	// device_mcp23017_data_t* user_data = (device_mcp23017_data_t *)i2c_get_clientdata(i2c);
+  
+    // if (--__mcp23017_i2c_refcnt == 0) {
+    //     __mcp23017_i2c = NULL;
+    // }
 
 	return 0;
 }
@@ -342,7 +340,7 @@ static void start_input_device_for_mcp23017(input_device_data_t *device_data)
 #else
     // add driver
 	int r = i2c_add_driver(&__mcp23017_driver);
-    printk("i2c_add_driver = %d", r);
+    // printk("i2c_add_driver = %d", r);
 
     {
         struct i2c_board_info i2c_board_info = {
@@ -356,10 +354,10 @@ static void start_input_device_for_mcp23017(input_device_data_t *device_data)
         i2c_put_adapter(i2c_adap);
     }
 
-    printk(">>>>>>>>>>>>>>>>> %p %p", user_data->i2c, __mcp23017_i2c);
-    if (!IS_ERR_OR_NULL(__mcp23017_i2c)) {
-        user_data->i2c = __mcp23017_i2c;
-    }
+    // printk("%p %p", user_data->i2c, __mcp23017_i2c);
+    // if (!IS_ERR_OR_NULL(__mcp23017_i2c)) {
+    //     user_data->i2c = __mcp23017_i2c;
+    // }
 
     if (!IS_ERR_OR_NULL(user_data->i2c)) {
         // Put all GPIOA inputs on MCP23017 in INPUT mode

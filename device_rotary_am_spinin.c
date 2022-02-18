@@ -11,6 +11,8 @@
 #include "gpio_util.h"
 #if defined(USE_I2C_DIRECT)
 #include "i2c_util.h"
+#else
+#include <linux/i2c.h>
 #endif
 #include "parse_util.h"
 
@@ -58,6 +60,9 @@ typedef struct tag_device_am_spinin_index_table {
 // device.data에 할당 될 구조체
 typedef struct tag_device_am_spinin_data {
     device_am_spinin_config_t         device_cfg;
+#if !defined(USE_I2C_DIRECT)    
+	struct i2c_client *i2c;
+#endif
     device_am_spinin_index_table_t    button_cfgs[1];
 } device_am_spinin_data_t;
 
@@ -255,6 +260,59 @@ static int init_input_device_for_am_spinin(void* device_desc_data, input_device_
 }
 
 
+#if !defined(USE_I2C_DIRECT)
+//static struct i2c_client *__am_spinin_i2c = NULL;
+//static int __am_spinin_i2c_refcnt = 0;
+
+static int __am_spinin_probe(struct i2c_client *i2c, const struct i2c_device_id *id)
+{
+    // device_mcp23017_data_t *user_data = (device_am_spinin_data_t *)i2c->dev.platform_data;
+  
+    // if (++__am_spinin_i2c_refcnt == 1) {
+    //     __am_spinin_i2c = i2c;
+    // }
+
+	// i2c_set_clientdata(i2c, user_data);
+	// user_data->i2c = i2c;
+
+	return 0;
+}
+
+static int __am_spinin_remove(struct i2c_client *i2c)
+{
+	// device_am_spinin_data_t* user_data = (device_am_spinin_data_t *)i2c_get_clientdata(i2c);
+  
+    // if (--__am_spinin_i2c_refcnt == 0) {
+    //     __am_spinin_i2c = NULL;
+    // }
+
+	return 0;
+}
+
+static const struct of_device_id __am_spinin_of_ids[] = {
+    { .compatible = "am_spinin" },
+	{} /* sentinel */
+};
+MODULE_DEVICE_TABLE(of, __am_spinin_of_ids);
+
+static const struct i2c_device_id __am_spinin_i2c_ids[] = {
+	{ "am_spinin", 0 },
+	{}
+};
+MODULE_DEVICE_TABLE(i2c, __am_spinin_i2c_ids);
+
+static struct i2c_driver __am_spinin_driver = {
+	.driver = {
+		.name = "am_spinin",
+        .owner = THIS_MODULE,
+		.of_match_table = of_match_ptr(__am_spinin_of_ids)
+	},
+	.probe = __am_spinin_probe,
+	.remove = __am_spinin_remove,
+    .id_table = __am_spinin_i2c_ids,
+};
+#endif
+
 static void start_input_device_for_am_spinin(input_device_data_t *device_data)
 {
     device_am_spinin_data_t *user_data = (device_am_spinin_data_t *)device_data->data;
@@ -268,7 +326,26 @@ static void start_input_device_for_am_spinin(input_device_data_t *device_data)
         i2c_write_1word(user_data->device_cfg.addr, AM_SPININ_SET_MAX_VALUE, user_data->device_cfg.max_value);
         i2c_write_1word(user_data->device_cfg.addr, AM_SPININ_SET_SAMPLERATE, user_data->device_cfg.sample_rate);
 #else
+        // add driver
+        int r = i2c_add_driver(&__am_spinin_driver);
+        // printk("i2c_add_driver = %d", r);
 
+        {
+            struct i2c_board_info i2c_board_info = {
+                I2C_BOARD_INFO("am_spinin", user_data->device_cfg.addr)
+            };
+            struct i2c_adapter* i2c_adap = i2c_get_adapter(1);
+            if (i2c_adap == NULL) {
+                return;
+            }
+            user_data->i2c = i2c_new_client_device(i2c_adap, &i2c_board_info);
+            i2c_put_adapter(i2c_adap);
+        }
+        i2c_smbus_write_word_data(user_data->i2c, AM_SPININ_SET_MODE, 0);
+        i2c_smbus_write_word_data(user_data->i2c, AM_SPININ_WRITE_VALUE, 0);
+        i2c_smbus_write_word_data(user_data->i2c, AM_SPININ_SET_MIN_VALUE, user_data->device_cfg.min_value);
+        i2c_smbus_write_word_data(user_data->i2c, AM_SPININ_SET_MAX_VALUE, user_data->device_cfg.max_value);
+        i2c_smbus_write_word_data(user_data->i2c, AM_SPININ_SET_SAMPLERATE, user_data->device_cfg.sample_rate);
 #endif        
     } else if (user_data->device_cfg.comm_type == AM_SPININ_COMM_SPI) {
         spi_init(bcm_peri_base_probe(), 0xB0);
@@ -308,7 +385,16 @@ static void check_input_device_for_am_spinin(input_device_data_t *device_data)
             i2c_write_1word(addr, AM_SPININ_WRITE_VALUE, 0);
         }
 #else
-
+        if (!IS_ERR_OR_NULL(user_data->i2c)) {
+            value = i2c_smbus_read_word_data(user_data->i2c, AM_SPININ_READ_VALUE);
+            if (value < 0) return;
+            value = (short)value;
+            if (value != 0) {
+                i2c_smbus_write_word_data(user_data->i2c, AM_SPININ_WRITE_VALUE, 0);
+            }
+        } else {
+            value = 0;
+        }
 #endif        
     } else if (user_data->device_cfg.comm_type == AM_SPININ_COMM_SPI) {
         spi_begin();
@@ -343,7 +429,10 @@ static void stop_input_device_for_am_spinin(input_device_data_t *device_data)
 #if defined(USE_I2C_DIRECT)        
         i2c_close();
 #else
-
+	i2c_del_driver(&__am_spinin_driver);
+    if (!IS_ERR_OR_NULL(user_data->i2c)) {
+        i2c_unregister_device(user_data->i2c);
+    }
 #endif        
     } else if (user_data->device_cfg.comm_type == AM_SPININ_COMM_SPI) {
         spi_close();
