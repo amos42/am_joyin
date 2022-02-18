@@ -2,8 +2,6 @@
  * Copyright (C) 2021 Ju, Gyeong-min
  ********************************************************************************/
 
-//#define I2C_DIRECT
-
 #include <linux/kernel.h>
 #include <linux/input.h>
 #include <linux/slab.h>
@@ -11,7 +9,7 @@
 #include <linux/uaccess.h>
 #include "bcm_peri.h"
 #include "gpio_util.h"
-#if defined(I2C_DIRECT)
+#if defined(USE_I2C_DIRECT)
 #include "i2c_util.h"
 #else
 #include <linux/i2c.h>
@@ -56,7 +54,7 @@ typedef struct tag_device_mcp23017_index_table {
 // device.data에 할당 될 구조체
 typedef struct tag_device_mcp23017_data {
     device_mcp23017_config_t         device_cfg;
-#if !defined(I2C_DIRECT)    
+#if !defined(USE_I2C_DIRECT)    
 	struct i2c_client *i2c;
 #endif    
     device_mcp23017_index_table_t    button_cfgs[1];
@@ -248,7 +246,7 @@ static int init_input_device_for_mcp23017(void* device_desc_data, input_device_d
 }
 
 
-#if !defined(I2C_DIRECT)
+#if !defined(USE_I2C_DIRECT)
 static struct i2c_client *__mcp23017_i2c = NULL;
 static int __cmp23017_i2c_refcnt = 0;
 
@@ -279,26 +277,18 @@ static int __mcp23017_remove(struct i2c_client *i2c)
 	return 0;
 }
 
-// static const struct platform_device __mcp23017_i2c_device = {
-//     .name   = "mcp23017-i2c",
-//     .id   = 0,
-//     .num_resources  = ARRAY_SIZE(__mcp23017_i2c_resource),
-//     .resource = __mcp23017_i2c_resource,
-// }; 
-
 static const struct of_device_id __mcp23017_of_ids[] = {
-	//{ .compatible = "brcm,bcm2835-i2c,i2c-bcm2708,i2c-dev" },
-    //{ .compatible = "i2c-1" },
     { .compatible = "mcp23017" },
 	{} /* sentinel */
 };
+MODULE_DEVICE_TABLE(of, __mcp23017_of_ids);
 
 static const struct i2c_device_id __mcp23017_i2c_ids[] = {
 	{ "mcp23017", 0 },
 	{}
 };
+MODULE_DEVICE_TABLE(i2c, __mcp23017_i2c_ids);
 
-MODULE_DEVICE_TABLE(of, __mcp23017_of_ids);
 static struct i2c_driver __mcp23017_driver = {
 	.driver = {
 		.name = "mcp23017",
@@ -315,7 +305,7 @@ static void start_input_device_for_mcp23017(input_device_data_t *device_data)
 {
     device_mcp23017_data_t *user_data = (device_mcp23017_data_t *)device_data->data;
 
-#if defined(I2C_DIRECT)
+#if defined(USE_I2C_DIRECT)
     char outval;
 
     i2c_init(bcm_peri_base_probe(), 0xB0);
@@ -350,25 +340,21 @@ static void start_input_device_for_mcp23017(input_device_data_t *device_data)
     i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOB_PULLUPS_MODE, &outval, 1);
     udelay(1000);
 #else
-    // platform_device_register(&__mcp23017_i2c_device);
-    int r;
-    struct i2c_board_info bdinfo;
-    struct i2c_adapter* i2c_adap = i2c_get_adapter(1);
-
-    if (i2c_adap == NULL) {
-        return;
-    }
-
-    memset(&bdinfo, 0, sizeof(struct i2c_board_info));
-    strcpy(bdinfo.type, "mcp23017");
-    bdinfo.addr = user_data->device_cfg.i2c_addr;
-    user_data->i2c = i2c_new_client_device(i2c_adap, &bdinfo);
-    // i2c_put_adapter(i2c_adap);
-
     // add driver
-	r = i2c_add_driver(&__mcp23017_driver);
+	int r = i2c_add_driver(&__mcp23017_driver);
     printk("i2c_add_driver = %d", r);
-    
+
+    {
+        struct i2c_board_info i2c_board_info = {
+            I2C_BOARD_INFO("mcp23017", user_data->device_cfg.i2c_addr)
+        };
+        struct i2c_adapter* i2c_adap = i2c_get_adapter(1);
+        if (i2c_adap == NULL) {
+            return;
+        }
+        user_data->i2c = i2c_new_client_device(i2c_adap, &i2c_board_info);
+        i2c_put_adapter(i2c_adap);
+    }
 
     printk(">>>>>>>>>>>>>>>>> %p %p", user_data->i2c, __mcp23017_i2c);
     if (!IS_ERR_OR_NULL(__mcp23017_i2c)) {
@@ -410,7 +396,7 @@ static void check_input_device_for_mcp23017(input_device_data_t *device_data)
 {
     int i, j, cnt;
     int io_count;
-#if defined(I2C_DIRECT)
+#if defined(USE_I2C_DIRECT)
     int i2c_addr;
 #endif
     char resultA, resultB;
@@ -418,12 +404,11 @@ static void check_input_device_for_mcp23017(input_device_data_t *device_data)
     device_mcp23017_data_t *user_data = (device_mcp23017_data_t *)device_data->data;
 
     if (user_data == NULL) return;
-return;
 
     io_count = user_data->device_cfg.io_count;
     if (io_count <= 0) return;
 
-#if defined(I2C_DIRECT)
+#if defined(USE_I2C_DIRECT)
     i2c_addr = user_data->device_cfg.i2c_addr;
     i2c_read(i2c_addr, MCP23017_GPIOA_READ, &resultA, 1);
     i2c_read(i2c_addr, MCP23017_GPIOB_READ, &resultB, 1);
@@ -464,11 +449,13 @@ return;
 
 static void stop_input_device_for_mcp23017(input_device_data_t *device_data)
 {
+#if !defined(USE_I2C_DIRECT)
     device_mcp23017_data_t *user_data = (device_mcp23017_data_t *)device_data->data;
+#endif    
 
     device_data->is_opend = FALSE;
 
-#if defined(I2C_DIRECT)
+#if defined(USE_I2C_DIRECT)
     i2c_close();
 #else
 	i2c_del_driver(&__mcp23017_driver);

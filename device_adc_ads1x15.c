@@ -342,7 +342,11 @@ static void start_input_device_for_ads1x15(input_device_data_t *device_data)
 {
     // device_ads1x15_data_t *user_data = (device_ads1x15_data_t *)device_data->data;
 
+#if defined(USE_I2C_DIRECT)
     i2c_init(bcm_peri_base_probe(), 0xB0);
+#else
+
+#endif    
 
     device_data->is_opend = TRUE;
 }
@@ -351,7 +355,11 @@ static void start_input_device_for_ads1x15(input_device_data_t *device_data)
 static uint16_t __readRegister(int i2c_addr, uint8_t reg) 
 {
     uint8_t buffer[2];
+#if defined(USE_I2C_DIRECT)
     i2c_read(i2c_addr, reg, buffer, 2);
+#else
+
+#endif
     return ((buffer[0] << 8) | buffer[1]);
 }
 
@@ -360,7 +368,11 @@ static void __writeRegister(int i2c_addr, uint8_t reg, uint16_t value)
     uint8_t buffer[2];
     buffer[0] = value >> 8;
     buffer[1] = value & 0xFF;
+#if defined(USE_I2C_DIRECT)
     i2c_write(i2c_addr, reg, buffer, 2);
+#else
+
+#endif    
 }
 
 
@@ -480,7 +492,11 @@ static void stop_input_device_for_ads1x15(input_device_data_t *device_data)
 {
     device_data->is_opend = FALSE;
 
+#if defined(USE_I2C_DIRECT)
     i2c_close();
+#else
+
+#endif    
 }
 
 

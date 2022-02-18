@@ -9,7 +9,9 @@
 #include <linux/uaccess.h>
 #include "bcm_peri.h"
 #include "gpio_util.h"
+#if defined(USE_I2C_DIRECT)
 #include "i2c_util.h"
+#endif
 #include "parse_util.h"
 
 
@@ -258,12 +260,16 @@ static void start_input_device_for_am_spinin(input_device_data_t *device_data)
     device_am_spinin_data_t *user_data = (device_am_spinin_data_t *)device_data->data;
 
     if (user_data->device_cfg.comm_type == AM_SPININ_COMM_I2C) {
+#if defined(USE_I2C_DIRECT)
         i2c_init(bcm_peri_base_probe(), 0xB0);
         i2c_write_1word(user_data->device_cfg.addr, AM_SPININ_SET_MODE, 0);
         i2c_write_1word(user_data->device_cfg.addr, AM_SPININ_WRITE_VALUE, 0);
         i2c_write_1word(user_data->device_cfg.addr, AM_SPININ_SET_MIN_VALUE, user_data->device_cfg.min_value);
         i2c_write_1word(user_data->device_cfg.addr, AM_SPININ_SET_MAX_VALUE, user_data->device_cfg.max_value);
         i2c_write_1word(user_data->device_cfg.addr, AM_SPININ_SET_SAMPLERATE, user_data->device_cfg.sample_rate);
+#else
+
+#endif        
     } else if (user_data->device_cfg.comm_type == AM_SPININ_COMM_SPI) {
         spi_init(bcm_peri_base_probe(), 0xB0);
         spi_setClockDivider(0x01);
@@ -296,10 +302,14 @@ static void check_input_device_for_am_spinin(input_device_data_t *device_data)
     addr = user_data->device_cfg.addr;
 
     if (user_data->device_cfg.comm_type == AM_SPININ_COMM_I2C) {
+#if defined(USE_I2C_DIRECT)        
         value = i2c_raw_read_1word(addr);
         if (value != 0) {
             i2c_write_1word(addr, AM_SPININ_WRITE_VALUE, 0);
         }
+#else
+
+#endif        
     } else if (user_data->device_cfg.comm_type == AM_SPININ_COMM_SPI) {
         spi_begin();
         spi_chipSelect(addr);
@@ -330,7 +340,11 @@ static void stop_input_device_for_am_spinin(input_device_data_t *device_data)
     device_data->is_opend = FALSE;
 
     if (user_data->device_cfg.comm_type == AM_SPININ_COMM_I2C) {
+#if defined(USE_I2C_DIRECT)        
         i2c_close();
+#else
+
+#endif        
     } else if (user_data->device_cfg.comm_type == AM_SPININ_COMM_SPI) {
         spi_close();
     }    

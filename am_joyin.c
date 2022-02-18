@@ -23,6 +23,7 @@
 #include <linux/input.h>
 #include <linux/mutex.h>
 #include <linux/slab.h>
+#include <linux/kthread.h>
 
 MODULE_AUTHOR("Amos42");
 MODULE_DESCRIPTION("GPIO and Multiplexer and 74HC165 amd MCP23017 Arcade Joystick Driver");
@@ -30,6 +31,7 @@ MODULE_LICENSE("GPL");
 
 /*============================================================*/
 
+#include "build_cfg.h"
 #include "am_joyin.h"
 
 /** parameters (begin) **/
@@ -41,8 +43,10 @@ MODULE_LICENSE("GPL");
 
 //#include "gpio_util.h"
 #include "gpio_util.c"
+#if defined(USE_I2C_DIRECT)
 //#include "i2c_util.h"
 #include "i2c_util.c"
+#endif
 //#include "spi_util.h"
 #include "spi_util.c"
 //#include "parse_util.h"
@@ -61,11 +65,16 @@ MODULE_LICENSE("GPL");
 #include "device_rotary_am_spinin.c"
 
 
+#if defined(USE_REPORT_TIMER)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,15,0)
 #define HAVE_TIMER_SETUP
 #endif
+#endif
 
-#define DEFAULT_REFRESH_TIME	(HZ/100)
+#define DEFAULT_REPORT_PERIOD	(100)
+#if defined(USE_REPORT_TIMER)
+#define DEFAULT_REFRESH_TIME	(HZ / DEFAULT_REPORT_PERIOD)
+#endif
 
 
 static am_joyin_data_t *a_input;
@@ -121,9 +130,10 @@ static void reportInput(struct input_dev *indev, int endpoint_type, input_button
 }
 
 
+#if defined(USE_REPORT_TIMER)
 #ifdef HAVE_TIMER_SETUP
 static void am_timer(struct timer_list *t) {
-    am_joyin_data_t *inp = from_timer(inp, t, timer);
+    am_joyin_data_t *inp = from_timer(inp, t, report_timer);
 #else
 static void am_timer(unsigned long private) {
     am_joyin_data_t *inp = (void *) private;
@@ -148,42 +158,82 @@ static void am_timer(unsigned long private) {
         reportInput(ep->indev, ep->endpoint_type, ep->target_buttonset->button_data, ep->button_count, ep->report_button_state, ep->current_button_state);
     }
 
-    if (inp->timer_activate) {
-        // 만약 키체크 시간이 너무 길어서 다음 타이머 주기를 초과해 버리면 예외 처리
-        if (next_timer <= jiffies) {
-            next_timer = jiffies + inp->timer_period;
-            
-            // 타이머 주기를 초과하는 횟수가 100회를 넘으면 타이머 중단
-            if (++inp->missing_timer_count > 100) {
-                printk(KERN_ERR"Button check time is too late. Terminate the timer.");
-                return;
+    // 만약 키체크 시간이 너무 길어서 다음 타이머 주기를 초과해 버리면 예외 처리
+    if (next_timer <= jiffies) {
+        next_timer = jiffies + inp->timer_period;
+        
+        // 타이머 주기를 초과하는 횟수가 100회를 넘으면 타이머 중단
+        if (++inp->missing_timer_count > 100) {
+            printk(KERN_ERR"Button check time is too late. Terminate the timer.");
+            return;
+        }
+    }
+
+    // 다음 타이머 트리거
+    mod_timer(&inp->report_timer, next_timer);
+}
+#else
+static int report_worker(void *data) {
+    am_joyin_data_t *inp = (am_joyin_data_t *)data;
+
+printk(">> worker start");
+	while (!kthread_should_stop()) {
+        int i;
+
+        for (i = 0; i < inp->input_endpoint_count; i++) {
+            input_endpoint_data_t *ep = &inp->endpoint_list[i];
+            memset(ep->report_button_state, 0, sizeof(int) * MAX_INPUT_BUTTON_COUNT);
+        }
+
+        for (i = 0; i < inp->input_device_count; i++) {
+            input_device_data_t *dev = &inp->device_list[i];
+            if (dev != NULL && dev->is_opend && dev->device_type_desc != NULL) {
+                dev->device_type_desc->check_input_dev(dev);
             }
         }
 
-        // 다음 타이머 트리거
-        mod_timer(&inp->timer, next_timer);
-    }
-}
+        for (i = 0; i < inp->input_endpoint_count; i++) {
+            input_endpoint_data_t *ep = &inp->endpoint_list[i];
+            reportInput(ep->indev, ep->endpoint_type, ep->target_buttonset->button_data, ep->button_count, ep->report_button_state, ep->current_button_state);
+        }
 
+		//fsleep(1000000 / inp->report_period);
+        msleep(1000 / inp->report_period);
+	}
+printk(">> worker end");
+
+	return 0;
+}
+#endif
 
 static void initTimer(void)
 {
     if (a_input != NULL) {
+#if defined(USE_REPORT_TIMER)        
 #ifdef HAVE_TIMER_SETUP
-        timer_setup(&a_input->timer, am_timer, 0);
+        timer_setup(&a_input->report_timer, am_timer, 0);
 #else
-        setup_timer(&a_input->timer, am_timer, (long)a_input);
+        setup_timer(&a_input->report_timer, am_timer, (long)a_input);
 #endif
+#else
+	    a_input->report_task = kthread_create(report_worker, a_input, "am_joyin_report_task-%d", current->pid);
+#endif        
     }
 }
 
 
 static void startTimer(void)
 {
-    if (a_input != NULL && !a_input->timer_activate) {
+    if (a_input != NULL) {
         if (a_input->input_endpoint_count > 0 && a_input->input_device_count > 0){
-            mod_timer(&a_input->timer, jiffies + a_input->timer_period);
-             a_input->timer_activate = TRUE;
+#if defined(USE_REPORT_TIMER)            
+            mod_timer(&a_input->report_timer, jiffies + a_input->timer_period);
+#else
+            if (a_input->report_task != NULL) {
+                printk(">> schedule task");
+                wake_up_process(a_input->report_task);
+            }
+#endif            
             //printk("start dev input timer");
         }
     }
@@ -192,9 +242,29 @@ static void startTimer(void)
 
 static void stopTimer(void)
 {
-    if (a_input != NULL && a_input->timer_activate) {
-        del_timer_sync(&a_input->timer);
-        a_input->timer_activate = FALSE;
+    if (a_input != NULL) {
+#if defined(USE_REPORT_TIMER)        
+        del_timer_sync(&a_input->report_timer);
+#else
+        if (a_input->report_task != NULL) {
+        }
+#endif        
+        //printk("stop dev input timer");
+    }
+}
+
+
+static void removeTimer(void)
+{
+    if (a_input != NULL) {
+#if defined(USE_REPORT_TIMER)        
+        del_timer_sync(&a_input->report_timer);
+#else
+        if (a_input->report_task != NULL) {
+            kthread_stop(a_input->report_task);
+            a_input->report_task = NULL;
+        }
+#endif        
         //printk("stop dev input timer");
     }
 }
@@ -335,7 +405,7 @@ static void cleanup(void)
     if (a_input != NULL) {
         int i;
 
-        stopTimer();
+        removeTimer();
 
         // 장치들을 제거한다.
         for (i = 0; i < a_input->input_device_count; i++) {
@@ -399,11 +469,12 @@ static int am_joyin_init(void)
 // goto err_free_dev;
 
     // 타이머 주기 설정. 비어 있으면 기본 타이머 주기
-    if (a_input->timer_period > 0) {
-        a_input->timer_period = HZ / a_input->timer_period;
-    } else {
-        a_input->timer_period = DEFAULT_REFRESH_TIME;
+    if (a_input->report_period <= 0 || a_input->report_period > 1000) {
+        a_input->report_period = DEFAULT_REPORT_PERIOD;
     }
+#if defined(USE_REPORT_TIMER)    
+    a_input->timer_period = HZ / a_input->report_period;
+#endif
 
     //printk("start register input dev...");
 

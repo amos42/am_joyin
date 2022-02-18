@@ -164,6 +164,18 @@ sudo nano /etc/modules-load.d/modules.conf
 am_joyin
 ```
 
+만약 mcp23017과 같은 I2C 장치를 사용하고 있다면, 다음의 2개 라인도 함께 포함시킨다.
+
+```
+i2c-bcm2708 
+i2c-dev
+```
+
+간혹 해당 모듈들이 블럭되어 있는 경우가 있는 경우도 있기에 블랙리스트에 포함되어 있다면 이를 제거해야 한다.
+
+```bash
+sudo nano /etc/modprobe.d/raspi-blacklist.conf
+```
 
 ### 4. am_joyin 설정
 
@@ -295,7 +307,7 @@ am_joyin의 파라미터는 다음과 같다.
 
 ### driver 전역 설정
 
-> 1. timer_period : 타이머 주기. Hz 단위로 기술. default는 100Hz. (OS의 인터럽트 세팅에 따라 최대치가 결정된다.)
+> 1. report_period : 키 체크 주기. Hz 단위로 기술. default는 100Hz. (OS의 인터럽트 세팅에 따라 최대치가 결정된다.)
 > 2. debug : 디버그 모드 여부. Log 출력 내용에 영향을 준다.
 
 ### buttonset 설정

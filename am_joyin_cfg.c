@@ -147,7 +147,7 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
     input_buttonset_data_t* target_buttonset;
 
     // default driver 설정 초기화
-    a_input->timer_period = 0;
+    a_input->report_period = 0;
     a_input->is_debug = FALSE;
 
     // default buttonset 설정 초기화
@@ -178,7 +178,7 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
         strcpy(szText, am_driver_cfg);
         pText = szText;
 
-        a_input->timer_period = parse_number(&pText, ",", 10, 0);
+        a_input->report_period = parse_number(&pText, ",", 10, 0);
 
         debug_p = strsep(&pText, ",");
         if (debug_p != NULL && strcmp(debug_p, "debug") == 0) {
