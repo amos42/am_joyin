@@ -173,6 +173,16 @@ i2c-dev
 
 필요한 내용를 다 추가했다면 ctrl-x를 눌러 저장하고 종료하면 된다.
 
+raspi-config 설정 유틸리티를 이용할 수도 있다.
+
+```bash
+sudo raspi-config
+```
+
+![raspi-config i2c 설정](images/i2c-menu.png)
+
+![raspi-config spi 설정](images/spi-menu.png)
+
 간혹 해당 모듈들이 블럭되어 있는 경우가 있기에 블랙리스트도 확인해 보는 것이 좋다. 만약 사용하고자 하는 모듈이 블랙리스트에 포함되어 있다면 이를 찾아 제거해 놔야 한다.
 
 ```bash
@@ -653,7 +663,7 @@ MCP3008의 Pinout은 다음과 같다.
 
 실제 MCP3008을 통해 아날로그 스틱을 라즈베리파이에 배선하기 위해서는 다음 배선도를 참고하면 된다.
 
-![MCP3008 Circuit](images/mcp3008_circuit.png)
+![MCP3008 Circuit](images/mcp3008_circuit.jpg)
 
  VDD와 VREF은 라즈베리파이의 3.3v에 연결하면 된다.
  CS 핀은 사용하고자 하는 SPI 채널에 맞춰 라즈베리파이의 SPI_CE0 혹은 SPI_CE1 중 하나에 연결하면 된다.
