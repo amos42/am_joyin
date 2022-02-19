@@ -287,7 +287,7 @@ static const struct i2c_device_id __mcp23017_i2c_ids[] = {
 };
 MODULE_DEVICE_TABLE(i2c, __mcp23017_i2c_ids);
 
-static struct i2c_driver __mcp23017_driver = {
+static struct i2c_driver __mcp23017_i2c_driver = {
 	.driver = {
 		.name = "mcp23017",
         .owner = THIS_MODULE,
@@ -339,7 +339,7 @@ static void start_input_device_for_mcp23017(input_device_data_t *device_data)
     udelay(1000);
 #else
     // add driver
-	int r = i2c_add_driver(&__mcp23017_driver);
+	int r = i2c_add_driver(&__mcp23017_i2c_driver);
     // printk("i2c_add_driver = %d", r);
 
     if (r >= 0) {
@@ -456,7 +456,7 @@ static void stop_input_device_for_mcp23017(input_device_data_t *device_data)
 #if defined(USE_I2C_DIRECT)
     i2c_close();
 #else
-	i2c_del_driver(&__mcp23017_driver);
+	i2c_del_driver(&__mcp23017_i2c_driver);
     if (!IS_ERR_OR_NULL(user_data->i2c)) {
         i2c_unregister_device(user_data->i2c);
     }
