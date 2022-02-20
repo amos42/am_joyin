@@ -24,6 +24,7 @@
 #include <linux/mutex.h>
 #include <linux/slab.h>
 #include <linux/kthread.h>
+#include <linux/timer.h>
 
 MODULE_AUTHOR("Amos42");
 MODULE_DESCRIPTION("GPIO and Multiplexer and 74HC165 amd MCP23017 Arcade Joystick Driver");
@@ -180,7 +181,7 @@ static void am_timer(unsigned long private) {
 static int report_worker(void *data) {
     am_joyin_data_t *inp = (am_joyin_data_t *)data;
 
-    unsigned long usleeptick = 1000000ul / inp->report_period;
+    unsigned int msleeptick = 1000 / inp->report_period;
 
     while (!kthread_should_stop()) {
         int i;
@@ -202,7 +203,7 @@ static int report_worker(void *data) {
             reportInput(ep->indev, ep->endpoint_type, ep->target_buttonset->button_data, ep->button_count, ep->report_button_state, ep->current_button_state);
         }
 
-        fsleep(usleeptick);
+        msleep(msleeptick);
     }
 
     return 0;
