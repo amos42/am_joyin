@@ -2,6 +2,8 @@
  * Copyright (C) 2021 Ju, Gyeong-min
  ********************************************************************************/
 
+#include "build_cfg.h"
+
 #include <linux/kernel.h>
 #include <linux/input.h>
 #include <linux/slab.h>
@@ -269,7 +271,6 @@ static int init_input_device_for_mcp23s17(void* device_desc_data, input_device_d
 #if !defined(USE_SPI_DIRECT)
 static int __mcp23s17_spi_probe(struct spi_device *spi)
 {
-    // printk("spi_probe");
     return 0;
 }
 
@@ -279,13 +280,13 @@ static int __mcp23s17_spi_remove(struct spi_device *spi)
 }
 
 static struct of_device_id __mcp23s17_match_table[] = { 
-    {.compatible = "mcp23s17",},
+    { .compatible = "brcm,bcm2835" },
     {},
 };
 MODULE_DEVICE_TABLE(of, __mcp23s17_match_table);
 
 static const struct spi_device_id __mcp23s17_spi_ids[] = {
-    { "mcp23s17", 0 },
+    { "spi0", 0 },
     {}
 };
 MODULE_DEVICE_TABLE(spi, __mcp23s17_spi_ids);
@@ -337,7 +338,7 @@ static void start_input_device_for_mcp23s17(input_device_data_t *device_data)
 #if defined(USE_SPI_DIRECT)
     spi_init(bcm_peri_base_probe(), 0xB0);
     spi_setClockDivider(256);
-    udelay(100);
+    //udelay(100);
 
     spi_begin();
     spi_chipSelect(user_data->device_cfg.spi_channel);
@@ -378,7 +379,7 @@ static void start_input_device_for_mcp23s17(input_device_data_t *device_data)
         struct spi_master* master = spi_busnum_to_master(spi_device_info.bus_num);
         if (master != NULL) {
             user_data->spi = spi_new_device(master, &spi_device_info);
-            printk(">>>>>> spi : %p", user_data->spi);
+            // printk(">>>>>> spi : %p", user_data->spi);
         } else {
             pr_err("SPI Master not found.\n");
         }

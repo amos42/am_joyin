@@ -9,5 +9,8 @@
         "**/build/": true,
         "**/Module.symvers": true,
         "**/modules.order": true
+    },
+    "files.associations": {
+        "kernel.h": "c"
     }
 }

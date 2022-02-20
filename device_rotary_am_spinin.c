@@ -2,6 +2,8 @@
  * Copyright (C) 2021 Ju, Gyeong-min
  ********************************************************************************/
 
+#include "build_cfg.h"
+
 #include <linux/kernel.h>
 #include <linux/input.h>
 #include <linux/slab.h>
@@ -299,7 +301,7 @@ static int __am_spinin_remove(struct i2c_client *i2c)
 }
 
 static const struct of_device_id __am_spinin_of_ids[] = {
-    { .compatible = "am_spinin" },
+    { .compatible = "brcm,bcm2835" },
 	{} /* sentinel */
 };
 MODULE_DEVICE_TABLE(of, __am_spinin_of_ids);

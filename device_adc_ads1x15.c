@@ -2,6 +2,8 @@
  * Copyright (C) 2021 Ju, Gyeong-min
  ********************************************************************************/
 
+#include "build_cfg.h"
+
 #include <linux/kernel.h>
 #include <linux/input.h>
 #include <linux/slab.h>
@@ -375,7 +377,7 @@ static int __ads1x15_remove(struct i2c_client *i2c)
 }
 
 static const struct of_device_id __ads1x15_of_ids[] = {
-    { .compatible = "ads1x15" },
+    { .compatible = "brcm,bcm2835" },
 	{} /* sentinel */
 };
 MODULE_DEVICE_TABLE(of, __ads1x15_of_ids);

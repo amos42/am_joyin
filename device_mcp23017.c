@@ -2,6 +2,8 @@
  * Copyright (C) 2021 Ju, Gyeong-min
  ********************************************************************************/
 
+#include "build_cfg.h"
+
 #include <linux/kernel.h>
 #include <linux/input.h>
 #include <linux/slab.h>
@@ -276,7 +278,7 @@ static int __mcp23017_remove(struct i2c_client *i2c)
 }
 
 static const struct of_device_id __mcp23017_of_ids[] = {
-    { .compatible = "mcp23017" },
+    { .compatible = "brcm,bcm2835" },
 	{} /* sentinel */
 };
 MODULE_DEVICE_TABLE(of, __mcp23017_of_ids);
@@ -307,7 +309,7 @@ static void start_input_device_for_mcp23017(input_device_data_t *device_data)
     char outval;
 
     i2c_init(bcm_peri_base_probe(), 0xB0);
-    udelay(1000);
+    //udelay(1000);
 
     // outval = 0x00;
     // i2c_write(user_data->device_cfg.i2c_addr, MCP23017_IOCON, &outval, 1);
@@ -316,27 +318,27 @@ static void start_input_device_for_mcp23017(input_device_data_t *device_data)
     outval = 0xFF;
     // Put all GPIOA inputs on MCP23017 in INPUT mode
     i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOA_MODE, &outval, 1);
-    udelay(1000);
+    //udelay(1000);
 
     // read one byte on GPIOA (for dummy)
-    i2c_read_1byte(user_data->device_cfg.i2c_addr, MCP23017_GPIOA_READ);
-    udelay(1000);
+    //i2c_read_1byte(user_data->device_cfg.i2c_addr, MCP23017_GPIOA_READ);
+    //udelay(1000);
 
     // Put all inputs on MCP23017 in pullup mode
     i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOA_PULLUPS_MODE, &outval, 1);
-    udelay(1000);
+    //udelay(1000);
 
     // Put all GPIOB inputs on MCP23017 in INPUT mode
     i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOB_MODE, &outval, 1);
-    udelay(1000);
+    //udelay(1000);
 
     // read one byte on GPIOB (for dummy)
-    i2c_read_1byte(user_data->device_cfg.i2c_addr, MCP23017_GPIOB_READ);
-    udelay(1000);
+    //i2c_read_1byte(user_data->device_cfg.i2c_addr, MCP23017_GPIOB_READ);
+    //udelay(1000);
 
     // Put all inputs on MCP23017 in pullup mode
     i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOB_PULLUPS_MODE, &outval, 1);
-    udelay(1000);
+    //udelay(1000);
 #else
     // add driver
 	int r = i2c_add_driver(&__mcp23017_i2c_driver);
@@ -360,29 +362,13 @@ static void start_input_device_for_mcp23017(input_device_data_t *device_data)
     // }
 
     if (!IS_ERR_OR_NULL(user_data->i2c)) {
-        // Put all GPIOA inputs on MCP23017 in INPUT mode
+        // Put all GPIOA pins to input mode & all pullup
         i2c_smbus_write_byte_data(user_data->i2c, MCP23017_GPIOA_MODE, 0xFF);
-        udelay(1000);
-
-        // read one byte on GPIOA (for dummy)
-        i2c_smbus_read_byte_data(user_data->i2c, MCP23017_GPIOA_READ);
-        udelay(1000);
-
-        // Put all inputs on MCP23017 in pullup mode
         i2c_smbus_write_byte_data(user_data->i2c, MCP23017_GPIOA_PULLUPS_MODE, 0xFF);
-        udelay(1000);
 
-        // Put all GPIOB inputs on MCP23017 in INPUT mode
+        // Put all GPIOB pins to input mode & all pullup
         i2c_smbus_write_byte_data(user_data->i2c, MCP23017_GPIOB_MODE, 0xFF);
-        udelay(1000);
-
-        // read one byte on GPIOB (for dummy)
-        i2c_smbus_read_byte_data(user_data->i2c, MCP23017_GPIOB_READ);
-        udelay(1000);
-
-        // Put all inputs on MCP23017 in pullup mode
         i2c_smbus_write_byte_data(user_data->i2c, MCP23017_GPIOB_PULLUPS_MODE, 0xFF);
-        udelay(1000);
     }
 #endif
 
