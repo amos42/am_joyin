@@ -12,9 +12,6 @@
 #include "gpio_util.h"
 #include "parse_util.h"
 
-//#define GPIO_GET(i)   GPIO_READ(i)
-//#define GPIO_GET_VALUE(i)   getGpio(i)
-//#define GPIO_SET_VALUE(i,v)   setGpio((i), (v))
 
 //#define DEFAULT_MUX_BUTTON_COUNT  (16)
 

@@ -11,6 +11,10 @@
         "**/modules.order": true
     },
     "files.associations": {
-        "kernel.h": "c"
-    }
+        "kernel.h": "c",
+        "slab.h": "c",
+        "uaccess.h": "c",
+        "gfp.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "Disabled"
 }

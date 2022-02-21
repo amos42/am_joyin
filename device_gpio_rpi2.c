@@ -10,8 +10,6 @@
 #include "gpio_util.h"
 #include "parse_util.h"
 
-//#define GPIO_GET(i)   GPIO_READ(i)
-//#define GPIO_GET_VALUE(i)   gpio_get_value(i)
 
 #define INPUT_GPIO_CONFIG_TYPE_INDEX    (0)
 #define INPUT_GPIO_CONFIG_TYPE_KEYCODE  (1)

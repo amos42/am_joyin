@@ -18,9 +18,6 @@
 #endif
 #include "parse_util.h"
 
-//#define GPIO_GET(i)   GPIO_READ(i)
-//#define GPIO_GET_VALUE(i)   getGpio(i)
-//#define GPIO_SET_VALUE(i,v)   setGpio((i), (v))
 
 //#define MAX_ADDR_IO_COUNT   (6)
 #define MCP23S17_DEFAULT_SPI_CHANNEL    (0)

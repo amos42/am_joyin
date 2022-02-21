@@ -12,10 +12,6 @@
 #include "gpio_util.h"
 #include "parse_util.h"
 
-//#define GPIO_GET(i)   GPIO_READ(i)
-//#define GPIO_GET_VALUE(i)   getGpio(i)
-//#define GPIO_SET_VALUE(i,v)   setGpio((i), (v))
-
 //static const int default_74hc165_gpio_maps[3] = {16, 20, 21};
 
 //#define DEFAULT_74HC165_BUTTON_COUNT  (16)

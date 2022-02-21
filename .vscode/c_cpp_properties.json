@@ -3,7 +3,9 @@
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "/lib/modules/5.10.63-v7+/build/include/**",
+                "/lib/modules/5.10.63-v7+/build/arch/arm/include/**"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
