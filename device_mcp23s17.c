@@ -75,11 +75,11 @@ typedef struct tag_device_mcp23s17_index_table {
 
 // device.data에 할당 될 구조체
 typedef struct tag_device_mcp23s17_data {
-    device_mcp23s17_config_t         device_cfg;
+    device_mcp23s17_config_t        device_cfg;
 #if !defined(USE_SPI_DIRECT)
-    struct spi_device *spi;
+    struct spi_device*              spi;
 #endif
-    device_mcp23s17_index_table_t    button_cfgs[1];
+    device_mcp23s17_index_table_t   button_cfgs[1];
 } device_mcp23s17_data_t;
 
 
@@ -286,7 +286,7 @@ static struct of_device_id __mcp23s17_match_table[] = {
 MODULE_DEVICE_TABLE(of, __mcp23s17_match_table);
 
 static const struct spi_device_id __mcp23s17_spi_ids[] = {
-    { "spi0", 0 },
+    { "mcp23s17", 0 },
     {}
 };
 MODULE_DEVICE_TABLE(spi, __mcp23s17_spi_ids);
