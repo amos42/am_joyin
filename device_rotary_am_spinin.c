@@ -66,11 +66,14 @@ typedef struct tag_device_am_spinin_index_table {
 
 // device.data에 할당 될 구조체
 typedef struct tag_device_am_spinin_data {
-    device_am_spinin_config_t         device_cfg;
+    device_am_spinin_config_t       device_cfg;
 #if !defined(USE_I2C_DIRECT)    
-	struct i2c_client *i2c;
+	struct i2c_client*              i2c;
 #endif
-    device_am_spinin_index_table_t    button_cfgs[1];
+#if !defined(USE_SPI_DIRECT)    
+	struct spi_device*              spi;
+#endif
+    device_am_spinin_index_table_t  button_cfgs[1];
 } device_am_spinin_data_t;
 
 
@@ -223,19 +226,28 @@ static int __parse_endpoint_param_for_am_spinin(device_am_spinin_data_t* user_da
 }
 
 
+#if defined(USE_SPI_DIRECT)
 static short __spi_trans_for_am_spinin(char cmd, short value) 
 {
     unsigned char buf[3];
     buf[0] = cmd;
     buf[1] = (value >> 8) & 0xFF;
     buf[2] = value & 0xFF;
-#if defined(USE_SPI_DIRECT)
     spi_transfern(buf, 3);
-#else
-
-#endif
     return (short)((unsigned short)buf[1] << 8 | buf[2]);
 }
+#else
+static short __spi_trans_for_am_spinin(struct spi_device* spi, char cmd, short value) 
+{
+    unsigned char buf[3];
+    buf[0] = cmd;
+    buf[1] = (value >> 8) & 0xFF;
+    buf[2] = value & 0xFF;
+    spi_write_then_read(spi, buf, 3, buf, 3);
+    return (short)((unsigned short)buf[1] << 8 | buf[2]);
+}
+#endif
+
 
 // device_config_str : comm_type, addr, io_count
 // endpoint_config_str : endpoint, config_type (default | custom), ...
@@ -324,6 +336,42 @@ static struct i2c_driver __am_spinin_driver = {
 };
 #endif
 
+#if !defined(USE_SPI_DIRECT)
+static int __am_spinin_spi_probe(struct spi_device *spi)
+{
+    return 0;
+}
+
+static int __am_spinin_spi_remove(struct spi_device *spi)
+{
+    return 0;
+}
+
+static struct of_device_id __am_spinin_match_table[] = { 
+    { .compatible = "brcm,bcm2835" },
+    {},
+};
+MODULE_DEVICE_TABLE(of, __am_spinin_match_table);
+
+static const struct spi_device_id __am_spinin_spi_ids[] = {
+    { "am_spinin", 0 },
+    {}
+};
+MODULE_DEVICE_TABLE(spi, __am_spinin_spi_ids);
+
+static struct spi_driver __am_spinin_spi_driver = {
+    .driver = {
+        .name = "am_spinin",
+        .owner = THIS_MODULE,
+        .of_match_table = __am_spinin_match_table,
+    },
+    .probe = __am_spinin_spi_probe,
+    .remove = __am_spinin_spi_remove,
+    .id_table = __am_spinin_spi_ids,
+};
+#endif
+
+
 static void start_input_device_for_am_spinin(input_device_data_t *device_data)
 {
     device_am_spinin_data_t *user_data = (device_am_spinin_data_t *)device_data->data;
@@ -366,6 +414,7 @@ static void start_input_device_for_am_spinin(input_device_data_t *device_data)
         spi_setDataMode(0);
 
         spi_begin();
+        spi_chipSelect(user_data->device_cfg.addr);
         __spi_trans_for_am_spinin(AM_SPININ_SET_MODE, 0);
         __spi_trans_for_am_spinin(AM_SPININ_WRITE_VALUE, 0);
         __spi_trans_for_am_spinin(AM_SPININ_SET_MIN_VALUE, user_data->device_cfg.min_value);
@@ -373,7 +422,26 @@ static void start_input_device_for_am_spinin(input_device_data_t *device_data)
         __spi_trans_for_am_spinin(AM_SPININ_SET_SAMPLERATE, user_data->device_cfg.sample_rate);
         spi_end();
 #else
+        int r = spi_register_driver(&__am_spinin_spi_driver);
+        // printk("spi_register_driver = %d", r);
 
+        if (r >= 0) {
+            struct spi_board_info spi_device_info = {
+                .modalias     = "am_spinin",
+                .max_speed_hz = 1 * 1000 * 1000,     // speed your device (slave) can handle
+                .bus_num      = 0,                   // SPI 0
+                .chip_select  = user_data->device_cfg.addr,
+                .mode         = SPI_MODE_0           // SPI mode 0
+            };
+
+            struct spi_master* master = spi_busnum_to_master(spi_device_info.bus_num);
+            if (master != NULL) {
+                user_data->spi = spi_new_device(master, &spi_device_info);
+                // printk(">>>>>> spi : %p", user_data->spi);
+            } else {
+                pr_err("SPI Master not found.\n");
+            }
+        }
 #endif
     } else {
         return;
@@ -425,7 +493,14 @@ static void check_input_device_for_am_spinin(input_device_data_t *device_data)
         }
         spi_end();
 #else
-
+        if (!IS_ERR_OR_NULL(user_data->spi)) {
+            value = __spi_trans_for_am_spinin(user_data->spi, AM_SPININ_READ_VALUE, 0);
+            if (value != 0) {
+                __spi_trans_for_am_spinin(user_data->spi, AM_SPININ_WRITE_VALUE, 0);
+            }
+        } else {
+            value = 0;
+        }
 #endif
     } else {
         return;
@@ -452,16 +527,19 @@ static void stop_input_device_for_am_spinin(input_device_data_t *device_data)
 #if defined(USE_I2C_DIRECT)        
         i2c_close();
 #else
-	i2c_del_driver(&__am_spinin_driver);
-    if (!IS_ERR_OR_NULL(user_data->i2c)) {
-        i2c_unregister_device(user_data->i2c);
-    }
+        i2c_del_driver(&__am_spinin_driver);
+        if (!IS_ERR_OR_NULL(user_data->i2c)) {
+            i2c_unregister_device(user_data->i2c);
+        }
 #endif        
     } else if (user_data->device_cfg.comm_type == AM_SPININ_COMM_SPI) {
 #if defined(USE_SPI_DIRECT)
         spi_close();
 #else
-
+        spi_unregister_driver(&__am_spinin_spi_driver);
+        if (!IS_ERR_OR_NULL(user_data->spi)) {
+            //spi_unregister_device(user_data->spi);
+        }
 #endif
     }    
 }
