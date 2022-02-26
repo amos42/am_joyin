@@ -74,7 +74,7 @@ void /*__init*/ prepocess_params(void)
     }
 
     // device 모두 생략시, 기본 파라미터 세팅
-    cnt = 0;    
+    cnt = 0;
     for (i = 0; i < MAX_INPUT_DEVICE_COUNT; i++)
     {
         if (am_device_cfg[i] != NULL)

@@ -88,7 +88,7 @@ static am_joyin_data_t *a_input;
 static void initButtonConfig(struct input_dev *indev, input_buttonset_data_t *buttonset_cfg, int button_count, int endpoint_type)
 {
     int i;
-   
+
     if (button_count > buttonset_cfg->button_count) {
         button_count = buttonset_cfg->button_count;
     }
@@ -166,7 +166,7 @@ static void am_timer(unsigned long private) {
     // 만약 키체크 시간이 너무 길어서 다음 타이머 주기를 초과해 버리면 예외 처리
     if (next_timer <= jiffies) {
         next_timer = jiffies + inp->timer_period;
-        
+
         // 타이머 주기를 초과하는 횟수가 100회를 넘으면 타이머 중단
         if (++inp->missing_timer_count > 100) {
             printk(KERN_ERR"Button check time is too late. Terminate the timer.");
@@ -273,7 +273,7 @@ static void removeTimer(void)
 }
 
 
-static int __open_handler(struct input_dev *indev) 
+static int __open_handler(struct input_dev *indev)
 {
     input_endpoint_data_t *endpoint = input_get_drvdata(indev);
     int err;
@@ -299,7 +299,7 @@ static int __open_handler(struct input_dev *indev)
 }
 
 
-static void __close_handler(struct input_dev *indev) 
+static void __close_handler(struct input_dev *indev)
 {
     input_endpoint_data_t *endpoint = input_get_drvdata(indev);
 
@@ -367,14 +367,13 @@ static int __endpoint_unregister(input_endpoint_data_t *endpoint, BOOL force)
 
     if (endpoint->indev != NULL) {
         input_unregister_device(endpoint->indev);
-        input_free_device(endpoint->indev);
         endpoint->indev = NULL;
     }
 
     return err;
 }
 
-static int __input_dev_register(input_device_data_t *device_data) 
+static int __input_dev_register(input_device_data_t *device_data)
 {
     int i;
     int err;
@@ -388,7 +387,7 @@ static int __input_dev_register(input_device_data_t *device_data)
 }
 
 
-static void __input_dev_unregister(input_device_data_t *device_data) 
+static void __input_dev_unregister(input_device_data_t *device_data)
 {
     int i;
 
@@ -399,7 +398,7 @@ static void __input_dev_unregister(input_device_data_t *device_data)
     if (device_data->data != NULL) {
         kfree(device_data->data);
         device_data->data = NULL;
-    }    
+    }
 }
 
 
@@ -475,7 +474,7 @@ static int am_joyin_init(void)
     if (a_input->report_period <= 0 || a_input->report_period > 1000) {
         a_input->report_period = DEFAULT_REPORT_PERIOD;
     }
-#if defined(USE_REPORT_TIMER)    
+#if defined(USE_REPORT_TIMER)
     a_input->timer_period = HZ / a_input->report_period;
 #endif
 
@@ -500,16 +499,17 @@ static int am_joyin_init(void)
     // 한개라도 endpoint가 등록되어 있다면 정상 종료
     for (i = 0; i < a_input->input_endpoint_count; i++) {
         if (a_input->endpoint_list[i].indev != NULL) {
+            printk(KERN_INFO"success register input dev.\n");
             return 0;
         }
     }
 
     // 단 한개도 enpoint가 없다면 에러
-    printk(KERN_ERR"nothing input endpoint");
+    printk(KERN_ERR"nothing input endpoint.");
     err = -ENODEV;
 
 err_free_dev:
-    printk(KERN_ERR"fail register input dev");
+    printk(KERN_ERR"fail register input dev.\n");
     cleanup();
     return err;
 }
@@ -518,7 +518,7 @@ err_free_dev:
 static void am_joyin_exit(void)
 {
     cleanup();
-    printk(KERN_INFO"am_joyin_exit.");
+    printk(KERN_INFO"am_joyin_exit.\n");
 }
 
 

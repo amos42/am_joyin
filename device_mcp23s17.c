@@ -41,7 +41,7 @@
 #define MCP23S17_IOCON     (0x0A)      // MCP23x17 Configuration Register
 //                         (0x0B)      //     Also Configuration Register
 #define MCP23S17_GPPUA     (0x0C)      // MCP23x17 Weak Pull-Up Resistor Register
-#define MCP23S17_GPPUB     (0x0D)      // INPUT ONLY: 0 = No Internal 100k Pull-Up (default) 1 = Internal 100k Pull-Up 
+#define MCP23S17_GPPUB     (0x0D)      // INPUT ONLY: 0 = No Internal 100k Pull-Up (default) 1 = Internal 100k Pull-Up
 #define MCP23S17_INTFA     (0x0E)      // MCP23x17 Interrupt Flag Register
 #define MCP23S17_INTFB     (0x0F)      // READ ONLY: 1 = This Pin Triggered the Interrupt
 #define MCP23S17_INTCAPA   (0x10)      // MCP23x17 Interrupt Captured Value for Port Register
@@ -87,7 +87,7 @@ static const device_mcp23s17_index_table_t default_input_mcp23s17_config = {
         {ABS_Y,      -DEFAULT_INPUT_ABS_MAX_VALUE},
         {ABS_Y,       DEFAULT_INPUT_ABS_MAX_VALUE},
         {ABS_X,      -DEFAULT_INPUT_ABS_MAX_VALUE},
-        {ABS_X,       DEFAULT_INPUT_ABS_MAX_VALUE}, 
+        {ABS_X,       DEFAULT_INPUT_ABS_MAX_VALUE},
         {BTN_START,   1},
         {BTN_SELECT,  1},
         {BTN_A,       1},
@@ -100,7 +100,7 @@ static const device_mcp23s17_index_table_t default_input_mcp23s17_config = {
         {BTN_TL2,     1},
         {BTN_TR2,     1},
         {BTN_TRIGGER, 1}
-    }, 
+    },
     INPUT_MCP23S17_DEFAULT_KEYCODE_TABLE_ITEM_COUNT,
     0, 0
 };
@@ -113,7 +113,7 @@ static int __parse_device_param_for_mcp23s17(device_mcp23s17_data_t* user_data, 
     char* pText;
 
     if (device_config_str != NULL) {
-        strcpy(szText, device_config_str); 
+        strcpy(szText, device_config_str);
         pText = szText;
 
         user_data->device_cfg.spi_channel = parse_number(&pText, ",", 0, MCP23S17_DEFAULT_SPI_CHANNEL);
@@ -149,7 +149,7 @@ static int __parse_endpoint_param_for_mcp23s17(device_mcp23s17_data_t* user_data
         if (ep == NULL) continue;
 
         if (endpoint_config_str[i] != NULL) {
-            strcpy(szText, endpoint_config_str[i]); 
+            strcpy(szText, endpoint_config_str[i]);
             pText = szText;
 
             cfgtype_p = strsep(&pText, ",");
@@ -241,7 +241,7 @@ static int init_input_device_for_mcp23s17(void* device_desc_data, input_device_d
 {
     device_mcp23s17_data_t* user_data;
     int result;
-    
+
     user_data = (device_mcp23s17_data_t *)kzalloc(sizeof(device_mcp23s17_data_t) + sizeof(device_mcp23s17_index_table_t) * (device_data->target_endpoint_count - 1), GFP_KERNEL);
 
     result = __parse_device_param_for_mcp23s17(user_data, device_config_str);
@@ -276,7 +276,7 @@ static int __mcp23s17_spi_remove(struct spi_device *spi)
     return 0;
 }
 
-static struct of_device_id __mcp23s17_match_table[] = { 
+static struct of_device_id __mcp23s17_match_table[] = {
     { .compatible = "brcm,bcm2835" },
     {},
 };
@@ -472,7 +472,7 @@ static void stop_input_device_for_mcp23s17(input_device_data_t *device_data)
 #endif
 
     device_data->is_opend = FALSE;
-    
+
 #if defined(USE_SPI_DIRECT)
     spi_close();
 #else

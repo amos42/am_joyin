@@ -57,9 +57,9 @@ typedef struct tag_device_mcp23017_index_table {
 // device.data에 할당 될 구조체
 typedef struct tag_device_mcp23017_data {
     device_mcp23017_config_t         device_cfg;
-#if !defined(USE_I2C_DIRECT)    
-	struct i2c_client *i2c;
-#endif    
+#if !defined(USE_I2C_DIRECT)
+    struct i2c_client *i2c;
+#endif
     device_mcp23017_index_table_t    button_cfgs[1];
 } device_mcp23017_data_t;
 
@@ -71,7 +71,7 @@ static const device_mcp23017_index_table_t default_input_mcp23017_config = {
         {ABS_Y,      -DEFAULT_INPUT_ABS_MAX_VALUE},
         {ABS_Y,       DEFAULT_INPUT_ABS_MAX_VALUE},
         {ABS_X,      -DEFAULT_INPUT_ABS_MAX_VALUE},
-        {ABS_X,       DEFAULT_INPUT_ABS_MAX_VALUE}, 
+        {ABS_X,       DEFAULT_INPUT_ABS_MAX_VALUE},
         {BTN_START,   1},
         {BTN_SELECT,  1},
         {BTN_A,       1},
@@ -84,7 +84,7 @@ static const device_mcp23017_index_table_t default_input_mcp23017_config = {
         {BTN_TL2,     1},
         {BTN_TR2,     1},
         {BTN_TRIGGER, 1}
-    }, 
+    },
     INPUT_MCP23017_DEFAULT_KEYCODE_TABLE_ITEM_COUNT,
     0, 0
 };
@@ -97,7 +97,7 @@ static int __parse_device_param_for_mcp23017(device_mcp23017_data_t* user_data, 
     char* pText;
 
     if (device_config_str != NULL) {
-        strcpy(szText, device_config_str); 
+        strcpy(szText, device_config_str);
         pText = szText;
 
         user_data->device_cfg.i2c_addr = parse_number(&pText, ",", 0, MCP23017_DEFAULT_I2C_ADDR);
@@ -133,7 +133,7 @@ static int __parse_endpoint_param_for_mcp23017(device_mcp23017_data_t* user_data
         if (ep == NULL) continue;
 
         if (endpoint_config_str[i] != NULL) {
-            strcpy(szText, endpoint_config_str[i]); 
+            strcpy(szText, endpoint_config_str[i]);
             pText = szText;
 
             cfgtype_p = strsep(&pText, ",");
@@ -224,7 +224,7 @@ static int init_input_device_for_mcp23017(void* device_desc_data, input_device_d
 {
     device_mcp23017_data_t* user_data;
     int result;
-    
+
     user_data = (device_mcp23017_data_t *)kzalloc(sizeof(device_mcp23017_data_t) + sizeof(device_mcp23017_index_table_t) * (device_data->target_endpoint_count - 1), GFP_KERNEL);
 
     result = __parse_device_param_for_mcp23017(user_data, device_config_str);
@@ -249,58 +249,59 @@ static int init_input_device_for_mcp23017(void* device_desc_data, input_device_d
 }
 
 
-#if !defined(USE_I2C_DIRECT)
-//static struct i2c_client *__mcp23017_i2c = NULL;
-//static int __mcp23017_i2c_refcnt = 0;
+//#if !defined(USE_I2C_DIRECT)
+// //static struct i2c_client *__mcp23017_i2c = NULL;
+// //static int __mcp23017_i2c_refcnt = 0;
 
-static int __mcp23017_probe(struct i2c_client *i2c, const struct i2c_device_id *id)
-{
-    // device_mcp23017_data_t *user_data = (device_mcp23017_data_t *)i2c->dev.platform_data;
-  
-    // if (++__mcp23017_i2c_refcnt == 1) {
-    //     __mcp23017_i2c = i2c;
-    // }
+// static int __mcp23017_probe(struct i2c_client *i2c, const struct i2c_device_id *id)
+// {
+//     printk(">>>>>>> %p", i2c);
+//     // device_mcp23017_data_t *user_data = (device_mcp23017_data_t *)i2c->dev.platform_data;
 
-	// i2c_set_clientdata(i2c, user_data);
-	// user_data->i2c = i2c;
+//     // if (++__mcp23017_i2c_refcnt == 1) {
+//     //     __mcp23017_i2c = i2c;
+//     // }
 
-	return 0;
-}
+// 	// i2c_set_clientdata(i2c, user_data);
+// 	// user_data->i2c = i2c;
 
-static int __mcp23017_remove(struct i2c_client *i2c)
-{
-	// device_mcp23017_data_t* user_data = (device_mcp23017_data_t *)i2c_get_clientdata(i2c);
-  
-    // if (--__mcp23017_i2c_refcnt == 0) {
-    //     __mcp23017_i2c = NULL;
-    // }
+// 	return 0;
+// }
 
-	return 0;
-}
+// static int __mcp23017_remove(struct i2c_client *i2c)
+// {
+// 	// device_mcp23017_data_t* user_data = (device_mcp23017_data_t *)i2c_get_clientdata(i2c);
 
-static const struct of_device_id __mcp23017_of_ids[] = {
-    { .compatible = "brcm,bcm2835" },
-	{} /* sentinel */
-};
-MODULE_DEVICE_TABLE(of, __mcp23017_of_ids);
+//     // if (--__mcp23017_i2c_refcnt == 0) {
+//     //     __mcp23017_i2c = NULL;
+//     // }
 
-static const struct i2c_device_id __mcp23017_i2c_ids[] = {
-	{ "mcp23017", 0 },
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, __mcp23017_i2c_ids);
+// 	return 0;
+// }
 
-static struct i2c_driver __mcp23017_i2c_driver = {
-	.driver = {
-		.name = "mcp23017",
-        .owner = THIS_MODULE,
-		.of_match_table = of_match_ptr(__mcp23017_of_ids)
-	},
-	.probe = __mcp23017_probe,
-	.remove = __mcp23017_remove,
-    .id_table = __mcp23017_i2c_ids,
-};
-#endif
+// static const struct of_device_id __mcp23017_of_ids[] = {
+//     { .compatible = "amos42,mcp23017" },
+// 	{} /* sentinel */
+// };
+// MODULE_DEVICE_TABLE(of, __mcp23017_of_ids);
+
+// static const struct i2c_device_id __mcp23017_i2c_ids[] = {
+// 	{ "mcp23017_i2c", 0 },
+// 	{}
+// };
+// MODULE_DEVICE_TABLE(i2c, __mcp23017_i2c_ids);
+
+// static struct i2c_driver __mcp23017_i2c_driver = {
+// 	.driver = {
+// 		.name = "mcp23017",
+//         .owner = THIS_MODULE,
+// 		.of_match_table = of_match_ptr(__mcp23017_of_ids)
+// 	},
+//     .id_table = __mcp23017_i2c_ids,
+// 	.probe = __mcp23017_probe,
+// 	.remove = __mcp23017_remove,
+// };
+//#endif
 
 static void start_input_device_for_mcp23017(input_device_data_t *device_data)
 {
@@ -342,10 +343,10 @@ static void start_input_device_for_mcp23017(input_device_data_t *device_data)
     //udelay(1000);
 #else
     // add driver
-	int r = i2c_add_driver(&__mcp23017_i2c_driver);
-    // printk("i2c_add_driver = %d", r);
+    //int r = i2c_add_driver(&__mcp23017_i2c_driver);
+    // pr_info("i2c_add_driver = %d", r);
 
-    if (r >= 0) {
+    //if (r >= 0) {
         struct i2c_board_info i2c_board_info = {
             I2C_BOARD_INFO("mcp23017", user_data->device_cfg.i2c_addr)
         };
@@ -355,7 +356,7 @@ static void start_input_device_for_mcp23017(input_device_data_t *device_data)
         }
         user_data->i2c = i2c_new_client_device(i2c_adap, &i2c_board_info);
         i2c_put_adapter(i2c_adap);
-    }
+    //}
 
     // printk("%p %p", user_data->i2c, __mcp23017_i2c);
     // if (!IS_ERR_OR_NULL(__mcp23017_i2c)) {
@@ -436,17 +437,18 @@ static void stop_input_device_for_mcp23017(input_device_data_t *device_data)
 {
 #if !defined(USE_I2C_DIRECT)
     device_mcp23017_data_t *user_data = (device_mcp23017_data_t *)device_data->data;
-#endif    
+#endif
 
     device_data->is_opend = FALSE;
 
 #if defined(USE_I2C_DIRECT)
     i2c_close();
 #else
-	i2c_del_driver(&__mcp23017_i2c_driver);
     if (!IS_ERR_OR_NULL(user_data->i2c)) {
         i2c_unregister_device(user_data->i2c);
+        user_data->i2c = NULL;
     }
+    //i2c_del_driver(&__mcp23017_i2c_driver);
 #endif
 }
 

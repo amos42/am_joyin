@@ -73,7 +73,7 @@ static const device_gpio_index_table_t default_input2_gpio_config = {
         {7,  BTN_TL,     1},
         {8,  BTN_TR,     1},
         {3,  BTN_MODE,   1},
-    }, 
+    },
     INPUT_GPIO_DEFAULT_KEYCODE_TABLE_ITEM_COUNT,
     0
 };
@@ -87,7 +87,7 @@ static int __parse_device_param_for_gpio(device_gpio_data_t* user_data, char* de
     char* temp_p;
 
     if (device_config_str != NULL) {
-        strcpy(szText, device_config_str); 
+        strcpy(szText, device_config_str);
         pText = szText;
 
         temp_p = strsep(&pText, ",");
@@ -124,7 +124,7 @@ static int __parse_endpoint_param_for_gpio(device_gpio_data_t* user_data, char* 
         if (ep == NULL) continue;
 
         if (endpoint_config_str[i] != NULL) {
-            strcpy(szText, endpoint_config_str[i]); 
+            strcpy(szText, endpoint_config_str[i]);
             pText = szText;
 
             cfgtype_p = strsep(&pText, ",");
@@ -208,7 +208,7 @@ static int __parse_endpoint_param_for_gpio(device_gpio_data_t* user_data, char* 
 }
 
 
-// device_config_str : 
+// device_config_str :
 // endpoint_config_str : endpoint, config_type (default1 | default2 | custom), ...
 //        default1: pin_count, start_index
 //        default2: pin_count, start_index
@@ -278,10 +278,10 @@ static void check_input_device_for_gpio(input_device_data_t* device_data)
     int i, j;
     device_gpio_index_table_t* table;
     device_gpio_data_t* user_data = (device_gpio_data_t *)device_data->data;
-    
+
     if (user_data == NULL) return;
     table = user_data->button_cfgs;
-    
+
     for (i = 0; i < device_data->target_endpoint_count; i++) {
         input_endpoint_data_t* endpoint = device_data->target_endpoints[i];
         device_gpio_index_item_t* item = &table->buttondef[table->button_start_index];
@@ -312,5 +312,5 @@ int register_input_device_for_gpio(input_device_type_desc_t *device_desc)
     device_desc->start_input_dev = start_input_device_for_gpio;
     device_desc->check_input_dev = check_input_device_for_gpio;
     device_desc->stop_input_dev = stop_input_device_for_gpio;
-    return 0;    
+    return 0;
 }

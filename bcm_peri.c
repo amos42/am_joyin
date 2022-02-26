@@ -24,7 +24,7 @@
 static u32 peri_base = 0x00000000;
 
 
-u32 bcm_peri_base_probe(void) 
+u32 bcm_peri_base_probe(void)
 {
     char *path = "/soc";
     struct device_node *dt_node;
@@ -63,10 +63,10 @@ u32 bcm_peri_base_probe(void)
 uint32_t bcm_peri_read(volatile uint32_t* paddr)
 {
     uint32_t ret;
-	__sync_synchronize();
-	ret = *paddr;
-	__sync_synchronize();
-	return ret;
+    __sync_synchronize();
+    ret = *paddr;
+    __sync_synchronize();
+    return ret;
 }
 
 /* read from peripheral without the read barrier
@@ -77,7 +77,7 @@ uint32_t bcm_peri_read(volatile uint32_t* paddr)
  */
 uint32_t bcm_peri_read_nb(volatile uint32_t* paddr)
 {
-	return *paddr;
+    return *paddr;
 }
 
 /* Write with memory barriers to peripheral
@@ -85,15 +85,15 @@ uint32_t bcm_peri_read_nb(volatile uint32_t* paddr)
 
 void bcm_peri_write(volatile uint32_t* paddr, uint32_t value)
 {
-	__sync_synchronize();
-	*paddr = value;
-	__sync_synchronize();
+    __sync_synchronize();
+    *paddr = value;
+    __sync_synchronize();
 }
 
 /* write to peripheral without the write barrier */
 void bcm_peri_write_nb(volatile uint32_t* paddr, uint32_t value)
 {
-	*paddr = value;
+    *paddr = value;
 }
 
 /* Set/clear only the bits in value covered by the mask

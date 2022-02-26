@@ -19,7 +19,7 @@
         // {ABS_Y,      -1},
         // {ABS_Y,       1},
         // {ABS_X,      -1},
-        // {ABS_X,       1}, 
+        // {ABS_X,       1},
         // {BTN_START,   1},
         // {BTN_SELECT,  1},
         // {BTN_A,       1},
@@ -73,7 +73,7 @@ static const device_mux_index_table_t default_input_mux_config = {
         {ABS_Y,      -DEFAULT_INPUT_ABS_MAX_VALUE},
         {ABS_Y,       DEFAULT_INPUT_ABS_MAX_VALUE},
         {ABS_X,      -DEFAULT_INPUT_ABS_MAX_VALUE},
-        {ABS_X,       DEFAULT_INPUT_ABS_MAX_VALUE}, 
+        {ABS_X,       DEFAULT_INPUT_ABS_MAX_VALUE},
         {BTN_START,   1},
         {BTN_SELECT,  1},
         {BTN_A,       1},
@@ -86,7 +86,7 @@ static const device_mux_index_table_t default_input_mux_config = {
         {BTN_TL2,     1},
         {BTN_TR2,     1},
         {BTN_TRIGGER, 1}
-    }, 
+    },
     INPUT_MUX_DEFAULT_KEYCODE_TABLE_ITEM_COUNT,
     0, 0
 };
@@ -100,7 +100,7 @@ static int __parse_device_param_for_mux(device_mux_data_t* user_data, char* devi
     char* pText;
     char* temp_p, *block_p;
 
-    strcpy(szText, device_config_str); 
+    strcpy(szText, device_config_str);
     pText = szText;
 
     temp_p = strsep(&pText, ",");
@@ -147,7 +147,7 @@ static int __parse_endpoint_param_for_mux(device_mux_data_t* user_data, char* en
         if (ep == NULL) continue;
 
         if (endpoint_config_str[i] != NULL) {
-            strcpy(szText, endpoint_config_str[i]); 
+            strcpy(szText, endpoint_config_str[i]);
             pText = szText;
 
             cfgtype_p = strsep(&pText, ",");
@@ -238,7 +238,7 @@ static int init_input_device_for_mux(void* device_desc_data, input_device_data_t
     device_mux_data_t* user_data;
     int result;
     //int i, all_io_count;
-    
+
     if (device_config_str == NULL || strcmp(device_config_str, "") == 0) return -EINVAL;
 
     user_data = (device_mux_data_t *)kzalloc(sizeof(device_mux_data_t) + sizeof(device_mux_index_table_t) * (device_data->target_endpoint_count - 1), GFP_KERNEL);
@@ -316,7 +316,7 @@ static void check_input_device_for_mux(input_device_data_t *device_data)
     if (cs_gpio != -1) {
         gpio_set_value(cs_gpio, user_data->device_cfg.enable_high == 0 ? 0 : 1);
         udelay(5);
-    }        
+    }
 
     addr = 0;
 
@@ -355,7 +355,7 @@ static void check_input_device_for_mux(input_device_data_t *device_data)
 
     if (cs_gpio != -1) {
         gpio_set_value(cs_gpio, user_data->device_cfg.enable_high == 0 ? 1 : 0);
-    }        
+    }
 }
 
 

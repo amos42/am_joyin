@@ -77,7 +77,7 @@ static const device_mcp300x_index_table_t default_input_mcp300x_config = {
         {5, ABS_WHEEL,    -DEFAULT_INPUT_ABS_MAX_VALUE, DEFAULT_INPUT_ABS_MAX_VALUE, 0, MAX_MCP300X_ADC_VALUE, MAX_MCP300X_ADC_VALUE/2},
         {6, ABS_HAT0X,    -DEFAULT_INPUT_ABS_MAX_VALUE, DEFAULT_INPUT_ABS_MAX_VALUE, 0, MAX_MCP300X_ADC_VALUE, MAX_MCP300X_ADC_VALUE/2},
         {7, ABS_HAT0Y,    -DEFAULT_INPUT_ABS_MAX_VALUE, DEFAULT_INPUT_ABS_MAX_VALUE, 0, MAX_MCP300X_ADC_VALUE, MAX_MCP300X_ADC_VALUE/2}
-    }, 
+    },
     INPUT_MCP300X_DEFAULT_KEYCODE_TABLE_ITEM_COUNT,
     0
 };
@@ -90,7 +90,7 @@ static int __parse_device_param_for_mcp300x(device_mcp300x_data_t* user_data, ch
     char* pText;
 
     if (device_config_str != NULL) {
-        strcpy(szText, device_config_str); 
+        strcpy(szText, device_config_str);
         pText = szText;
 
         user_data->device_cfg.spi_channel = parse_number(&pText, ",", 0, MCP300X_DEFAULT_SPI_CHANNEL);
@@ -126,7 +126,7 @@ static int __parse_endpoint_param_for_mcp300x(device_mcp300x_data_t* user_data, 
         if (ep == NULL) continue;
 
         if (endpoint_config_str[i] != NULL) {
-            strcpy(szText, endpoint_config_str[i]); 
+            strcpy(szText, endpoint_config_str[i]);
             pText = szText;
 
             cfgtype_p = strsep(&pText, ",");
@@ -224,7 +224,7 @@ static int init_input_device_for_mcp300x(void* device_desc_data, input_device_da
     device_mcp300x_data_t* user_data;
     int result;
     int i;
-    
+
     user_data = (device_mcp300x_data_t *)kzalloc(sizeof(device_mcp300x_data_t) + sizeof(device_mcp300x_index_table_t) * (device_data->target_endpoint_count - 1), GFP_KERNEL);
     user_data->device_desc_data = *(device_mcp300x_desc_config_t *)device_desc_data;
 
@@ -260,7 +260,7 @@ static int __mcp300x_spi_remove(struct spi_device *spi)
     return 0;
 }
 
-static struct of_device_id __mcp300x_match_table[] = { 
+static struct of_device_id __mcp300x_match_table[] = {
     { .compatible = "brcm,bcm2835" },
     {},
 };

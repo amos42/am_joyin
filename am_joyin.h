@@ -36,12 +36,12 @@ typedef struct tag_am_joyin_data {
 
     // 런타임 참조 정보
     int used;
-#if defined(USE_REPORT_TIMER)    
+#if defined(USE_REPORT_TIMER)
     unsigned long timer_period;
     struct timer_list report_timer;
 #else
     struct task_struct* report_task;
-#endif    
+#endif
     struct mutex mutex;
     int missing_timer_count;
 } am_joyin_data_t;
