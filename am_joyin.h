@@ -6,6 +6,8 @@
 #define __AM_JOYIN_H_
 
 
+#include "build_cfg.h"
+
 #include <linux/kernel.h>
 #include <linux/mutex.h>
 

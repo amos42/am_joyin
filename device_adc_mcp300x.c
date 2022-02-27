@@ -269,40 +269,6 @@ static int init_input_device_for_mcp300x(void* device_desc_data, input_device_da
     return 0;
 }
 
-// #if !defined(USE_SPI_DIRECT)
-// static int __mcp300x_spi_probe(struct spi_device *spi)
-// {
-//     return 0;
-// }
-
-// static int __mcp300x_spi_remove(struct spi_device *spi)
-// {
-//     return 0;
-// }
-
-// static struct of_device_id __mcp300x_match_table[] = {
-//     { .compatible = "brcm,bcm2835" },
-//     {},
-// };
-// MODULE_DEVICE_TABLE(of, __mcp300x_match_table);
-
-// static const struct spi_device_id __mcp300x_spi_ids[] = {
-//     { "mcp300x", 0 },
-//     {}
-// };
-// MODULE_DEVICE_TABLE(spi, __mcp300x_spi_ids);
-
-// static struct spi_driver __mcp300x_spi_driver = {
-//     .driver = {
-//         .name = "mcp300x",
-//         .owner = THIS_MODULE,
-//         .of_match_table = __mcp300x_match_table,
-//     },
-//     .probe = __mcp300x_spi_probe,
-//     .remove = __mcp300x_spi_remove,
-//     .id_table = __mcp300x_spi_ids,
-// };
-// #endif
 
 static void start_input_device_for_mcp300x(input_device_data_t *device_data)
 {
@@ -315,26 +281,25 @@ static void start_input_device_for_mcp300x(input_device_data_t *device_data)
 
     spi_setClockDivider(256);
 #else
-    // int r = spi_register_driver(&__mcp300x_spi_driver);
-    // printk("spi_register_driver = %d", r);
+    struct spi_board_info spi_device_info = {
+        .modalias     = "mcp300x",
+        .max_speed_hz = 1 * 1000 * 1000,     // speed your device (slave) can handle
+        .bus_num      = 0,                   // SPI 0
+        .chip_select  = user_data->device_cfg.spi_channel,
+        .mode         = SPI_MODE_0           // SPI mode 0
+    };
 
-    //if (r >= 0) {
-        struct spi_board_info spi_device_info = {
-            .modalias     = "mcp300x",
-            .max_speed_hz = 1 * 1000 * 1000,     // speed your device (slave) can handle
-            .bus_num      = 0,                   // SPI 0
-            .chip_select  = user_data->device_cfg.spi_channel,
-            .mode         = SPI_MODE_0           // SPI mode 0
-        };
+    struct spi_master* master = spi_busnum_to_master(spi_device_info.bus_num);
+    if (IS_ERR_OR_NULL(master)) {
+        pr_err("SPI Master {%d} not found.\n", spi_device_info.bus_num);
+        return;
+    }
 
-        struct spi_master* master = spi_busnum_to_master(spi_device_info.bus_num);
-        if (master != NULL) {
-            user_data->spi = spi_new_device(master, &spi_device_info);
-            // printk(">>>>>> spi : %p", user_data->spi);
-        } else {
-            pr_err("SPI Master not found.\n");
-        }
-    //}
+    user_data->spi = spi_new_device(master, &spi_device_info);
+    if (IS_ERR_OR_NULL(user_data->spi)) {
+        pr_err("spi open device error {%d}.\n", user_data->device_cfg.spi_channel);
+        return;
+    }
 #endif
 
     device_data->is_opend = TRUE;
@@ -344,9 +309,6 @@ static void start_input_device_for_mcp300x(input_device_data_t *device_data)
 static void check_input_device_for_mcp300x(input_device_data_t *device_data)
 {
     int i, j, k, cnt;
-    int spi_channel;
-    char resultA, resultB;
-    unsigned io_value;
     device_mcp300x_data_t *user_data = (device_mcp300x_data_t *)device_data->data;
     int sampling_count, value_weight, prev_weight;
 #if !defined(USE_SPI_DIRECT)
@@ -355,13 +317,9 @@ static void check_input_device_for_mcp300x(input_device_data_t *device_data)
 
     if (user_data == NULL) return;
 
-    spi_channel = user_data->device_cfg.spi_channel;
-
-    io_value = ((unsigned)resultB << 8) | (unsigned)resultA;
-
 #if defined(USE_SPI_DIRECT)
     spi_begin();
-    spi_chipSelect(spi_channel);
+    spi_chipSelect(user_data->device_cfg.spi_channel);
 #else
     spi = user_data->spi;
 #endif
@@ -432,8 +390,8 @@ static void stop_input_device_for_mcp300x(input_device_data_t *device_data)
 #else
     if (!IS_ERR_OR_NULL(user_data->spi)) {
         spi_unregister_device(user_data->spi);
+        user_data->spi = NULL;
     }
-    //spi_unregister_driver(&__mcp300x_spi_driver);
 #endif
 }
 

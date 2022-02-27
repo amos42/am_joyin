@@ -15,6 +15,7 @@
 #define PRODUCT_VERSION (0x0100)
 #define DEVICE_NAME     "Amos Joystick"
 
+#include "build_cfg.h"
 
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -23,8 +24,11 @@
 #include <linux/input.h>
 #include <linux/mutex.h>
 #include <linux/slab.h>
-#include <linux/kthread.h>
+#if defined(USE_REPORT_TIMER)
 #include <linux/timer.h>
+#else
+#include <linux/kthread.h>
+#endif
 
 MODULE_AUTHOR("Amos42");
 MODULE_DESCRIPTION("GPIO and Multiplexer and 74HC165 amd MCP23017 Arcade Joystick Driver");
@@ -32,7 +36,6 @@ MODULE_LICENSE("GPL");
 
 /*============================================================*/
 
-#include "build_cfg.h"
 #include "am_joyin.h"
 
 /** parameters (begin) **/
@@ -237,7 +240,7 @@ static void start_report_worker(void)
                 wake_up_process(a_input->report_task);
             }
 #endif
-            printk("start report worker.\n");
+            //printk("start report worker.\n");
         }
     }
 }
@@ -253,7 +256,7 @@ static void stop_report_worker(void)
             //sleep_on(a_input->report_task);
         }
 #endif
-        printk("stop report worker.\n");
+        //printk("stop report worker.\n");
     }
 }
 
@@ -438,7 +441,7 @@ static int am_joyin_init(void)
     int i;
     int err;
 
-    //printk("init input dev.....");
+    printk("am_joyin init...\n");
 
     // 커맨드 라인 파라미터 전처리
     prepocess_params();
@@ -518,7 +521,7 @@ err_free_dev:
 static void am_joyin_exit(void)
 {
     cleanup();
-    printk(KERN_INFO"am_joyin_exit.\n");
+    printk(KERN_INFO"am_joyin exit.\n");
 }
 
 

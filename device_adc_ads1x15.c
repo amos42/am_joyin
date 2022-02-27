@@ -347,41 +347,6 @@ static int init_input_device_for_ads1x15(void* device_desc_data, input_device_da
 }
 
 
-// #if !defined(USE_I2C_DIRECT)
-// static int __ads1x15_probe(struct i2c_client *i2c, const struct i2c_device_id *id)
-// {
-// 	return 0;
-// }
-
-// static int __ads1x15_remove(struct i2c_client *i2c)
-// {
-// 	return 0;
-// }
-
-// static const struct of_device_id __ads1x15_of_ids[] = {
-//     { .compatible = "brcm,bcm2835" },
-// 	{} /* sentinel */
-// };
-// MODULE_DEVICE_TABLE(of, __ads1x15_of_ids);
-
-// static const struct i2c_device_id __ads1x15_i2c_ids[] = {
-// 	{ "ads1x15", 0 },
-// 	{}
-// };
-// MODULE_DEVICE_TABLE(i2c, __ads1x15_i2c_ids);
-
-// static struct i2c_driver __ads1x15_driver = {
-// 	.driver = {
-// 		.name = "ads1x15",
-//         .owner = THIS_MODULE,
-// 		.of_match_table = of_match_ptr(__ads1x15_of_ids)
-// 	},
-// 	.probe = __ads1x15_probe,
-// 	.remove = __ads1x15_remove,
-//     .id_table = __ads1x15_i2c_ids,
-// };
-// #endif
-
 static void start_input_device_for_ads1x15(input_device_data_t *device_data)
 {
 #if !defined(USE_I2C_DIRECT)
@@ -391,21 +356,20 @@ static void start_input_device_for_ads1x15(input_device_data_t *device_data)
 #if defined(USE_I2C_DIRECT)
     i2c_init(bcm_peri_base_probe(), 0xB0);
 #else
-    // add driver
-    //int r = i2c_add_driver(&__ads1x15_driver);
-    // printk("i2c_add_driver = %d", r);
-
-    //if (r >= 0) {
-        struct i2c_board_info i2c_board_info = {
-            I2C_BOARD_INFO("ads1x15", user_data->device_cfg.i2c_addr)
-        };
-        struct i2c_adapter* i2c_adap = i2c_get_adapter(1);
-        if (i2c_adap == NULL) {
-            return;
-        }
-        user_data->i2c = i2c_new_client_device(i2c_adap, &i2c_board_info);
-        i2c_put_adapter(i2c_adap);
-    //}
+    struct i2c_board_info i2c_board_info = {
+        I2C_BOARD_INFO("ads1x15", user_data->device_cfg.i2c_addr)
+    };
+    struct i2c_adapter* i2c_adap = i2c_get_adapter(1);
+    if (i2c_adap == NULL) {
+        pr_err("i2c adapter open erro {%d}", 1);
+        return;
+    }
+    user_data->i2c = i2c_new_client_device(i2c_adap, &i2c_board_info);
+    if (IS_ERR_OR_NULL(user_data->i2c)) {
+        pr_err("i2c device open erro {%d}", user_data->device_cfg.i2c_addr);
+        return;
+    }
+    i2c_put_adapter(i2c_adap);
 #endif
 
     device_data->is_opend = TRUE;
@@ -588,8 +552,8 @@ static void stop_input_device_for_ads1x15(input_device_data_t *device_data)
 #else
     if (!IS_ERR_OR_NULL(user_data->i2c)) {
         i2c_unregister_device(user_data->i2c);
+        user_data->i2c = NULL;
     }
-    //i2c_del_driver(&__ads1x15_driver);
 #endif
 }
 

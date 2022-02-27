@@ -265,40 +265,6 @@ static int init_input_device_for_mcp23s17(void* device_desc_data, input_device_d
     return 0;
 }
 
-// #if !defined(USE_SPI_DIRECT)
-// static int __mcp23s17_spi_probe(struct spi_device *spi)
-// {
-//     return 0;
-// }
-
-// static int __mcp23s17_spi_remove(struct spi_device *spi)
-// {
-//     return 0;
-// }
-
-// static struct of_device_id __mcp23s17_match_table[] = {
-//     { .compatible = "brcm,bcm2835" },
-//     {},
-// };
-// MODULE_DEVICE_TABLE(of, __mcp23s17_match_table);
-
-// static const struct spi_device_id __mcp23s17_spi_ids[] = {
-//     { "mcp23s17", 0 },
-//     {}
-// };
-// MODULE_DEVICE_TABLE(spi, __mcp23s17_spi_ids);
-
-// static struct spi_driver __mcp23s17_spi_driver = {
-//     .driver = {
-//         .name = "mcp23s17",
-//         .owner = THIS_MODULE,
-//         .of_match_table = __mcp23s17_match_table,
-//     },
-//     .probe = __mcp23s17_spi_probe,
-//     .remove = __mcp23s17_spi_remove,
-//     .id_table = __mcp23s17_spi_ids,
-// };
-// #endif
 
 #if defined(USE_SPI_DIRECT)
 static uint8_t __mcp23s17_spi_read(uint8_t cmd)
@@ -333,6 +299,7 @@ static int __mcp23s17_spi_write(struct spi_device *spi, uint8_t cmd, uint8_t val
 }
 #endif
 
+
 static void start_input_device_for_mcp23s17(input_device_data_t *device_data)
 {
     device_mcp23s17_data_t *user_data = (device_mcp23s17_data_t *)device_data->data;
@@ -366,47 +333,30 @@ static void start_input_device_for_mcp23s17(input_device_data_t *device_data)
 
     spi_end();
 #else
-    // int r = spi_register_driver(&__mcp23s17_spi_driver);
-    // printk("spi_register_driver = %d", r);
+    struct spi_board_info spi_device_info = {
+        .modalias     = "mcp23s17",
+        .max_speed_hz = 1 * 1000 * 1000,     // speed your device (slave) can handle
+        .bus_num      = 0,                   // SPI 0
+        .chip_select  = user_data->device_cfg.spi_channel,
+        .mode         = SPI_MODE_0           // SPI mode 0
+    };
 
-    //if (r >= 0) {
-        struct spi_board_info spi_device_info = {
-            .modalias     = "mcp23s17",
-            .max_speed_hz = 1 * 1000 * 1000,     // speed your device (slave) can handle
-            .bus_num      = 0,                   // SPI 0
-            .chip_select  = user_data->device_cfg.spi_channel,
-            .mode         = SPI_MODE_0           // SPI mode 0
-        };
+    struct spi_master* master = spi_busnum_to_master(spi_device_info.bus_num);
+    if (IS_ERR_OR_NULL(master)) {
+        pr_err("SPI Master {%d} not found.\n", spi_device_info.bus_num);
+        return;
+    }
 
-        struct spi_master* master = spi_busnum_to_master(spi_device_info.bus_num);
-        if (master != NULL) {
-            user_data->spi = spi_new_device(master, &spi_device_info);
-            pr_info(">>>>>> spi : %p", user_data->spi);
-        } else {
-            pr_err("SPI Master not found.\n");
-        }
+    user_data->spi = spi_new_device(master, &spi_device_info);
+    if (IS_ERR_OR_NULL(user_data->spi)) {
+        pr_err("spi open device error {%d}.\n", user_data->device_cfg.spi_channel);
+        return;
+    }
 
-        if (!IS_ERR_OR_NULL(user_data->spi)) {
-            __mcp23s17_spi_write(user_data->spi, MCP23017_GPIOA_MODE, 0xFF);
-            //udelay(100);
-
-            // read one byte on GPIOA (for dummy)
-            //__mcp23s17_spi_read(user_data->spi, MCP23017_GPIOA_READ);
-            //udelay(100);
-
-            __mcp23s17_spi_write(user_data->spi, MCP23017_GPIOA_PULLUPS_MODE, 0xFF);
-            //udelay(100);
-
-            __mcp23s17_spi_write(user_data->spi, MCP23017_GPIOB_MODE, 0xFF);
-            //udelay(100);
-
-            // read one byte on GPIOA (for dummy)
-            //__mcp23s17_spi_read(user_data->spi, MCP23017_GPIOB_READ);
-            //udelay(100);
-
-            __mcp23s17_spi_write(user_data->spi, MCP23017_GPIOB_PULLUPS_MODE, 0xFF);
-        }
-    //}
+    __mcp23s17_spi_write(user_data->spi, MCP23017_GPIOA_MODE, 0xFF);
+    __mcp23s17_spi_write(user_data->spi, MCP23017_GPIOA_PULLUPS_MODE, 0xFF);
+    __mcp23s17_spi_write(user_data->spi, MCP23017_GPIOB_MODE, 0xFF);
+    __mcp23s17_spi_write(user_data->spi, MCP23017_GPIOB_PULLUPS_MODE, 0xFF);
 #endif
 
     device_data->is_opend = TRUE;
@@ -416,21 +366,20 @@ static void start_input_device_for_mcp23s17(input_device_data_t *device_data)
 static void check_input_device_for_mcp23s17(input_device_data_t *device_data)
 {
     int i, j, cnt;
-    int spi_channel, io_count;
+    int io_count;
     uint8_t resultA, resultB;
     unsigned io_value;
     device_mcp23s17_data_t *user_data = (device_mcp23s17_data_t *)device_data->data;
 
     if (user_data == NULL) return;
 
-    spi_channel = user_data->device_cfg.spi_channel;
     io_count = user_data->device_cfg.io_count;
 
     if (io_count <= 0) return;
 
 #if defined(USE_SPI_DIRECT)
     spi_begin();
-    spi_chipSelect(spi_channel);
+    spi_chipSelect(user_data->device_cfg.spi_channel);
 
     resultA = __mcp23s17_spi_read(MCP23S17_GPIOA);
     resultB = __mcp23s17_spi_read(MCP23S17_GPIOB);
@@ -483,8 +432,8 @@ static void stop_input_device_for_mcp23s17(input_device_data_t *device_data)
 #else
     if (!IS_ERR_OR_NULL(user_data->spi)) {
         spi_unregister_device(user_data->spi);
+        user_data->spi = NULL;
     }
-    //spi_unregister_driver(&__mcp23s17_spi_driver);
 #endif
 }
 

@@ -10,6 +10,8 @@ extern "C" {
 #endif
 
 
+#include "build_cfg.h"
+
 #ifndef BOOL
 typedef int BOOL;
 #endif
