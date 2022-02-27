@@ -15,7 +15,7 @@ am_joyin은 라즈베리파이를 이용하여 아케이드 게임기를 제작�
 이는 기존에 제작 된 기기에 좀 더 수월하게 am_joyin을 적용하기 위한 목적도 있다.
 
 > ***NOTE:***\
-> mk_arcade_joystick_rpi 프로젝트 사이트 : https://github.com/recalbox/mk_arcade_joystick_rpi
+> mk_arcade_joystick_rpi 프로젝트 사이트 : `https://github.com/recalbox/mk_arcade_joystick_rpi`
 
 
 **키워드 설명**
@@ -113,7 +113,7 @@ sudo apt install -y --force-yes raspberrypi-kernel-headers
 #### wget 사용시
 
 ```shell
-wget https://github.com/amos42/am_joyin/releases/download/v0.3.2-beta01/am_joyin-0.3.2.deb
+wget https://github.com/amos42/am_joyin/releases/download/v0.3.2/am_joyin-0.3.2.deb
 sudo dpkg -i am_joyin-0.3.2.deb
 ```
 
@@ -144,9 +144,13 @@ sudo modprobe am_joyin
 만약 에러 메시지가 발생하지 않는다면 정상적으로 설치가 완료 된 것이다.
 
 
-### 3. 드라이버 부팅시 자동 로딩
+### 3-1. 드라이버 부팅시 자동 로딩 (I2C를 사용하지 않을 경우)
 
 다음은 전원을 켤 때마다 자동으로 am_joyin 드라이버가 로딩되도록 하기 위한 과정이다.
+이를 위해서는 모듈 정의 파일에 am_joyin 모듈을 추가하면 된다.
+
+> ***NOTE:***\
+> 모듈 정의 파일 위치 : `/etc/modules-load.d/modules.conf`
 
 드라이버 모듈 설정 파일을 연다.
 
@@ -164,16 +168,23 @@ sudo nano /etc/modules-load.d/modules.conf
 am_joyin
 ```
 
-만약 mcp23017, ads1x15, am_spinin과 같은 I2C 장치를 사용하고 있다면, 다음의 2개 라인도 함께 포함시킨다.
+수정이 완료되었으면 ctrl-x를 눌러 파일을 저장하고 종료한다.
+
+
+### 3-2. 드라이버 부팅시 자동 로딩 (I2C를 사용할 경우)
+
+만약 mcp23017, ads1x15, am_spinin과 같은 I2C 장치를 사용하고 있다면 조금 다른 방법을 사용해야 한다.
+
+이는 I2C 관련 서비스가 시작 된 이후에 am_joyin 모듈의 적재가 이루어지도록 모듈의 초기화 순서를 조정해 주어야 하기 때문이다. 이를 위해 모듈 정의 파일이 아닌, rc.local 스크립트에 모듈을 적재하는 명령을 적어 주어야 한다.
+
+먼저 모듈 정의 파일인 modules.conf 다음의 2개 라인을 포함시킨다.
 
 ```
 i2c-bcm2708 
 i2c-dev
 ```
 
-필요한 내용를 다 추가했다면 ctrl-x를 눌러 저장하고 종료하면 된다.
-
-raspi-config 설정 유틸리티를 이용할 수도 있다.
+또다른 방법으로는 raspi-config 설정 유틸리티를 이용할 수도 있다.
 
 ```bash
 sudo raspi-config
@@ -181,13 +192,36 @@ sudo raspi-config
 
 ![raspi-config i2c 설정](images/i2c-menu.png)
 
-![raspi-config spi 설정](images/spi-menu.png)
+<!-- ![raspi-config spi 설정](images/spi-menu.png) -->
 
-간혹 해당 모듈들이 블럭되어 있는 경우가 있기에 블랙리스트도 확인해 보는 것이 좋다. 만약 사용하고자 하는 모듈이 블랙리스트에 포함되어 있다면 이를 찾아 제거해 놔야 한다.
+그 다음에 rc.local에 modprobe 명령을 이용해 am_joyin 모듈을 포함시킨다.
 
 ```bash
-sudo nano /etc/modprobe.d/raspi-blacklist.conf
+sudo nano /etc/rc.local
 ```
+
+맨 마지막 줄의 exit 명령 전에 다음의 내용을 삽입한다.
+
+```
+  .
+  .
+  .
+
+/sbin/modprobe am_joyin
+
+  .
+  .
+  .
+exit 0  
+```
+
+수정이 완료되었으면 ctrl-x를 눌러 파일을 저장하고 종료한다.
+
+
+> ***NOTE:***\
+> 간혹 해당 모듈들이 블럭되어 있는 경우가 있기에 블랙리스트도 확인해 보는 것이 좋다.
+> 만약 사용하고자 하는 모듈이 블랙리스트에 포함되어 있다면 이를 찾아 제거해 놔야 한다.\
+> 블랙 리스트 파일 위치 : `/etc/modprobe.d/raspi-blacklist.conf`
 
 
 ### 4. am_joyin 설정
@@ -195,7 +229,7 @@ sudo nano /etc/modprobe.d/raspi-blacklist.conf
 다음으로는 드라이버 설정을 진행한다.
 
 > ***NOTE:***\
-> am_joyin 설정 파일 위치 : /etc/modprobe.d/am_joyin.conf
+> am_joyin 설정 파일 위치 : `/etc/modprobe.d/am_joyin.conf`
 
 텍스트 에디터로 설정 파일을 연다.
 

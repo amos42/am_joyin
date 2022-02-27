@@ -7,7 +7,7 @@
 
 
 //#define USE_REPORT_TIMER
-#define USE_I2C_DIRECT
+//#define USE_I2C_DIRECT
 #define USE_SPI_DIRECT
 
 
