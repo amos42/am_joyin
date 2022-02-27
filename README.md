@@ -287,7 +287,7 @@ jstest /dev/input/js0
 더이상 am_joyin을 사용하지 않길 원하여 드라이버를 삭제하기 위해선 설치한 순서의 반대로 진행하면 된다.
 
 > 1. /etc/modprobe.d/am_joyin.conf 파일 삭제
-> 2. /etc/modules-load.d/modules.conf 목록에서 am_joyin 제거
+> 2. /etc/modules-load.d/modules.conf 혹은 /etc/rc.local 목록에서 am_joyin 제거
 > 3. sudo dpkg -r am-joyin-dkms 명령으로 드라이버 패키지 삭제
 
 
