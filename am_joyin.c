@@ -85,7 +85,7 @@ MODULE_LICENSE("GPL");
 static am_joyin_data_t *a_input;
 
 
-static void initButtonConfig(struct input_dev *indev, input_buttonset_data_t *buttonset_cfg, int button_count, int endpoint_type)
+static void init_button_config(struct input_dev *indev, input_buttonset_data_t *buttonset_cfg, int button_count, int endpoint_type)
 {
     int i;
 
@@ -107,7 +107,7 @@ static void initButtonConfig(struct input_dev *indev, input_buttonset_data_t *bu
 }
 
 
-static void reportInput(struct input_dev *indev, int endpoint_type, input_button_data_t *button_data, int button_count, int *data, int *cur_data)
+static void report_input(struct input_dev *indev, int endpoint_type, input_button_data_t *button_data, int button_count, int *data, int *cur_data)
 {
     int i;
     BOOL is_changed = FALSE;
@@ -160,7 +160,7 @@ static void am_timer(unsigned long private) {
 
     for (i = 0; i < inp->input_endpoint_count; i++) {
         input_endpoint_data_t *ep = &inp->endpoint_list[i];
-        reportInput(ep->indev, ep->endpoint_type, ep->target_buttonset->button_data, ep->button_count, ep->report_button_state, ep->current_button_state);
+        report_input(ep->indev, ep->endpoint_type, ep->target_buttonset->button_data, ep->button_count, ep->report_button_state, ep->current_button_state);
     }
 
     // 만약 키체크 시간이 너무 길어서 다음 타이머 주기를 초과해 버리면 예외 처리
@@ -200,7 +200,7 @@ static int report_worker(void *data) {
 
         for (i = 0; i < inp->input_endpoint_count; i++) {
             input_endpoint_data_t *ep = &inp->endpoint_list[i];
-            reportInput(ep->indev, ep->endpoint_type, ep->target_buttonset->button_data, ep->button_count, ep->report_button_state, ep->current_button_state);
+            report_input(ep->indev, ep->endpoint_type, ep->target_buttonset->button_data, ep->button_count, ep->report_button_state, ep->current_button_state);
         }
 
         msleep(msleeptick);
@@ -210,7 +210,7 @@ static int report_worker(void *data) {
 }
 #endif
 
-static void initTimer(void)
+static void init_report_worker(void)
 {
     if (a_input != NULL) {
 #if defined(USE_REPORT_TIMER)
@@ -226,7 +226,7 @@ static void initTimer(void)
 }
 
 
-static void startTimer(void)
+static void start_report_worker(void)
 {
     if (a_input != NULL) {
         if (a_input->input_endpoint_count > 0 && a_input->input_device_count > 0){
@@ -237,27 +237,28 @@ static void startTimer(void)
                 wake_up_process(a_input->report_task);
             }
 #endif
-            //printk("start dev input timer");
+            printk("start report worker.\n");
         }
     }
 }
 
 
-static void stopTimer(void)
+static void stop_report_worker(void)
 {
     if (a_input != NULL) {
 #if defined(USE_REPORT_TIMER)
         del_timer_sync(&a_input->report_timer);
 #else
         if (a_input->report_task != NULL) {
+            //sleep_on(a_input->report_task);
         }
 #endif
-        //printk("stop dev input timer");
+        printk("stop report worker.\n");
     }
 }
 
 
-static void removeTimer(void)
+static void remove_report_worker(void)
 {
     if (a_input != NULL) {
 #if defined(USE_REPORT_TIMER)
@@ -268,7 +269,6 @@ static void removeTimer(void)
             a_input->report_task = NULL;
         }
 #endif
-        //printk("stop dev input timer");
     }
 }
 
@@ -286,7 +286,7 @@ static int __open_handler(struct input_dev *indev)
 
     if (!endpoint->is_opened) {
         if (!a_input->used++) {
-            startTimer();
+            start_report_worker();
         }
 
         endpoint->is_opened = TRUE;
@@ -309,7 +309,7 @@ static void __close_handler(struct input_dev *indev)
 
     if (endpoint->is_opened) {
         if (!--a_input->used) {
-            stopTimer();
+            stop_report_worker();
         }
 
         endpoint->is_opened = FALSE;
@@ -338,7 +338,7 @@ static int __endpoint_register(input_endpoint_data_t *endpoint)
         if (endpoint->endpoint_type == ENDPOINT_TYPE_JOYSTICK) {
             indev->phys = "joystick";
             indev->evbit[0] = BIT_MASK(EV_KEY) | BIT_MASK(EV_ABS);
-            initButtonConfig(indev, endpoint->target_buttonset, endpoint->button_count, endpoint->endpoint_type);
+            init_button_config(indev, endpoint->target_buttonset, endpoint->button_count, endpoint->endpoint_type);
         } else if (endpoint->endpoint_type == ENDPOINT_TYPE_MOUSE) {
             indev->phys = "mouse";
             indev->evbit[0] = BIT_MASK(EV_KEY) | BIT_MASK(EV_REL);
@@ -407,7 +407,7 @@ static void cleanup(void)
     if (a_input != NULL) {
         int i;
 
-        removeTimer();
+        remove_report_worker();
 
         // 장치들을 제거한다.
         for (i = 0; i < a_input->input_device_count; i++) {
@@ -450,7 +450,7 @@ static int am_joyin_init(void)
 
     a_input = (am_joyin_data_t *)kzalloc(sizeof(am_joyin_data_t), GFP_KERNEL);
 
-    initTimer();
+    init_report_worker();
 
     // 지원할 장치 목록들을 등록한다.
     register_input_device_for_gpio(&a_input->device_type_desc_list[a_input->input_device_type_desc_count++]);       // 1
