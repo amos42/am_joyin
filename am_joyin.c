@@ -15,6 +15,7 @@
 #define PRODUCT_VERSION (0x0100)
 #define DEVICE_NAME     "Amos Joystick"
 
+#include "build_cfg.h"
 
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -23,10 +24,18 @@
 #include <linux/input.h>
 #include <linux/mutex.h>
 #include <linux/slab.h>
+#if defined(USE_REPORT_TIMER)
+#include <linux/timer.h>
+#else
+#include <linux/kthread.h>
+#endif
 
 MODULE_AUTHOR("Amos42");
 MODULE_DESCRIPTION("GPIO and Multiplexer and 74HC165 amd MCP23017 Arcade Joystick Driver");
 MODULE_LICENSE("GPL");
+#if !defined(USE_I2C_DIRECT)
+MODULE_SOFTDEP("pre: i2c-dev");
+#endif
 
 /*============================================================*/
 
@@ -41,10 +50,16 @@ MODULE_LICENSE("GPL");
 
 //#include "gpio_util.h"
 #include "gpio_util.c"
+
+#if defined(USE_I2C_DIRECT)
 //#include "i2c_util.h"
 #include "i2c_util.c"
+#endif
+#if defined(USE_SPI_DIRECT)
 //#include "spi_util.h"
 #include "spi_util.c"
+#endif
+
 //#include "parse_util.h"
 #include "parse_util.c"
 
@@ -61,20 +76,25 @@ MODULE_LICENSE("GPL");
 #include "device_rotary_am_spinin.c"
 
 
+#if defined(USE_REPORT_TIMER)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,15,0)
 #define HAVE_TIMER_SETUP
 #endif
+#endif
 
-#define DEFAULT_REFRESH_TIME	(HZ/100)
+#define DEFAULT_REPORT_PERIOD	(100)
+#if defined(USE_REPORT_TIMER)
+#define DEFAULT_REFRESH_TIME	(HZ / DEFAULT_REPORT_PERIOD)
+#endif
 
 
 static am_joyin_data_t *a_input;
 
 
-static void initButtonConfig(struct input_dev *indev, input_buttonset_data_t *buttonset_cfg, int button_count)
+static void init_button_config(struct input_dev *indev, input_buttonset_data_t *buttonset_cfg, int button_count, int endpoint_type)
 {
     int i;
-   
+
     if (button_count > buttonset_cfg->button_count) {
         button_count = buttonset_cfg->button_count;
     }
@@ -83,7 +103,9 @@ static void initButtonConfig(struct input_dev *indev, input_buttonset_data_t *bu
         input_button_data_t *btn = &buttonset_cfg->button_data[i];
         unsigned int code = btn->button_code;
         if (code < ABS_MAX) {
-            input_set_abs_params(indev, code, btn->min_value, btn->max_value, 0, 0);
+            if (endpoint_type == ENDPOINT_TYPE_JOYSTICK) {
+                input_set_abs_params(indev, code, btn->min_value, btn->max_value, 0, 0);
+            }
         } else {
             __set_bit(code, indev->keybit);
         }
@@ -91,7 +113,7 @@ static void initButtonConfig(struct input_dev *indev, input_buttonset_data_t *bu
 }
 
 
-static void reportInput(struct input_dev *indev, int endpoint_type, input_button_data_t *button_data, int button_count, int *data, int *cur_data)
+static void report_input(struct input_dev *indev, int endpoint_type, input_button_data_t *button_data, int button_count, int *data, int *cur_data)
 {
     int i;
     BOOL is_changed = FALSE;
@@ -119,9 +141,10 @@ static void reportInput(struct input_dev *indev, int endpoint_type, input_button
 }
 
 
-#ifdef HAVE_TIMER_SETUP
+#if defined(USE_REPORT_TIMER)
+#if defined(HAVE_TIMER_SETUP)
 static void am_timer(struct timer_list *t) {
-    am_joyin_data_t *inp = from_timer(inp, t, timer);
+    am_joyin_data_t *inp = from_timer(inp, t, report_timer);
 #else
 static void am_timer(unsigned long private) {
     am_joyin_data_t *inp = (void *) private;
@@ -143,13 +166,13 @@ static void am_timer(unsigned long private) {
 
     for (i = 0; i < inp->input_endpoint_count; i++) {
         input_endpoint_data_t *ep = &inp->endpoint_list[i];
-        reportInput(ep->indev, ep->endpoint_type, ep->target_buttonset->button_data, ep->button_count, ep->report_button_state, ep->current_button_state);
+        report_input(ep->indev, ep->endpoint_type, ep->target_buttonset->button_data, ep->button_count, ep->report_button_state, ep->current_button_state);
     }
 
     // 만약 키체크 시간이 너무 길어서 다음 타이머 주기를 초과해 버리면 예외 처리
     if (next_timer <= jiffies) {
         next_timer = jiffies + inp->timer_period;
-        
+
         // 타이머 주기를 초과하는 횟수가 100회를 넘으면 타이머 중단
         if (++inp->missing_timer_count > 100) {
             printk(KERN_ERR"Button check time is too late. Terminate the timer.");
@@ -158,43 +181,105 @@ static void am_timer(unsigned long private) {
     }
 
     // 다음 타이머 트리거
-    mod_timer(&inp->timer, next_timer);
+    mod_timer(&inp->report_timer, next_timer);
 }
+#else
+static int report_worker(void *data) {
+    am_joyin_data_t *inp = (am_joyin_data_t *)data;
 
+    unsigned int msleeptick = 1000 / inp->report_period;
 
-static void initTimer(void)
+    while (!kthread_should_stop()) {
+        int i;
+
+        for (i = 0; i < inp->input_endpoint_count; i++) {
+            input_endpoint_data_t *ep = &inp->endpoint_list[i];
+            memset(ep->report_button_state, 0, sizeof(int) * MAX_INPUT_BUTTON_COUNT);
+        }
+
+        for (i = 0; i < inp->input_device_count; i++) {
+            input_device_data_t *dev = &inp->device_list[i];
+            if (dev != NULL && dev->is_opend && dev->device_type_desc != NULL) {
+                dev->device_type_desc->check_input_dev(dev);
+            }
+        }
+
+        for (i = 0; i < inp->input_endpoint_count; i++) {
+            input_endpoint_data_t *ep = &inp->endpoint_list[i];
+            report_input(ep->indev, ep->endpoint_type, ep->target_buttonset->button_data, ep->button_count, ep->report_button_state, ep->current_button_state);
+        }
+
+        msleep(msleeptick);
+    }
+
+    return 0;
+}
+#endif
+
+static void init_report_worker(void)
 {
     if (a_input != NULL) {
-#ifdef HAVE_TIMER_SETUP
-        timer_setup(&a_input->timer, am_timer, 0);
+#if defined(USE_REPORT_TIMER)
+#if defined(HAVE_TIMER_SETUP)
+        timer_setup(&a_input->report_timer, am_timer, 0);
 #else
-        setup_timer(&a_input->timer, am_timer, (long)a_input);
+        setup_timer(&a_input->report_timer, am_timer, (long)a_input);
+#endif
+#else
+        a_input->report_task = kthread_create(report_worker, a_input, "am_joyin_report_task-%d", current->pid);
 #endif
     }
 }
 
 
-static void startTimer(void)
+static void start_report_worker(void)
 {
     if (a_input != NULL) {
         if (a_input->input_endpoint_count > 0 && a_input->input_device_count > 0){
-            mod_timer(&a_input->timer, jiffies + a_input->timer_period);
-            //printk("start dev input timer");
+#if defined(USE_REPORT_TIMER)
+            mod_timer(&a_input->report_timer, jiffies + a_input->timer_period);
+#else
+            if (a_input->report_task != NULL) {
+                wake_up_process(a_input->report_task);
+            }
+#endif
+            //printk("start report worker.\n");
         }
     }
 }
 
 
-static void stopTimer(void)
+static void stop_report_worker(void)
 {
     if (a_input != NULL) {
-        del_timer_sync(&a_input->timer);
-        //printk("stop dev input timer");
+#if defined(USE_REPORT_TIMER)
+        del_timer_sync(&a_input->report_timer);
+#else
+        if (a_input->report_task != NULL) {
+            //sleep_on(a_input->report_task);
+        }
+#endif
+        //printk("stop report worker.\n");
     }
 }
 
 
-static int __open_handler(struct input_dev *indev) 
+static void remove_report_worker(void)
+{
+    if (a_input != NULL) {
+#if defined(USE_REPORT_TIMER)
+        del_timer_sync(&a_input->report_timer);
+#else
+        if (a_input->report_task != NULL) {
+            kthread_stop(a_input->report_task);
+            a_input->report_task = NULL;
+        }
+#endif
+    }
+}
+
+
+static int __open_handler(struct input_dev *indev)
 {
     input_endpoint_data_t *endpoint = input_get_drvdata(indev);
     int err;
@@ -207,7 +292,7 @@ static int __open_handler(struct input_dev *indev)
 
     if (!endpoint->is_opened) {
         if (!a_input->used++) {
-            startTimer();
+            start_report_worker();
         }
 
         endpoint->is_opened = TRUE;
@@ -220,7 +305,7 @@ static int __open_handler(struct input_dev *indev)
 }
 
 
-static void __close_handler(struct input_dev *indev) 
+static void __close_handler(struct input_dev *indev)
 {
     input_endpoint_data_t *endpoint = input_get_drvdata(indev);
 
@@ -230,7 +315,7 @@ static void __close_handler(struct input_dev *indev)
 
     if (endpoint->is_opened) {
         if (!--a_input->used) {
-            stopTimer();
+            stop_report_worker();
         }
 
         endpoint->is_opened = FALSE;
@@ -259,15 +344,16 @@ static int __endpoint_register(input_endpoint_data_t *endpoint)
         if (endpoint->endpoint_type == ENDPOINT_TYPE_JOYSTICK) {
             indev->phys = "joystick";
             indev->evbit[0] = BIT_MASK(EV_KEY) | BIT_MASK(EV_ABS);
+            init_button_config(indev, endpoint->target_buttonset, endpoint->button_count, endpoint->endpoint_type);
         } else if (endpoint->endpoint_type == ENDPOINT_TYPE_MOUSE) {
             indev->phys = "mouse";
             indev->evbit[0] = BIT_MASK(EV_KEY) | BIT_MASK(EV_REL);
-            __set_bit(BTN_MOUSE, indev->keybit);
             __set_bit(REL_X, indev->relbit);
             __set_bit(REL_Y, indev->relbit);
+            __set_bit(BTN_MOUSE, indev->keybit);
+            __set_bit(BTN_RIGHT, indev->keybit);
+            __set_bit(BTN_MIDDLE, indev->keybit);
         }
-
-        initButtonConfig(indev, endpoint->target_buttonset, endpoint->button_count);
 
         err = input_register_device(indev);
         if (err >= 0){
@@ -287,14 +373,13 @@ static int __endpoint_unregister(input_endpoint_data_t *endpoint, BOOL force)
 
     if (endpoint->indev != NULL) {
         input_unregister_device(endpoint->indev);
-        input_free_device(endpoint->indev);
         endpoint->indev = NULL;
     }
 
     return err;
 }
 
-static int __input_dev_register(input_device_data_t *device_data) 
+static int __input_dev_register(input_device_data_t *device_data)
 {
     int i;
     int err;
@@ -308,7 +393,7 @@ static int __input_dev_register(input_device_data_t *device_data)
 }
 
 
-static void __input_dev_unregister(input_device_data_t *device_data) 
+static void __input_dev_unregister(input_device_data_t *device_data)
 {
     int i;
 
@@ -319,7 +404,7 @@ static void __input_dev_unregister(input_device_data_t *device_data)
     if (device_data->data != NULL) {
         kfree(device_data->data);
         device_data->data = NULL;
-    }    
+    }
 }
 
 
@@ -328,7 +413,7 @@ static void cleanup(void)
     if (a_input != NULL) {
         int i;
 
-        stopTimer();
+        remove_report_worker();
 
         // 장치들을 제거한다.
         for (i = 0; i < a_input->input_device_count; i++) {
@@ -359,7 +444,7 @@ static int am_joyin_init(void)
     int i;
     int err;
 
-    //printk("init input dev.....");
+    printk("am_joyin init...\n");
 
     // 커맨드 라인 파라미터 전처리
     prepocess_params();
@@ -371,9 +456,10 @@ static int am_joyin_init(void)
 
     a_input = (am_joyin_data_t *)kzalloc(sizeof(am_joyin_data_t), GFP_KERNEL);
 
-    initTimer();
+    init_report_worker();
 
-    // 지원할 장치 목록들을 등록한다.
+    // 지원할 장치 목록들을 등록한다. 
+    // 등록 가능한 최대 갯수는 MAX_INPUT_DEVICE_TYPE_DESC_COUNT 값을 따른다.
     register_input_device_for_gpio(&a_input->device_type_desc_list[a_input->input_device_type_desc_count++]);       // 1
     register_input_device_for_74hc165(&a_input->device_type_desc_list[a_input->input_device_type_desc_count++]);    // 2
     register_input_device_for_mcp23017(&a_input->device_type_desc_list[a_input->input_device_type_desc_count++]);   // 3
@@ -388,15 +474,13 @@ static int am_joyin_init(void)
     // 커맨드 라인 파라미터들을 분석한다.
     parsing_device_config_params(a_input);
 
-// err = -ENODEV;
-// goto err_free_dev;
-
     // 타이머 주기 설정. 비어 있으면 기본 타이머 주기
-    if (a_input->timer_period > 0) {
-        a_input->timer_period = HZ / a_input->timer_period;
-    } else {
-        a_input->timer_period = DEFAULT_REFRESH_TIME;
+    if (a_input->report_period <= 0 || a_input->report_period > 1000) {
+        a_input->report_period = DEFAULT_REPORT_PERIOD;
     }
+#if defined(USE_REPORT_TIMER)
+    a_input->timer_period = HZ / a_input->report_period;
+#endif
 
     //printk("start register input dev...");
 
@@ -419,16 +503,17 @@ static int am_joyin_init(void)
     // 한개라도 endpoint가 등록되어 있다면 정상 종료
     for (i = 0; i < a_input->input_endpoint_count; i++) {
         if (a_input->endpoint_list[i].indev != NULL) {
+            printk(KERN_INFO"success register input dev.\n");
             return 0;
         }
     }
 
     // 단 한개도 enpoint가 없다면 에러
-    printk(KERN_ERR"nothing input endpoint");
+    printk(KERN_ERR"nothing input endpoint.");
     err = -ENODEV;
 
 err_free_dev:
-    printk(KERN_ERR"fail register input dev");
+    printk(KERN_ERR"fail register input dev.\n");
     cleanup();
     return err;
 }
@@ -437,7 +522,7 @@ err_free_dev:
 static void am_joyin_exit(void)
 {
     cleanup();
-    //printk("unregister input dev");
+    printk(KERN_INFO"am_joyin exit.\n");
 }
 
 

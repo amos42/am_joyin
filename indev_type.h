@@ -10,6 +10,8 @@ extern "C" {
 #endif
 
 
+#include "build_cfg.h"
+
 #ifndef BOOL
 typedef int BOOL;
 #endif
@@ -110,7 +112,7 @@ typedef struct tag_input_endpoint_data {
 
     input_buttonset_data_t* target_buttonset;
     int button_count;
-    
+
     BOOL is_opened;
     struct input_dev* indev;
 

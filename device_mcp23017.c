@@ -2,6 +2,8 @@
  * Copyright (C) 2021 Ju, Gyeong-min
  ********************************************************************************/
 
+#include "build_cfg.h"
+
 #include <linux/kernel.h>
 #include <linux/input.h>
 #include <linux/slab.h>
@@ -9,12 +11,13 @@
 #include <linux/uaccess.h>
 #include "bcm_peri.h"
 #include "gpio_util.h"
+#if defined(USE_I2C_DIRECT)
 #include "i2c_util.h"
+#else
+#include <linux/i2c.h>
+#endif
 #include "parse_util.h"
 
-//#define GPIO_GET(i)   GPIO_READ(i)
-//#define GPIO_GET_VALUE(i)   getGpio(i)
-//#define GPIO_SET_VALUE(i,v)   setGpio((i), (v))
 
 //#define MAX_ADDR_IO_COUNT   (6)
 
@@ -54,6 +57,9 @@ typedef struct tag_device_mcp23017_index_table {
 // device.data에 할당 될 구조체
 typedef struct tag_device_mcp23017_data {
     device_mcp23017_config_t         device_cfg;
+#if !defined(USE_I2C_DIRECT)
+    struct i2c_client *i2c;
+#endif
     device_mcp23017_index_table_t    button_cfgs[1];
 } device_mcp23017_data_t;
 
@@ -65,7 +71,7 @@ static const device_mcp23017_index_table_t default_input_mcp23017_config = {
         {ABS_Y,      -DEFAULT_INPUT_ABS_MAX_VALUE},
         {ABS_Y,       DEFAULT_INPUT_ABS_MAX_VALUE},
         {ABS_X,      -DEFAULT_INPUT_ABS_MAX_VALUE},
-        {ABS_X,       DEFAULT_INPUT_ABS_MAX_VALUE}, 
+        {ABS_X,       DEFAULT_INPUT_ABS_MAX_VALUE},
         {BTN_START,   1},
         {BTN_SELECT,  1},
         {BTN_A,       1},
@@ -78,7 +84,7 @@ static const device_mcp23017_index_table_t default_input_mcp23017_config = {
         {BTN_TL2,     1},
         {BTN_TR2,     1},
         {BTN_TRIGGER, 1}
-    }, 
+    },
     INPUT_MCP23017_DEFAULT_KEYCODE_TABLE_ITEM_COUNT,
     0, 0
 };
@@ -91,7 +97,7 @@ static int __parse_device_param_for_mcp23017(device_mcp23017_data_t* user_data, 
     char* pText;
 
     if (device_config_str != NULL) {
-        strcpy(szText, device_config_str); 
+        strcpy(szText, device_config_str);
         pText = szText;
 
         user_data->device_cfg.i2c_addr = parse_number(&pText, ",", 0, MCP23017_DEFAULT_I2C_ADDR);
@@ -127,7 +133,7 @@ static int __parse_endpoint_param_for_mcp23017(device_mcp23017_data_t* user_data
         if (ep == NULL) continue;
 
         if (endpoint_config_str[i] != NULL) {
-            strcpy(szText, endpoint_config_str[i]); 
+            strcpy(szText, endpoint_config_str[i]);
             pText = szText;
 
             cfgtype_p = strsep(&pText, ",");
@@ -205,7 +211,6 @@ static int __parse_endpoint_param_for_mcp23017(device_mcp23017_data_t* user_data
     return 0;
 }
 
-
 // device_config_str : i2c_addr, io_count
 // endpoint_config_str : endpoint, config_type (default | custom), ...
 //        default: pin_count, start_index, io_skip_count
@@ -219,7 +224,7 @@ static int init_input_device_for_mcp23017(void* device_desc_data, input_device_d
 {
     device_mcp23017_data_t* user_data;
     int result;
-    
+
     user_data = (device_mcp23017_data_t *)kzalloc(sizeof(device_mcp23017_data_t) + sizeof(device_mcp23017_index_table_t) * (device_data->target_endpoint_count - 1), GFP_KERNEL);
 
     result = __parse_device_param_for_mcp23017(user_data, device_config_str);
@@ -247,10 +252,12 @@ static int init_input_device_for_mcp23017(void* device_desc_data, input_device_d
 static void start_input_device_for_mcp23017(input_device_data_t *device_data)
 {
     device_mcp23017_data_t *user_data = (device_mcp23017_data_t *)device_data->data;
+
+#if defined(USE_I2C_DIRECT)
     char outval;
 
     i2c_init(bcm_peri_base_probe(), 0xB0);
-    udelay(1000);
+    //udelay(1000);
 
     // outval = 0x00;
     // i2c_write(user_data->device_cfg.i2c_addr, MCP23017_IOCON, &outval, 1);
@@ -259,27 +266,51 @@ static void start_input_device_for_mcp23017(input_device_data_t *device_data)
     outval = 0xFF;
     // Put all GPIOA inputs on MCP23017 in INPUT mode
     i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOA_MODE, &outval, 1);
-    udelay(1000);
+    //udelay(1000);
 
     // read one byte on GPIOA (for dummy)
-    i2c_read_1byte(user_data->device_cfg.i2c_addr, MCP23017_GPIOA_READ);
-    udelay(1000);
+    //i2c_read_1byte(user_data->device_cfg.i2c_addr, MCP23017_GPIOA_READ);
+    //udelay(1000);
 
     // Put all inputs on MCP23017 in pullup mode
     i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOA_PULLUPS_MODE, &outval, 1);
-    udelay(1000);
+    //udelay(1000);
 
     // Put all GPIOB inputs on MCP23017 in INPUT mode
     i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOB_MODE, &outval, 1);
-    udelay(1000);
+    //udelay(1000);
 
     // read one byte on GPIOB (for dummy)
-    i2c_read_1byte(user_data->device_cfg.i2c_addr, MCP23017_GPIOB_READ);
-    udelay(1000);
+    //i2c_read_1byte(user_data->device_cfg.i2c_addr, MCP23017_GPIOB_READ);
+    //udelay(1000);
 
     // Put all inputs on MCP23017 in pullup mode
     i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOB_PULLUPS_MODE, &outval, 1);
-    udelay(1000);
+    //udelay(1000);
+#else
+    struct i2c_board_info i2c_board_info = {
+        I2C_BOARD_INFO("mcp23017", user_data->device_cfg.i2c_addr)
+    };
+    struct i2c_adapter* i2c_adap = i2c_get_adapter(1);
+    if (i2c_adap == NULL) {
+        pr_err("i2c adapter open erro {%d}", 1);
+        return;
+    }
+    user_data->i2c = i2c_new_client_device(i2c_adap, &i2c_board_info);
+    if (IS_ERR_OR_NULL(user_data->i2c)) {
+        pr_err("i2c device open erro {%d}", user_data->device_cfg.i2c_addr);
+        return;
+    }
+    i2c_put_adapter(i2c_adap);
+
+    // Put all GPIOA pins to input mode & all pullup
+    i2c_smbus_write_byte_data(user_data->i2c, MCP23017_GPIOA_MODE, 0xFF);
+    i2c_smbus_write_byte_data(user_data->i2c, MCP23017_GPIOA_PULLUPS_MODE, 0xFF);
+
+    // Put all GPIOB pins to input mode & all pullup
+    i2c_smbus_write_byte_data(user_data->i2c, MCP23017_GPIOB_MODE, 0xFF);
+    i2c_smbus_write_byte_data(user_data->i2c, MCP23017_GPIOB_PULLUPS_MODE, 0xFF);
+#endif
 
     device_data->is_opend = TRUE;
 }
@@ -288,20 +319,31 @@ static void start_input_device_for_mcp23017(input_device_data_t *device_data)
 static void check_input_device_for_mcp23017(input_device_data_t *device_data)
 {
     int i, j, cnt;
-    int i2c_addr, io_count;
+    int io_count;
+#if defined(USE_I2C_DIRECT)
+    int i2c_addr;
+#endif
     char resultA, resultB;
     unsigned io_value;
     device_mcp23017_data_t *user_data = (device_mcp23017_data_t *)device_data->data;
 
     if (user_data == NULL) return;
 
-    i2c_addr = user_data->device_cfg.i2c_addr;
     io_count = user_data->device_cfg.io_count;
-
     if (io_count <= 0) return;
 
+#if defined(USE_I2C_DIRECT)
+    i2c_addr = user_data->device_cfg.i2c_addr;
     i2c_read(i2c_addr, MCP23017_GPIOA_READ, &resultA, 1);
     i2c_read(i2c_addr, MCP23017_GPIOB_READ, &resultB, 1);
+#else
+    if (!IS_ERR_OR_NULL(user_data->i2c)) {
+        resultA = i2c_smbus_read_byte_data(user_data->i2c, MCP23017_GPIOA_READ);
+        resultB = i2c_smbus_read_byte_data(user_data->i2c, MCP23017_GPIOB_READ);
+    } else {
+        resultA = resultB = 0xFF;
+    }
+#endif
 
     io_value = ((unsigned)resultB << 8) | (unsigned)resultA;
 
@@ -331,9 +373,20 @@ static void check_input_device_for_mcp23017(input_device_data_t *device_data)
 
 static void stop_input_device_for_mcp23017(input_device_data_t *device_data)
 {
+#if !defined(USE_I2C_DIRECT)
+    device_mcp23017_data_t *user_data = (device_mcp23017_data_t *)device_data->data;
+#endif
+
     device_data->is_opend = FALSE;
 
+#if defined(USE_I2C_DIRECT)
     i2c_close();
+#else
+    if (!IS_ERR_OR_NULL(user_data->i2c)) {
+        i2c_unregister_device(user_data->i2c);
+        user_data->i2c = NULL;
+    }
+#endif
 }
 
 

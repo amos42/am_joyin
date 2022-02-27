@@ -2,6 +2,8 @@
  * Copyright (C) 2021 Ju, Gyeong-min
  ********************************************************************************/
 
+#include "build_cfg.h"
+
 #include <linux/kernel.h>
 #include <linux/input.h>
 #include <linux/slab.h>
@@ -9,7 +11,16 @@
 #include <linux/uaccess.h>
 #include "bcm_peri.h"
 #include "gpio_util.h"
+#if defined(USE_I2C_DIRECT)
 #include "i2c_util.h"
+#else
+#include <linux/i2c.h>
+#endif
+#if defined(USE_SPI_DIRECT)
+#include "spi_util.h"
+#else
+#include <linux/spi/spi.h>
+#endif
 #include "parse_util.h"
 
 
@@ -26,7 +37,7 @@
 
 // default i2c addr
 #define AM_SPININ_DEFAULT_I2C_ADDR          (0x34)
-#define INPUT_AM_SPININ_DEFAULT_PPR         (360)
+#define INPUT_AM_SPININ_DEFAULT_PPR         (400)
 #define INPUT_AM_SPININ_DEFAULT_MIN_VALUE   (-5000)
 #define INPUT_AM_SPININ_DEFAULT_MAX_VALUE   (5000)
 #define INPUT_AM_SPININ_DEFAULT_SAMPLE_RATE (10)
@@ -55,8 +66,14 @@ typedef struct tag_device_am_spinin_index_table {
 
 // device.data에 할당 될 구조체
 typedef struct tag_device_am_spinin_data {
-    device_am_spinin_config_t         device_cfg;
-    device_am_spinin_index_table_t    button_cfgs[1];
+    device_am_spinin_config_t       device_cfg;
+#if !defined(USE_I2C_DIRECT)
+    struct i2c_client*              i2c;
+#endif
+#if !defined(USE_SPI_DIRECT)
+    struct spi_device*              spi;
+#endif
+    device_am_spinin_index_table_t  button_cfgs[1];
 } device_am_spinin_data_t;
 
 
@@ -65,7 +82,7 @@ typedef struct tag_device_am_spinin_data {
 static const device_am_spinin_index_table_t default_input_am_spinin_config = {
     {
         {REL_X,       0}
-    }, 
+    },
     INPUT_AM_SPININ_DEFAULT_KEYCODE_TABLE_ITEM_COUNT,
     0, 0
 };
@@ -79,7 +96,7 @@ static int __parse_device_param_for_am_spinin(device_am_spinin_data_t* user_data
     if (device_config_str != NULL) {
         char str[10];
 
-        strcpy(szText, device_config_str); 
+        strcpy(szText, device_config_str);
         pText = szText;
 
         if (parse_string(str, 10, &pText, ",", "i2c") == NULL) {
@@ -130,7 +147,7 @@ static int __parse_endpoint_param_for_am_spinin(device_am_spinin_data_t* user_da
         if (ep == NULL) continue;
 
         if (endpoint_config_str[i] != NULL) {
-            strcpy(szText, endpoint_config_str[i]); 
+            strcpy(szText, endpoint_config_str[i]);
             pText = szText;
 
             cfgtype_p = strsep(&pText, ",");
@@ -209,7 +226,8 @@ static int __parse_endpoint_param_for_am_spinin(device_am_spinin_data_t* user_da
 }
 
 
-static short __spi_trans(char cmd, short value) 
+#if defined(USE_SPI_DIRECT)
+static short __spi_trans_for_am_spinin(char cmd, short value)
 {
     unsigned char buf[3];
     buf[0] = cmd;
@@ -218,6 +236,18 @@ static short __spi_trans(char cmd, short value)
     spi_transfern(buf, 3);
     return (short)((unsigned short)buf[1] << 8 | buf[2]);
 }
+#else
+static short __spi_trans_for_am_spinin(struct spi_device* spi, char cmd, short value)
+{
+    unsigned char buf[3];
+    buf[0] = cmd;
+    buf[1] = (value >> 8) & 0xFF;
+    buf[2] = value & 0xFF;
+    spi_write_then_read(spi, buf, 3, buf, 3);
+    return (short)((unsigned short)buf[1] << 8 | buf[2]);
+}
+#endif
+
 
 // device_config_str : comm_type, addr, io_count
 // endpoint_config_str : endpoint, config_type (default | custom), ...
@@ -232,7 +262,7 @@ static int init_input_device_for_am_spinin(void* device_desc_data, input_device_
 {
     device_am_spinin_data_t* user_data;
     int result;
-    
+
     user_data = (device_am_spinin_data_t *)kzalloc(sizeof(device_am_spinin_data_t) + sizeof(device_am_spinin_index_table_t) * (device_data->target_endpoint_count - 1), GFP_KERNEL);
 
     result = __parse_device_param_for_am_spinin(user_data, device_config_str);
@@ -258,24 +288,76 @@ static void start_input_device_for_am_spinin(input_device_data_t *device_data)
     device_am_spinin_data_t *user_data = (device_am_spinin_data_t *)device_data->data;
 
     if (user_data->device_cfg.comm_type == AM_SPININ_COMM_I2C) {
+#if defined(USE_I2C_DIRECT)
         i2c_init(bcm_peri_base_probe(), 0xB0);
         i2c_write_1word(user_data->device_cfg.addr, AM_SPININ_SET_MODE, 0);
         i2c_write_1word(user_data->device_cfg.addr, AM_SPININ_WRITE_VALUE, 0);
         i2c_write_1word(user_data->device_cfg.addr, AM_SPININ_SET_MIN_VALUE, user_data->device_cfg.min_value);
         i2c_write_1word(user_data->device_cfg.addr, AM_SPININ_SET_MAX_VALUE, user_data->device_cfg.max_value);
         i2c_write_1word(user_data->device_cfg.addr, AM_SPININ_SET_SAMPLERATE, user_data->device_cfg.sample_rate);
+#else
+        struct i2c_board_info i2c_board_info = {
+            I2C_BOARD_INFO("am_spinin", user_data->device_cfg.addr)
+        };
+        struct i2c_adapter* i2c_adap = i2c_get_adapter(1);
+        if (i2c_adap == NULL) {
+            pr_err("i2c adapter open erro {%d}", 1);
+            return;
+        }
+        user_data->i2c = i2c_new_client_device(i2c_adap, &i2c_board_info);
+        if (IS_ERR_OR_NULL(user_data->i2c)) {
+            pr_err("i2c device open erro {%d}", user_data->device_cfg.addr);
+            return;
+        }
+        i2c_put_adapter(i2c_adap);
+
+        i2c_smbus_write_word_data(user_data->i2c, AM_SPININ_SET_MODE, 0);
+        i2c_smbus_write_word_data(user_data->i2c, AM_SPININ_WRITE_VALUE, 0);
+        i2c_smbus_write_word_data(user_data->i2c, AM_SPININ_SET_MIN_VALUE, user_data->device_cfg.min_value);
+        i2c_smbus_write_word_data(user_data->i2c, AM_SPININ_SET_MAX_VALUE, user_data->device_cfg.max_value);
+        i2c_smbus_write_word_data(user_data->i2c, AM_SPININ_SET_SAMPLERATE, user_data->device_cfg.sample_rate);
+#endif
     } else if (user_data->device_cfg.comm_type == AM_SPININ_COMM_SPI) {
+#if defined(USE_SPI_DIRECT)
         spi_init(bcm_peri_base_probe(), 0xB0);
         spi_setClockDivider(0x01);
         spi_setDataMode(0);
 
         spi_begin();
-        __spi_trans(AM_SPININ_SET_MODE, 0);
-        __spi_trans(AM_SPININ_WRITE_VALUE, 0);
-        __spi_trans(AM_SPININ_SET_MIN_VALUE, user_data->device_cfg.min_value);
-        __spi_trans(AM_SPININ_SET_MAX_VALUE, user_data->device_cfg.max_value);
-        __spi_trans(AM_SPININ_SET_SAMPLERATE, user_data->device_cfg.sample_rate);
+        spi_chipSelect(user_data->device_cfg.addr);
+        __spi_trans_for_am_spinin(AM_SPININ_SET_MODE, 0);
+        __spi_trans_for_am_spinin(AM_SPININ_WRITE_VALUE, 0);
+        __spi_trans_for_am_spinin(AM_SPININ_SET_MIN_VALUE, user_data->device_cfg.min_value);
+        __spi_trans_for_am_spinin(AM_SPININ_SET_MAX_VALUE, user_data->device_cfg.max_value);
+        __spi_trans_for_am_spinin(AM_SPININ_SET_SAMPLERATE, user_data->device_cfg.sample_rate);
         spi_end();
+#else
+        struct spi_board_info spi_device_info = {
+            .modalias     = "am_spinin",
+            .max_speed_hz = 1 * 1000 * 1000,     // speed your device (slave) can handle
+            .bus_num      = 0,                   // SPI 0
+            .chip_select  = user_data->device_cfg.addr,
+            .mode         = SPI_MODE_0           // SPI mode 0
+        };
+
+        struct spi_master* master = spi_busnum_to_master(spi_device_info.bus_num);
+        if (IS_ERR_OR_NULL(master)) {
+            pr_err("SPI Master {%d} not found.\n", spi_device_info.bus_num);
+            return;
+        }
+
+        user_data->spi = spi_new_device(master, &spi_device_info);
+        if (IS_ERR_OR_NULL(user_data->spi)) {
+            pr_err("spi open device error {%d}.\n", user_data->device_cfg.addr);
+            return;
+        }
+
+        __spi_trans_for_am_spinin(user_data->spi, AM_SPININ_SET_MODE, 0);
+        __spi_trans_for_am_spinin(user_data->spi, AM_SPININ_WRITE_VALUE, 0);
+        __spi_trans_for_am_spinin(user_data->spi, AM_SPININ_SET_MIN_VALUE, user_data->device_cfg.min_value);
+        __spi_trans_for_am_spinin(user_data->spi, AM_SPININ_SET_MAX_VALUE, user_data->device_cfg.max_value);
+        __spi_trans_for_am_spinin(user_data->spi, AM_SPININ_SET_SAMPLERATE, user_data->device_cfg.sample_rate);
+#endif
     } else {
         return;
     }
@@ -296,18 +378,44 @@ static void check_input_device_for_am_spinin(input_device_data_t *device_data)
     addr = user_data->device_cfg.addr;
 
     if (user_data->device_cfg.comm_type == AM_SPININ_COMM_I2C) {
+#if defined(USE_I2C_DIRECT)
         value = i2c_raw_read_1word(addr);
         if (value != 0) {
             i2c_write_1word(addr, AM_SPININ_WRITE_VALUE, 0);
         }
+#else
+        if (!IS_ERR_OR_NULL(user_data->i2c)) {
+            value = i2c_smbus_read_word_data(user_data->i2c, AM_SPININ_READ_VALUE);
+            if (value < 0) {
+                return;
+            }
+            value = (short)value;
+            if (value != 0) {
+                i2c_smbus_write_word_data(user_data->i2c, AM_SPININ_WRITE_VALUE, 0);
+            }
+        } else {
+            value = 0;
+        }
+#endif
     } else if (user_data->device_cfg.comm_type == AM_SPININ_COMM_SPI) {
+#if defined(USE_SPI_DIRECT)
         spi_begin();
         spi_chipSelect(addr);
-        value = __spi_trans(AM_SPININ_READ_VALUE, 0);
+        value = __spi_trans_for_am_spinin(AM_SPININ_READ_VALUE, 0);
         if (value != 0) {
-            __spi_trans(AM_SPININ_WRITE_VALUE, 0);
+            __spi_trans_for_am_spinin(AM_SPININ_WRITE_VALUE, 0);
         }
         spi_end();
+#else
+        if (!IS_ERR_OR_NULL(user_data->spi)) {
+            value = __spi_trans_for_am_spinin(user_data->spi, AM_SPININ_READ_VALUE, 0);
+            if (value != 0) {
+                __spi_trans_for_am_spinin(user_data->spi, AM_SPININ_WRITE_VALUE, 0);
+            }
+        } else {
+            value = 0;
+        }
+#endif
     } else {
         return;
     }
@@ -330,10 +438,24 @@ static void stop_input_device_for_am_spinin(input_device_data_t *device_data)
     device_data->is_opend = FALSE;
 
     if (user_data->device_cfg.comm_type == AM_SPININ_COMM_I2C) {
+#if defined(USE_I2C_DIRECT)
         i2c_close();
+#else
+        if (!IS_ERR_OR_NULL(user_data->i2c)) {
+            i2c_unregister_device(user_data->i2c);
+            user_data->i2c = NULL;
+        }
+#endif
     } else if (user_data->device_cfg.comm_type == AM_SPININ_COMM_SPI) {
+#if defined(USE_SPI_DIRECT)
         spi_close();
-    }    
+#else
+        if (!IS_ERR_OR_NULL(user_data->spi)) {
+            spi_unregister_device(user_data->spi);
+            user_data->spi = NULL;
+        }
+#endif
+    }
 }
 
 

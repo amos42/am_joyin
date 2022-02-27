@@ -15,7 +15,7 @@ am_joyin은 라즈베리파이를 이용하여 아케이드 게임기를 제작�
 이는 기존에 제작 된 기기에 좀 더 수월하게 am_joyin을 적용하기 위한 목적도 있다.
 
 > ***NOTE:***\
-> mk_arcade_joystick_rpi 프로젝트 사이트 : https://github.com/recalbox/mk_arcade_joystick_rpi
+> mk_arcade_joystick_rpi 프로젝트 사이트 : `https://github.com/recalbox/mk_arcade_joystick_rpi`
 
 
 **키워드 설명**
@@ -113,8 +113,8 @@ sudo apt install -y --force-yes raspberrypi-kernel-headers
 #### wget 사용시
 
 ```shell
-wget https://github.com/amos42/am_joyin/releases/download/v0.3.1-beta01/am_joyin-0.3.1.deb
-sudo dpkg -i am_joyin-0.3.1.deb
+wget https://github.com/amos42/am_joyin/releases/download/v0.3.2/am_joyin-0.3.2.deb
+sudo dpkg -i am_joyin-0.3.2.deb
 ```
 
 #### git 사용시
@@ -129,8 +129,8 @@ git clone https://github.com/amos42/am_joyin.git
 
 ```shell
 cd am_joyin
-./utils/makepackage.sh 0.3.1 
-sudo dpkg -i build/am_joyin-0.3.1.deb
+./utils/makepackage.sh 0.3.2 
+sudo dpkg -i build/am_joyin-0.3.2.deb
 ```
 ​
 이 과정까지 거치면 드라이버 설치가 1차적으로 완료된다.
@@ -144,9 +144,13 @@ sudo modprobe am_joyin
 만약 에러 메시지가 발생하지 않는다면 정상적으로 설치가 완료 된 것이다.
 
 
-### 3. 드라이버 부팅시 자동 로딩
+### 3-1. 드라이버 부팅시 자동 로딩 (I2C를 사용하지 않을 경우)
 
 다음은 전원을 켤 때마다 자동으로 am_joyin 드라이버가 로딩되도록 하기 위한 과정이다.
+이를 위해서는 모듈 정의 파일에 am_joyin 모듈을 추가하면 된다.
+
+> ***NOTE:***\
+> 모듈 정의 파일 위치 : `/etc/modules-load.d/modules.conf`
 
 드라이버 모듈 설정 파일을 연다.
 
@@ -154,7 +158,7 @@ sudo modprobe am_joyin
 sudo nano /etc/modules-load.d/modules.conf
 ```
 
-마지막 라인에 다음 항목을 추가하고 ctrl-x를 눌러 저장하고 종료한다.
+마지막 라인에 다음 항목을 추가한다.
 
 ```
   .
@@ -164,13 +168,72 @@ sudo nano /etc/modules-load.d/modules.conf
 am_joyin
 ```
 
+수정이 완료되었으면 ctrl-x를 눌러 파일을 저장하고 종료한다.
+
+
+### 3-2. 드라이버 부팅시 자동 로딩 (I2C를 사용할 경우)
+
+만약 mcp23017, ads1x15, am_spinin과 같은 I2C 장치를 사용하고 있다면 조금 다른 방법을 사용해야 한다.
+
+이는 I2C 관련 서비스가 시작 된 이후에 am_joyin 모듈의 적재가 이루어지도록 모듈의 초기화 순서를 조정해 주어야 하기 때문이다. 이를 위해 모듈 정의 파일인 modules.conf가 아닌, rc.local 스크립트에 모듈을 적재하는 명령을 적어 주어야 한다.
+
+> ***NOTE:***\
+> I2C를 사용하지 않는 경우라도 modules.conf 대신 rc.local에 기술해도 된다. 2가지의 방법의 차이는 다음과 같다.
+> * **modules.conf** : 다른 서비스들보다 먼저 모듈을 로드한다.
+> * **rc.local** : 다른 모든 서비스들이 로드 된 이후에 모듈 적재를 시작한다.
+
+먼저 모듈 정의 파일인 modules.conf 다음의 2개 라인을 포함시킨다.
+
+```
+i2c-bcm2708 
+i2c-dev
+```
+
+또다른 방법으로는 raspi-config 설정 유틸리티를 이용할 수도 있다.
+
+```bash
+sudo raspi-config
+```
+
+![raspi-config i2c 설정](images/i2c-menu.png)
+
+<!-- ![raspi-config spi 설정](images/spi-menu.png) -->
+
+그 다음에 rc.local에 modprobe 명령을 이용해 am_joyin 모듈을 포함시킨다.
+
+```bash
+sudo nano /etc/rc.local
+```
+
+맨 마지막 줄의 exit 명령 전에 다음의 내용을 삽입한다.
+
+```
+  .
+  .
+  .
+
+/sbin/modprobe am_joyin
+
+  .
+  .
+  .
+exit 0  
+```
+
+수정이 완료되었으면 ctrl-x를 눌러 파일을 저장하고 종료한다.
+
+> ***NOTE:***\
+> 간혹 해당 모듈들이 블럭되어 있는 경우가 있기에 블랙리스트도 확인해 보는 것이 좋다.
+> 만약 사용하고자 하는 모듈이 블랙리스트에 포함되어 있다면 이를 찾아 제거해 놔야 한다.\
+> 블랙 리스트 파일 위치 : `/etc/modprobe.d/raspi-blacklist.conf`
+
 
 ### 4. am_joyin 설정
 
 다음으로는 드라이버 설정을 진행한다.
 
 > ***NOTE:***\
-> am_joyin 설정 파일 위치 : /etc/modprobe.d/am_joyin.conf
+> am_joyin 설정 파일 위치 : `/etc/modprobe.d/am_joyin.conf`
 
 텍스트 에디터로 설정 파일을 연다.
 
@@ -197,6 +260,7 @@ options am_joyin device1="gpio;;0,default1"
 sudo reboot
 ```
 
+
 ### 6. 드라이버 동작 테스트
 
 동작 테스트를 위해서는 jstest 유틸리티를 사용하면 된다.
@@ -220,10 +284,10 @@ jstest /dev/input/js0
 
 ### 7. 드라이버 삭제
 
-드라이버를 삭제하기 위해선 설치한 순서의 반대로 진행하면 된다.
+더이상 am_joyin을 사용하지 않길 원하여 드라이버를 삭제하기 위해선 설치한 순서의 반대로 진행하면 된다.
 
 > 1. /etc/modprobe.d/am_joyin.conf 파일 삭제
-> 2. /etc/modules-load.d/modules.conf 목록에서 am_joyin 제거
+> 2. /etc/modules-load.d/modules.conf 혹은 /etc/rc.local 목록에서 am_joyin 제거
 > 3. sudo dpkg -r am-joyin-dkms 명령으로 드라이버 패키지 삭제
 
 
@@ -295,7 +359,7 @@ am_joyin의 파라미터는 다음과 같다.
 
 ### driver 전역 설정
 
-> 1. timer_period : 타이머 주기. Hz 단위로 기술. default는 100Hz. (OS의 인터럽트 세팅에 따라 최대치가 결정된다.)
+> 1. report_period : 키 체크 주기. Hz 단위로 기술. default는 100Hz. (최대값은 1000Hz이나, 현실적으로는 권장하지 않는다.)
 > 2. debug : 디버그 모드 여부. Log 출력 내용에 영향을 준다.
 
 ### buttonset 설정
@@ -473,10 +537,11 @@ sudo modprobe am_joyin device1="gpio;;0,custom,0,{4,0x1,-100},{17,0x1,100},{27,0
 
 ![74HC165 Board](images/74hc165-board_02.jpg)
 
-해당 보드의 회로도는 다음의 링크를 통해 얻을 수 있다.
+해당 보드의 회로도 및 gerber 파일은 다음의 링크를 통해 얻을 수 있다.
 
 > - DIP 버전 : https://github.com/amos42/pcbs/tree/master/joystick-input
 > - SMD 버전 : https://github.com/amos42/pcbs/tree/master/joystick-input_smd
+> - JST 커넥터 버전 : https://github.com/amos42/pcbs/tree/master/joystick-input_jst
 
 74HC165 장치를 사용하기 위해서는 기본적으로 VCC, GND 및 Load, Clock, Data (=Q8) 핀을 라즈베리파이의 전원 및 GPIO 핀에 연결한다.
 
@@ -636,7 +701,7 @@ MCP3008의 Pinout은 다음과 같다.
 
 실제 MCP3008을 통해 아날로그 스틱을 라즈베리파이에 배선하기 위해서는 다음 배선도를 참고하면 된다.
 
-![MCP3008 Circuit](images/mcp3008_circuit.png)
+![MCP3008 Circuit](images/mcp3008_circuit.jpg)
 
  VDD와 VREF은 라즈베리파이의 3.3v에 연결하면 된다.
  CS 핀은 사용하고자 하는 SPI 채널에 맞춰 라즈베리파이의 SPI_CE0 혹은 SPI_CE1 중 하나에 연결하면 된다.
