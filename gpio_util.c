@@ -49,7 +49,7 @@ volatile uint32_t* gpio = NULL;
 static int is_2711;
 
 
-static void gpio_pullups_mask_2835(unsigned pull_ups) 
+static void gpio_pullups_mask_2835(unsigned pull_ups)
 {
     // *(gpio + 37) = 0x02;
     // udelay(10);
@@ -67,13 +67,13 @@ static void gpio_pullups_mask_2835(unsigned pull_ups)
 }
 
 
-static void gpio_pullups_2835(int gpio_map[], int count) 
+static void gpio_pullups_2835(int gpio_map[], int count)
 {
     gpio_pullups_mask_2835(gpio_get_pullup_mask(gpio_map, count));
 }
 
 
-static void gpio_pullups_2711(int gpio_map[], int count) 
+static void gpio_pullups_2711(int gpio_map[], int count)
 {
     int i;
     for (i = 0; i < count; i++) {
@@ -89,7 +89,7 @@ static void gpio_pullups_2711(int gpio_map[], int count)
 }
 
 
-void gpio_pullups(int gpio_map[], int count) 
+void gpio_pullups(int gpio_map[], int count)
 {
     if (is_2711) {
         gpio_pullups_2711(gpio_map, count);
@@ -99,13 +99,13 @@ void gpio_pullups(int gpio_map[], int count)
 }
 
 
-void gpio_as_input(int gpio_no) 
+void gpio_as_input(int gpio_no)
 {
     INP_GPIO(gpio_no);
 }
 
 
-void gpio_as_output(int gpio_no) 
+void gpio_as_output(int gpio_no)
 {
     OUT_GPIO(gpio_no);
 }
@@ -141,10 +141,10 @@ unsigned gpio_get_value(int gpio_no)
 }
 
 
-void gpio_set_value(int gpio_no, int onoff) 
+void gpio_set_value(int gpio_no, int onoff)
 {
-    if (onoff) 
-        GPIO_SET = ((unsigned)1 << gpio_no); 
+    if (onoff)
+        GPIO_SET = ((unsigned)1 << gpio_no);
     else
         GPIO_CLR = ((unsigned)1 << gpio_no);
 }

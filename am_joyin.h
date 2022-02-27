@@ -6,6 +6,8 @@
 #define __AM_JOYIN_H_
 
 
+#include "build_cfg.h"
+
 #include <linux/kernel.h>
 #include <linux/mutex.h>
 
@@ -13,8 +15,8 @@
 
 
 typedef struct tag_am_joyin_data {
-    // 타이머 주기
-    unsigned long timer_period;
+    // 키체크 주기
+    unsigned long report_period;
     // 디버그 모드
     BOOL is_debug;
 
@@ -36,8 +38,13 @@ typedef struct tag_am_joyin_data {
 
     // 런타임 참조 정보
     int used;
+#if defined(USE_REPORT_TIMER)
+    unsigned long timer_period;
+    struct timer_list report_timer;
+#else
+    struct task_struct* report_task;
+#endif
     struct mutex mutex;
-    struct timer_list timer;
     int missing_timer_count;
 } am_joyin_data_t;
 

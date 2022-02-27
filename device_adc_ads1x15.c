@@ -2,6 +2,8 @@
  * Copyright (C) 2021 Ju, Gyeong-min
  ********************************************************************************/
 
+#include "build_cfg.h"
+
 #include <linux/kernel.h>
 #include <linux/input.h>
 #include <linux/slab.h>
@@ -9,7 +11,11 @@
 #include <linux/uaccess.h>
 #include "bcm_peri.h"
 #include "gpio_util.h"
+#if defined(USE_I2C_DIRECT)
 #include "i2c_util.h"
+#else
+#include <linux/i2c.h>
+#endif
 #include "parse_util.h"
 
 
@@ -149,6 +155,9 @@ typedef struct tag_device_ads1x15_data {
 
     device_ads1x15_desc_config_t    device_desc_data;
     device_ads1x15_config_t         device_cfg;
+#if !defined(USE_I2C_DIRECT)
+    struct i2c_client *i2c;
+#endif
     device_ads1x15_index_table_t    button_cfgs[1];
 } device_ads1x15_data_t;
 
@@ -161,7 +170,7 @@ static const device_ads1x15_index_table_t default_input_ads1x15_config = {
         {1, ABS_Y,        -DEFAULT_INPUT_ABS_MAX_VALUE, DEFAULT_INPUT_ABS_MAX_VALUE, 0, MAX_ADS1X15_ADC_VALUE, MAX_ADS1X15_ADC_VALUE/2},
         {2, ABS_RX,       -DEFAULT_INPUT_ABS_MAX_VALUE, DEFAULT_INPUT_ABS_MAX_VALUE, 0, MAX_ADS1X15_ADC_VALUE, MAX_ADS1X15_ADC_VALUE/2},
         {3, ABS_RY,       -DEFAULT_INPUT_ABS_MAX_VALUE, DEFAULT_INPUT_ABS_MAX_VALUE, 0, MAX_ADS1X15_ADC_VALUE, MAX_ADS1X15_ADC_VALUE/2}
-    }, 
+    },
     INPUT_ADS1X15_DEFAULT_KEYCODE_TABLE_ITEM_COUNT,
     0
 };
@@ -174,7 +183,7 @@ static int __parse_device_param_for_ads1x15(device_ads1x15_data_t* user_data, ch
     char* pText;
 
     if (device_config_str != NULL) {
-        strcpy(szText, device_config_str); 
+        strcpy(szText, device_config_str);
         pText = szText;
 
         user_data->device_cfg.i2c_addr = parse_number(&pText, ",", 0, ADS1X15_DEFAULT_I2C_ADDR);
@@ -214,7 +223,7 @@ static int __parse_endpoint_param_for_ads1x15(device_ads1x15_data_t* user_data, 
         if (ep == NULL) continue;
 
         if (endpoint_config_str[i] != NULL) {
-            strcpy(szText, endpoint_config_str[i]); 
+            strcpy(szText, endpoint_config_str[i]);
             pText = szText;
 
             cfgtype_p = strsep(&pText, ",");
@@ -312,7 +321,7 @@ static int init_input_device_for_ads1x15(void* device_desc_data, input_device_da
     device_ads1x15_data_t* user_data;
     int result;
     int i;
-    
+
     user_data = (device_ads1x15_data_t *)kzalloc(sizeof(device_ads1x15_data_t) + sizeof(device_ads1x15_index_table_t) * (device_data->target_endpoint_count - 1), GFP_KERNEL);
     user_data->device_desc_data = *(device_ads1x15_desc_config_t *)device_desc_data;
 
@@ -340,85 +349,132 @@ static int init_input_device_for_ads1x15(void* device_desc_data, input_device_da
 
 static void start_input_device_for_ads1x15(input_device_data_t *device_data)
 {
-    // device_ads1x15_data_t *user_data = (device_ads1x15_data_t *)device_data->data;
+#if !defined(USE_I2C_DIRECT)
+    device_ads1x15_data_t *user_data = (device_ads1x15_data_t *)device_data->data;
+#endif
 
+#if defined(USE_I2C_DIRECT)
     i2c_init(bcm_peri_base_probe(), 0xB0);
+#else
+    struct i2c_board_info i2c_board_info = {
+        I2C_BOARD_INFO("ads1x15", user_data->device_cfg.i2c_addr)
+    };
+    struct i2c_adapter* i2c_adap = i2c_get_adapter(1);
+    if (i2c_adap == NULL) {
+        pr_err("i2c adapter open erro {%d}", 1);
+        return;
+    }
+    user_data->i2c = i2c_new_client_device(i2c_adap, &i2c_board_info);
+    if (IS_ERR_OR_NULL(user_data->i2c)) {
+        pr_err("i2c device open erro {%d}", user_data->device_cfg.i2c_addr);
+        return;
+    }
+    i2c_put_adapter(i2c_adap);
+#endif
 
     device_data->is_opend = TRUE;
 }
 
 
-static uint16_t __readRegister(int i2c_addr, uint8_t reg) 
+#if defined(USE_I2C_DIRECT)
+static uint16_t __readRegister(int i2c_addr, uint8_t reg)
 {
     uint8_t buffer[2];
     i2c_read(i2c_addr, reg, buffer, 2);
     return ((buffer[0] << 8) | buffer[1]);
 }
 
-static void __writeRegister(int i2c_addr, uint8_t reg, uint16_t value) 
+static void __writeRegister(int i2c_addr, uint8_t reg, uint16_t value)
 {
     uint8_t buffer[2];
     buffer[0] = value >> 8;
     buffer[1] = value & 0xFF;
     i2c_write(i2c_addr, reg, buffer, 2);
 }
-
-
-static int16_t __readADC_SingleEnded(int i2c_addr, uint8_t channel, unsigned gain) 
+#else
+static uint16_t __readRegister(struct i2c_client* i2c, uint8_t reg)
 {
-  uint16_t config;
+    if (!IS_ERR_OR_NULL(i2c)) {
+        int value = i2c_smbus_read_word_data(i2c, reg);
+        return (value < 0) ? 0 : value;
+    } else {
+        return 0;
+    }
+}
 
-  if (channel > 3) {
-    return 0;
-  }
+static void __writeRegister(struct i2c_client* i2c, uint8_t reg, uint16_t value)
+{
+    if (!IS_ERR_OR_NULL(i2c)) {
+        i2c_smbus_write_word_data(i2c, reg, value);
+    }
+}
+#endif
 
-  // Start with default values
-  config = ADS1X15_REG_CONFIG_CQUE_NONE |    // Disable the comparator (default val)
-           ADS1X15_REG_CONFIG_CLAT_NONLAT |  // Non-latching (default val)
-           ADS1X15_REG_CONFIG_CPOL_ACTVLOW | // Alert/Rdy active low   (default val)
-           ADS1X15_REG_CONFIG_CMODE_TRAD |   // Traditional comparator (default val)
-           ADS1X15_REG_CONFIG_MODE_SINGLE;   // Single-shot mode (default)
 
-  // Set PGA/voltage range
-  config |= gain;
 
-  // Set data rate
-  config |= RATE_ADS1015_2400SPS;
+#if defined(USE_I2C_DIRECT)
+static int16_t __readADC_SingleEnded(int i2c_addr, uint8_t channel, unsigned gain)
+#else
+static int16_t __readADC_SingleEnded(struct i2c_client* i2c_addr, uint8_t channel, unsigned gain)
+#endif
+{
+    uint16_t config;
 
-  // Set single-ended input channel
-  switch (channel) {
-  case (0):
-    config |= ADS1X15_REG_CONFIG_MUX_SINGLE_0;
-    break;
-  case (1):
-    config |= ADS1X15_REG_CONFIG_MUX_SINGLE_1;
-    break;
-  case (2):
-    config |= ADS1X15_REG_CONFIG_MUX_SINGLE_2;
-    break;
-  case (3):
-    config |= ADS1X15_REG_CONFIG_MUX_SINGLE_3;
-    break;
-  }
+    if (channel > 3) {
+        return 0;
+    }
 
-  // Set 'start single-conversion' bit
-  config |= ADS1X15_REG_CONFIG_OS_SINGLE;
+    // Start with default values
+    config = ADS1X15_REG_CONFIG_CQUE_NONE |    // Disable the comparator (default val)
+            ADS1X15_REG_CONFIG_CLAT_NONLAT |  // Non-latching (default val)
+            ADS1X15_REG_CONFIG_CPOL_ACTVLOW | // Alert/Rdy active low   (default val)
+            ADS1X15_REG_CONFIG_CMODE_TRAD |   // Traditional comparator (default val)
+            ADS1X15_REG_CONFIG_MODE_SINGLE;   // Single-shot mode (default)
 
-  // Write config register to the ADC
-  __writeRegister(i2c_addr, ADS1X15_REG_POINTER_CONFIG, config);
+    // Set PGA/voltage range
+    config |= gain;
 
-  // Wait for the conversion to complete
-  while ((__readRegister(i2c_addr, ADS1X15_REG_POINTER_CONFIG) & 0x8000) == 0) {}
+    // Set data rate
+    config |= RATE_ADS1015_2400SPS;
 
-  // Read the conversion results
-  return __readRegister(i2c_addr, ADS1X15_REG_POINTER_CONVERT);
+    // Set single-ended input channel
+    switch (channel) {
+        case 0:
+            config |= ADS1X15_REG_CONFIG_MUX_SINGLE_0;
+            break;
+        case 1:
+            config |= ADS1X15_REG_CONFIG_MUX_SINGLE_1;
+            break;
+        case 2:
+            config |= ADS1X15_REG_CONFIG_MUX_SINGLE_2;
+            break;
+        case 3:
+            config |= ADS1X15_REG_CONFIG_MUX_SINGLE_3;
+            break;
+    }
+
+    // Set 'start single-conversion' bit
+    config |= ADS1X15_REG_CONFIG_OS_SINGLE;
+
+    // Write config register to the ADC
+    __writeRegister(i2c_addr, ADS1X15_REG_POINTER_CONFIG, config);
+
+    // Wait for the conversion to complete
+    while ((__readRegister(i2c_addr, ADS1X15_REG_POINTER_CONFIG) & 0x8000) == 0) {}
+
+    // Read the conversion results
+    return __readRegister(i2c_addr, ADS1X15_REG_POINTER_CONVERT);
 }
 
 
 static void check_input_device_for_ads1x15(input_device_data_t *device_data)
 {
     int i, j, k, cnt;
-    int i2c_addr;
+#if defined(USE_I2C_DIRECT)
+    int i2c;
+#else
+    struct i2c_client* i2c;
+#endif
     unsigned adc_gain;
     int adc_gain_milli_volt, ref_milli_volt;
     device_ads1x15_data_t *user_data = (device_ads1x15_data_t *)device_data->data;
@@ -426,7 +482,14 @@ static void check_input_device_for_ads1x15(input_device_data_t *device_data)
 
     if (user_data == NULL) return;
 
-    i2c_addr = user_data->device_cfg.i2c_addr;
+#if defined(USE_I2C_DIRECT)
+    i2c = user_data->device_cfg.i2c_addr;
+#else
+    i2c = user_data->i2c;
+    if (IS_ERR_OR_NULL(i2c)) {
+        return;
+    }
+#endif
     adc_gain = ads1x15_gain_setting[user_data->device_cfg.ads_gain][0]; /* +/- 4.096V range (limited to VDD +0.3V max!) */
     adc_gain_milli_volt = ads1x15_gain_setting[user_data->device_cfg.ads_gain][1];
     ref_milli_volt = user_data->device_cfg.ref_milli_volt;
@@ -447,13 +510,13 @@ static void check_input_device_for_ads1x15(input_device_data_t *device_data)
             if (btndef->abs_input >= 0 && btndef->adc_channel >= 0) {
                 if (value_weight >= 100) {
                     // 4.096 / 32767 / 3.3 = 4.096 / (32767 * 3.3) = 4096 / (32767 * 3300) = 0 ~ 1
-                    v = __readADC_SingleEnded(i2c_addr, btndef->adc_channel, adc_gain);
+                    v = __readADC_SingleEnded(i2c, btndef->adc_channel, adc_gain);
                     v *= adc_gain_milli_volt / ref_milli_volt;
                 } else {
                     v = user_data->currentAdcValue[btndef->adc_channel];
                     for (k = 0; k < sampling_count; k++) {
                         // 4.096 / 32767 / 3.3 = 4.096 / (32767 * 3.3) = 4096 / (32767 * 3300) = 0 ~ 1
-                        v0 = __readADC_SingleEnded(i2c_addr, btndef->adc_channel, adc_gain);
+                        v0 = __readADC_SingleEnded(i2c, btndef->adc_channel, adc_gain);
                         v0 *= adc_gain_milli_volt / ref_milli_volt;
                         v = (v0 * value_weight + v * prev_weight) / 100;
                     }
@@ -478,9 +541,20 @@ static void check_input_device_for_ads1x15(input_device_data_t *device_data)
 
 static void stop_input_device_for_ads1x15(input_device_data_t *device_data)
 {
+#if !defined(USE_I2C_DIRECT)
+    device_ads1x15_data_t *user_data = (device_ads1x15_data_t *)device_data->data;
+#endif
+
     device_data->is_opend = FALSE;
 
+#if defined(USE_I2C_DIRECT)
     i2c_close();
+#else
+    if (!IS_ERR_OR_NULL(user_data->i2c)) {
+        i2c_unregister_device(user_data->i2c);
+        user_data->i2c = NULL;
+    }
+#endif
 }
 
 

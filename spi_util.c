@@ -59,7 +59,7 @@ void spi_close(void)
         iounmap((void *)bcm2835_spi0);
         bcm2835_spi0 = NULL;
     }
-}    
+}
 
 
 int spi_begin(void)
@@ -68,11 +68,11 @@ int spi_begin(void)
 
     if (bcm2835_spi0 == NULL)
       return -ENODEV; /* bcm2835_init() failed, or not root */
-    
+
     /* Set the SPI CS register to the some sensible defaults */
     paddr = bcm2835_spi0 + BCM2835_SPI0_CS/sizeof(uint32_t);
     bcm_peri_write(paddr, 0); /* All 0s */
-    
+
     /* Clear TX and RX fifos */
     bcm_peri_write_nb(paddr, BCM2835_SPI0_CS_CLEAR);
 
@@ -80,7 +80,7 @@ int spi_begin(void)
 }
 
 void spi_end(void)
-{  
+{
     /* Set all the SPI0 pins back to input */
     // gpio_fsel(RPI_GPIO_P1_26, BCM2835_GPIO_FSEL_INPT); /* CE1 */
     // gpio_fsel(RPI_GPIO_P1_24, BCM2835_GPIO_FSEL_INPT); /* CE0 */
@@ -121,7 +121,7 @@ uint8_t spi_transfer(uint8_t value)
 
     /* This is Polled transfer as per section 10.6.1
     // BUG ALERT: what happens if we get interupted in this section, and someone else
-    // accesses a different peripheral? 
+    // accesses a different peripheral?
     // Clear TX and RX fifos
     */
     bcm_peri_set_bits(paddr, BCM2835_SPI0_CS_CLEAR, BCM2835_SPI0_CS_CLEAR);
@@ -157,7 +157,7 @@ void spi_transfernb(char* tbuf, char* rbuf, uint32_t len)
 
     /* This is Polled transfer as per section 10.6.1
     // BUG ALERT: what happens if we get interupted in this section, and someone else
-    // accesses a different peripheral? 
+    // accesses a different peripheral?
     */
 
     /* Clear TX and RX fifos */
@@ -210,22 +210,22 @@ void spi_writenb(const char* tbuf, uint32_t len)
 
     for (i = 0; i < len; i++)
     {
-	/* Maybe wait for TXD */
-	while (!(bcm_peri_read(paddr) & BCM2835_SPI0_CS_TXD))
-	    ;
-	
-	/* Write to FIFO, no barrier */
-	bcm_peri_write_nb(fifo, tbuf[i]);
-	
-	/* Read from FIFO to prevent stalling */
-	while (bcm_peri_read(paddr) & BCM2835_SPI0_CS_RXD)
-	    (void) bcm_peri_read_nb(fifo);
+    /* Maybe wait for TXD */
+    while (!(bcm_peri_read(paddr) & BCM2835_SPI0_CS_TXD))
+        ;
+
+    /* Write to FIFO, no barrier */
+    bcm_peri_write_nb(fifo, tbuf[i]);
+
+    /* Read from FIFO to prevent stalling */
+    while (bcm_peri_read(paddr) & BCM2835_SPI0_CS_RXD)
+        (void) bcm_peri_read_nb(fifo);
     }
-    
+
     /* Wait for DONE to be set */
     while (!(bcm_peri_read_nb(paddr) & BCM2835_SPI0_CS_DONE)) {
-	while (bcm_peri_read(paddr) & BCM2835_SPI0_CS_RXD)
-		(void) bcm_peri_read_nb(fifo);
+    while (bcm_peri_read(paddr) & BCM2835_SPI0_CS_RXD)
+        (void) bcm_peri_read_nb(fifo);
     };
 
     /* Set TA = 0, and also set the barrier */
@@ -255,7 +255,7 @@ void spi_setChipSelectPolarity(uint8_t cs, uint8_t active)
     bcm_peri_set_bits(paddr, active << shift, 1 << shift);
 }
 
-void spi_write(uint16_t data) 
+void spi_write(uint16_t data)
 {
     volatile uint32_t* paddr = bcm2835_spi0 + BCM2835_SPI0_CS/sizeof(uint32_t);
     volatile uint32_t* fifo = bcm2835_spi0 + BCM2835_SPI0_FIFO/sizeof(uint32_t);
@@ -266,12 +266,12 @@ void spi_write(uint16_t data)
     /* Set TA = 1 */
     bcm_peri_set_bits(paddr, BCM2835_SPI0_CS_TA, BCM2835_SPI0_CS_TA);
 
-	/* Maybe wait for TXD */
-	while (!(bcm_peri_read(paddr) & BCM2835_SPI0_CS_TXD)) {}
+    /* Maybe wait for TXD */
+    while (!(bcm_peri_read(paddr) & BCM2835_SPI0_CS_TXD)) {}
 
-	/* Write to FIFO */
-	bcm_peri_write_nb(fifo,  (uint32_t) data >> 8);
-	bcm_peri_write_nb(fifo,  data & 0xFF);
+    /* Write to FIFO */
+    bcm_peri_write_nb(fifo,  (uint32_t) data >> 8);
+    bcm_peri_write_nb(fifo,  data & 0xFF);
 
     /* Wait for DONE to be set */
     while (!(bcm_peri_read_nb(paddr) & BCM2835_SPI0_CS_DONE)) {}
