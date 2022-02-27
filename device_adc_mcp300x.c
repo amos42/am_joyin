@@ -209,6 +209,26 @@ static int __parse_endpoint_param_for_mcp300x(device_mcp300x_data_t* user_data, 
     return 0;
 }
 
+#if defined(USE_SPI_DIRECT)
+static int __mcp300x_spi_read(uint8_t adc_channel)
+{
+    unsigned char buf[3] = {0x01, (0x08 | adc_channel) << 4, 0};
+    spi_transfern(buf, 3);
+    return (int)(((unsigned short)buf[1] & 0x3) << 8 | buf[2]);
+}
+#else
+static int __mcp300x_spi_read(struct spi_device *spi, uint8_t adc_channel)
+{
+    unsigned char buf[3] = {0x01, (0x08 | adc_channel) << 4, 0};
+	struct spi_transfer	t = {
+        .tx_buf		= buf,
+        .rx_buf		= buf,
+        .len		= 3,
+    };
+	int r = spi_sync_transfer(spi, &t, 1);
+    return (r >= 0)? (int)(((unsigned short)buf[1] & 0x3) << 8 | buf[2]) : r;
+}
+#endif
 
 // device_config_str : spi_channel, value_weight_percent, sampling_count
 // endpoint_config_str : endpoint, config_type (default | custom), ...
@@ -249,40 +269,40 @@ static int init_input_device_for_mcp300x(void* device_desc_data, input_device_da
     return 0;
 }
 
-#if !defined(USE_SPI_DIRECT)
-static int __mcp300x_spi_probe(struct spi_device *spi)
-{
-    return 0;
-}
+// #if !defined(USE_SPI_DIRECT)
+// static int __mcp300x_spi_probe(struct spi_device *spi)
+// {
+//     return 0;
+// }
 
-static int __mcp300x_spi_remove(struct spi_device *spi)
-{
-    return 0;
-}
+// static int __mcp300x_spi_remove(struct spi_device *spi)
+// {
+//     return 0;
+// }
 
-static struct of_device_id __mcp300x_match_table[] = {
-    { .compatible = "brcm,bcm2835" },
-    {},
-};
-MODULE_DEVICE_TABLE(of, __mcp300x_match_table);
+// static struct of_device_id __mcp300x_match_table[] = {
+//     { .compatible = "brcm,bcm2835" },
+//     {},
+// };
+// MODULE_DEVICE_TABLE(of, __mcp300x_match_table);
 
-static const struct spi_device_id __mcp300x_spi_ids[] = {
-    { "mcp300x", 0 },
-    {}
-};
-MODULE_DEVICE_TABLE(spi, __mcp300x_spi_ids);
+// static const struct spi_device_id __mcp300x_spi_ids[] = {
+//     { "mcp300x", 0 },
+//     {}
+// };
+// MODULE_DEVICE_TABLE(spi, __mcp300x_spi_ids);
 
-static struct spi_driver __mcp300x_spi_driver = {
-    .driver = {
-        .name = "mcp300x",
-        .owner = THIS_MODULE,
-        .of_match_table = __mcp300x_match_table,
-    },
-    .probe = __mcp300x_spi_probe,
-    .remove = __mcp300x_spi_remove,
-    .id_table = __mcp300x_spi_ids,
-};
-#endif
+// static struct spi_driver __mcp300x_spi_driver = {
+//     .driver = {
+//         .name = "mcp300x",
+//         .owner = THIS_MODULE,
+//         .of_match_table = __mcp300x_match_table,
+//     },
+//     .probe = __mcp300x_spi_probe,
+//     .remove = __mcp300x_spi_remove,
+//     .id_table = __mcp300x_spi_ids,
+// };
+// #endif
 
 static void start_input_device_for_mcp300x(input_device_data_t *device_data)
 {
@@ -295,10 +315,10 @@ static void start_input_device_for_mcp300x(input_device_data_t *device_data)
 
     spi_setClockDivider(256);
 #else
-    int r = spi_register_driver(&__mcp300x_spi_driver);
+    // int r = spi_register_driver(&__mcp300x_spi_driver);
     // printk("spi_register_driver = %d", r);
 
-    if (r >= 0) {
+    //if (r >= 0) {
         struct spi_board_info spi_device_info = {
             .modalias     = "mcp300x",
             .max_speed_hz = 1 * 1000 * 1000,     // speed your device (slave) can handle
@@ -314,7 +334,7 @@ static void start_input_device_for_mcp300x(input_device_data_t *device_data)
         } else {
             pr_err("SPI Master not found.\n");
         }
-    }
+    //}
 #endif
 
     device_data->is_opend = TRUE;
@@ -354,32 +374,26 @@ static void check_input_device_for_mcp300x(input_device_data_t *device_data)
         input_endpoint_data_t* endpoint = device_data->target_endpoints[i];
         device_mcp300x_index_table_t* table = &user_data->button_cfgs[i];
         device_mcp300x_index_item_t* btndef = &table->buttondef[table->button_start_index];
-        unsigned char wrbuf[3] = { 0x01, 0, 0x00 };
-        unsigned char rdbuf[3];
         int v, v0, md;
 
         cnt = table->pin_count;
 
         for (j = 0; j < cnt; j++ ){
             if (btndef->abs_input >= 0 && btndef->adc_channel >= 0) {
-                wrbuf[1] = (0x08 | btndef->adc_channel) << 4;
-
                 if (value_weight >= 100) {
 #if defined(USE_SPI_DIRECT)
-                    spi_transfernb(wrbuf, rdbuf, 3);
+                    v = __mcp300x_spi_read(btndef->adc_channel);
 #else
-                    spi_write_then_read(spi, wrbuf, 3, rdbuf, 3);
+                    v = __mcp300x_spi_read(spi, btndef->adc_channel);
 #endif
-                    v = (int)(((unsigned short)rdbuf[1] & 0x3) << 8 | rdbuf[2]);
                 } else {
                     v = user_data->currentAdcValue[btndef->adc_channel];
                     for (k = 0; k < sampling_count; k++) {
 #if defined(USE_SPI_DIRECT)
-                        spi_transfernb(wrbuf, rdbuf, 3);
+                        v0 = __mcp300x_spi_read(btndef->adc_channel);
 #else
-                        spi_write_then_read(spi, wrbuf, 3, rdbuf, 3);
+                        v0 = __mcp300x_spi_read(spi, btndef->adc_channel);
 #endif
-                        v0 = (int)(((unsigned short)rdbuf[1] & 0x3) << 8 | rdbuf[2]);
                         v = (v0 * value_weight + v * prev_weight) / 100;
                     }
                     user_data->currentAdcValue[btndef->adc_channel] = v;
@@ -416,10 +430,10 @@ static void stop_input_device_for_mcp300x(input_device_data_t *device_data)
 #if defined(USE_SPI_DIRECT)
     spi_close();
 #else
-    spi_unregister_driver(&__mcp300x_spi_driver);
     if (!IS_ERR_OR_NULL(user_data->spi)) {
-        //spi_unregister_device(user_data->spi);
+        spi_unregister_device(user_data->spi);
     }
+    //spi_unregister_driver(&__mcp300x_spi_driver);
 #endif
 }
 

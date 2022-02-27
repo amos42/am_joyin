@@ -265,40 +265,40 @@ static int init_input_device_for_mcp23s17(void* device_desc_data, input_device_d
     return 0;
 }
 
-#if !defined(USE_SPI_DIRECT)
-static int __mcp23s17_spi_probe(struct spi_device *spi)
-{
-    return 0;
-}
+// #if !defined(USE_SPI_DIRECT)
+// static int __mcp23s17_spi_probe(struct spi_device *spi)
+// {
+//     return 0;
+// }
 
-static int __mcp23s17_spi_remove(struct spi_device *spi)
-{
-    return 0;
-}
+// static int __mcp23s17_spi_remove(struct spi_device *spi)
+// {
+//     return 0;
+// }
 
-static struct of_device_id __mcp23s17_match_table[] = {
-    { .compatible = "brcm,bcm2835" },
-    {},
-};
-MODULE_DEVICE_TABLE(of, __mcp23s17_match_table);
+// static struct of_device_id __mcp23s17_match_table[] = {
+//     { .compatible = "brcm,bcm2835" },
+//     {},
+// };
+// MODULE_DEVICE_TABLE(of, __mcp23s17_match_table);
 
-static const struct spi_device_id __mcp23s17_spi_ids[] = {
-    { "mcp23s17", 0 },
-    {}
-};
-MODULE_DEVICE_TABLE(spi, __mcp23s17_spi_ids);
+// static const struct spi_device_id __mcp23s17_spi_ids[] = {
+//     { "mcp23s17", 0 },
+//     {}
+// };
+// MODULE_DEVICE_TABLE(spi, __mcp23s17_spi_ids);
 
-static struct spi_driver __mcp23s17_spi_driver = {
-    .driver = {
-        .name = "mcp23s17",
-        .owner = THIS_MODULE,
-        .of_match_table = __mcp23s17_match_table,
-    },
-    .probe = __mcp23s17_spi_probe,
-    .remove = __mcp23s17_spi_remove,
-    .id_table = __mcp23s17_spi_ids,
-};
-#endif
+// static struct spi_driver __mcp23s17_spi_driver = {
+//     .driver = {
+//         .name = "mcp23s17",
+//         .owner = THIS_MODULE,
+//         .of_match_table = __mcp23s17_match_table,
+//     },
+//     .probe = __mcp23s17_spi_probe,
+//     .remove = __mcp23s17_spi_remove,
+//     .id_table = __mcp23s17_spi_ids,
+// };
+// #endif
 
 #if defined(USE_SPI_DIRECT)
 static uint8_t __mcp23s17_spi_read(uint8_t cmd)
@@ -317,14 +317,19 @@ static void __mcp23s17_spi_write(uint8_t cmd, uint8_t value)
 static uint8_t __mcp23s17_spi_read(struct spi_device *spi, uint8_t cmd)
 {
     unsigned char buf[3] = {0x41, cmd, 0};
-    int r = spi_write_then_read(spi, buf, 3, buf, 3);
-    return (r >= 0) ? buf[2] : 0;
+	struct spi_transfer	t = {
+        .tx_buf		= buf,
+        .rx_buf		= buf,
+        .len		= 3,
+    };
+	int r = spi_sync_transfer(spi, &t, 1);
+    return (r >= 0) ? buf[2] : 0xFF;
 }
 
 static int __mcp23s17_spi_write(struct spi_device *spi, uint8_t cmd, uint8_t value)
 {
     unsigned char buf[3] = {0x40, cmd, value};
-    return spi_write_then_read(spi, buf, 3, buf, 3);
+    return spi_write(spi, buf, 3);
 }
 #endif
 
@@ -361,10 +366,10 @@ static void start_input_device_for_mcp23s17(input_device_data_t *device_data)
 
     spi_end();
 #else
-    int r = spi_register_driver(&__mcp23s17_spi_driver);
+    // int r = spi_register_driver(&__mcp23s17_spi_driver);
     // printk("spi_register_driver = %d", r);
 
-    if (r >= 0) {
+    //if (r >= 0) {
         struct spi_board_info spi_device_info = {
             .modalias     = "mcp23s17",
             .max_speed_hz = 1 * 1000 * 1000,     // speed your device (slave) can handle
@@ -376,7 +381,7 @@ static void start_input_device_for_mcp23s17(input_device_data_t *device_data)
         struct spi_master* master = spi_busnum_to_master(spi_device_info.bus_num);
         if (master != NULL) {
             user_data->spi = spi_new_device(master, &spi_device_info);
-            // printk(">>>>>> spi : %p", user_data->spi);
+            pr_info(">>>>>> spi : %p", user_data->spi);
         } else {
             pr_err("SPI Master not found.\n");
         }
@@ -401,7 +406,7 @@ static void start_input_device_for_mcp23s17(input_device_data_t *device_data)
 
             __mcp23s17_spi_write(user_data->spi, MCP23017_GPIOB_PULLUPS_MODE, 0xFF);
         }
-    }
+    //}
 #endif
 
     device_data->is_opend = TRUE;
@@ -476,10 +481,10 @@ static void stop_input_device_for_mcp23s17(input_device_data_t *device_data)
 #if defined(USE_SPI_DIRECT)
     spi_close();
 #else
-    spi_unregister_driver(&__mcp23s17_spi_driver);
     if (!IS_ERR_OR_NULL(user_data->spi)) {
-        //spi_unregister_device(user_data->spi);
+        spi_unregister_device(user_data->spi);
     }
+    //spi_unregister_driver(&__mcp23s17_spi_driver);
 #endif
 }
 
