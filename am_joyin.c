@@ -33,6 +33,9 @@
 MODULE_AUTHOR("Amos42");
 MODULE_DESCRIPTION("GPIO and Multiplexer and 74HC165 amd MCP23017 Arcade Joystick Driver");
 MODULE_LICENSE("GPL");
+#if !defined(USE_I2C_DIRECT)
+MODULE_SOFTDEP("pre: i2c-dev");
+#endif
 
 /*============================================================*/
 

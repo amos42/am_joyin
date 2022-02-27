@@ -12,6 +12,10 @@
 #include "gpio_util.h"
 #include "parse_util.h"
 
+
+#define DEFAULT_74HC165_LOAD_RATE     (10)
+#define DEFAULT_74HC165_CLOCK_RATE    (1)
+
 //static const int default_74hc165_gpio_maps[3] = {16, 20, 21};
 
 //#define DEFAULT_74HC165_BUTTON_COUNT  (16)
@@ -290,7 +294,7 @@ static void check_input_device_for_74hc165(input_device_data_t *device_data)
     if (io_count <= 0) return;
 
     gpio_set_value(ld, 0);
-    udelay(5);
+    udelay(DEFAULT_74HC165_LOAD_RATE);
     gpio_set_value(ld, 1);
 
     readed = 0;
@@ -309,7 +313,7 @@ static void check_input_device_for_74hc165(input_device_data_t *device_data)
         if (user_data->device_cfg.bit_order == 0) {
             for (j = 0; j < skip_cnt; j++ ){
                 gpio_set_value(ck, 1);
-                ndelay(20);
+                udelay(DEFAULT_74HC165_CLOCK_RATE);
                 gpio_set_value(ck, 0);
             }
 
@@ -320,7 +324,7 @@ static void check_input_device_for_74hc165(input_device_data_t *device_data)
                 btndef++;
 
                 gpio_set_value(ck, 1);
-                ndelay(20);
+                udelay(DEFAULT_74HC165_CLOCK_RATE);
                 gpio_set_value(ck, 0);
             }
         } else {
@@ -333,7 +337,7 @@ static void check_input_device_for_74hc165(input_device_data_t *device_data)
                         io_value = (io_value << 1) | (v == 0 ? 1 : 0);
 
                         gpio_set_value(ck, 1);
-                        ndelay(20);
+                        ndelay(DEFAULT_74HC165_CLOCK_RATE);
                         gpio_set_value(ck, 0);
                     }
                 }
