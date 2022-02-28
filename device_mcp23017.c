@@ -6,9 +6,7 @@
 
 #include <linux/kernel.h>
 #include <linux/input.h>
-#include <linux/slab.h>
 #include <linux/delay.h>
-#include <linux/uaccess.h>
 #include "bcm_peri.h"
 #include "gpio_util.h"
 #if defined(USE_I2C_DIRECT)
@@ -16,6 +14,7 @@
 #else
 #include <linux/i2c.h>
 #endif
+#include "log_util.h"
 #include "parse_util.h"
 
 
@@ -254,51 +253,31 @@ static void start_input_device_for_mcp23017(input_device_data_t *device_data)
     device_mcp23017_data_t *user_data = (device_mcp23017_data_t *)device_data->data;
 
 #if defined(USE_I2C_DIRECT)
-    char outval;
+    char outval = 0xFF;;
 
     i2c_init(bcm_peri_base_probe(), 0xB0);
-    //udelay(1000);
+    udealy(100);
 
-    // outval = 0x00;
-    // i2c_write(user_data->device_cfg.i2c_addr, MCP23017_IOCON, &outval, 1);
-    // udelay(1000);
-
-    outval = 0xFF;
     // Put all GPIOA inputs on MCP23017 in INPUT mode
     i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOA_MODE, &outval, 1);
-    //udelay(1000);
-
-    // read one byte on GPIOA (for dummy)
-    //i2c_read_1byte(user_data->device_cfg.i2c_addr, MCP23017_GPIOA_READ);
-    //udelay(1000);
-
     // Put all inputs on MCP23017 in pullup mode
     i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOA_PULLUPS_MODE, &outval, 1);
-    //udelay(1000);
-
     // Put all GPIOB inputs on MCP23017 in INPUT mode
     i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOB_MODE, &outval, 1);
-    //udelay(1000);
-
-    // read one byte on GPIOB (for dummy)
-    //i2c_read_1byte(user_data->device_cfg.i2c_addr, MCP23017_GPIOB_READ);
-    //udelay(1000);
-
     // Put all inputs on MCP23017 in pullup mode
     i2c_write(user_data->device_cfg.i2c_addr, MCP23017_GPIOB_PULLUPS_MODE, &outval, 1);
-    //udelay(1000);
 #else
     struct i2c_board_info i2c_board_info = {
         I2C_BOARD_INFO("mcp23017", user_data->device_cfg.i2c_addr)
     };
     struct i2c_adapter* i2c_adap = i2c_get_adapter(1);
     if (i2c_adap == NULL) {
-        pr_err("i2c adapter open erro {%d}", 1);
+        am_log_err("i2c adapter open erro {%d}", 1);
         return;
     }
     user_data->i2c = i2c_new_client_device(i2c_adap, &i2c_board_info);
     if (IS_ERR_OR_NULL(user_data->i2c)) {
-        pr_err("i2c device open erro {%d}", user_data->device_cfg.i2c_addr);
+        am_log_err("i2c device open erro {%d}", user_data->device_cfg.i2c_addr);
         return;
     }
     i2c_put_adapter(i2c_adap);

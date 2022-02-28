@@ -4,8 +4,10 @@
 
 #include <linux/kernel.h>
 #include <linux/delay.h>
+#include <linux/errno.h>
 #include <asm/io.h>
 
+#include "log_util.h"
 #include "spi_util.h"
 #include "bcm_peri.h"
 #include "gpio_util.h"
@@ -30,7 +32,7 @@ int spi_init(u32 peri_base_addr, int size)
     if(size == 0) size = 0xB0;
 
     if ((bcm2835_spi0 = (volatile uint32_t *)ioremap(peri_base_addr + BCM2835_SPI0_BASE, size)) == NULL) {
-        pr_err("io remap failed");
+        am_log_err("io remap failed.");
         spi0_ref_count--;
         return -EINVAL;
     }

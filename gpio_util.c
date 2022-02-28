@@ -3,9 +3,11 @@
  ********************************************************************************/
 
 #include <linux/kernel.h>
+#include <linux/errno.h>
 #include <linux/delay.h>
 #include <asm/io.h>
 
+#include "log_util.h"
 #include "gpio_util.h"
 #include "bcm_peri.h"
 #include "bcm2835.h"
@@ -155,13 +157,13 @@ int gpio_init(u32 peri_base_addr)
     //peri_base = bcm_peri_base_probe();
     //peri_base = peri_base_addr;
     if (!peri_base_addr) {
-        pr_err("failed to find peripherals address base via device-tree - not a Raspberry PI board ?\n");
+        am_log_err("failed to find peripherals address base via device-tree - not a Raspberry PI board ?");
         return -EINVAL;
     }
 
     /* Set up gpio pointer for direct register access */
     if ((gpio = (volatile uint32_t *)ioremap(peri_base_addr + GPIO_BASE, 0xB0)) == NULL) {
-        pr_err("io remap failed");
+        am_log_err("io remap failed");
         return -EINVAL;
     }
 

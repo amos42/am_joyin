@@ -7,10 +7,12 @@
 
 #include <linux/kernel.h>
 #include <linux/module.h>
+#include <linux/moduleparam.h>
 
 #include "indev_type.h"
 #include "am_joyin.h"
 
+#include "log_util.h"
 #include "parse_util.h"
 
 /*
@@ -41,6 +43,7 @@ char *strsep(char **stringp, const char *delim)
 */
 
 
+// Because some parameters are used as operation data, __initdata is not attached.
 #define AM_PARAM_ARRAY_VARIABLE(N, I) static char *N[I] /*__initdata*/;
 #define AM_PARAM_DEFINE(N, V)           \
     module_param_named(N, V, charp, 0); \
@@ -66,17 +69,21 @@ AM_PARAM_DEFINE(device3, am_device_cfg[2])
 AM_PARAM_DEFINE(device4, am_device_cfg[3])
 
 
-void /*__init*/ prepocess_params(void)
+/**
+ * @brief parameter initial state preprocessing
+ *
+ */
+void __init prepocess_params(void)
 {
     int i, cnt;
 
-    // endpoint 생략시, 기본 파라미터 세팅
+    // If endpoint is omitted, default parameter setting
     if (am_endpoints_cfg == NULL)
     {
         am_endpoints_cfg = "joystick";
     }
 
-    // device 모두 생략시, 기본 파라미터 세팅
+    // If all device is omitted, default parameter setting
     cnt = 0;
     for (i = 0; i < MAX_INPUT_DEVICE_COUNT; i++)
     {
@@ -89,7 +96,15 @@ void /*__init*/ prepocess_params(void)
     }
 }
 
-static input_buttonset_data_t* __find_buttonset(am_joyin_data_t* a_input, char* buttonset_name, int exclude_count)
+/**
+ * @brief Find buttonset data by button set name.
+ *
+ * @param a_input
+ * @param buttonset_name buttonset name
+ * @param exclude_count
+ * @return buttonset data instance
+ */
+static __init input_buttonset_data_t* __find_buttonset(am_joyin_data_t* a_input, char* buttonset_name, int exclude_count)
 {
     int i;
     int target_buttonset_count, buttonset_idx;
@@ -115,7 +130,16 @@ static input_buttonset_data_t* __find_buttonset(am_joyin_data_t* a_input, char* 
     return NULL;
 }
 
-static int __append_button(input_buttonset_data_t* target_buttonset, int key_code, int min_value, int max_value)
+/**
+ * @brief
+ *
+ * @param target_buttonset
+ * @param key_code
+ * @param min_value
+ * @param max_value
+ * @return int
+ */
+static int __init __append_button(input_buttonset_data_t* target_buttonset, int key_code, int min_value, int max_value)
 {
     int i;
     int idx = -1;
@@ -141,7 +165,12 @@ static int __append_button(input_buttonset_data_t* target_buttonset, int key_cod
     return idx;
 }
 
-void parsing_device_config_params(am_joyin_data_t* a_input)
+/**
+ * @brief
+ *
+ * @param a_input
+ */
+void __init parsing_device_config_params(am_joyin_data_t* a_input)
 {
     int i, j;
     char szText[512];
@@ -149,11 +178,11 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
     int idx;
     input_buttonset_data_t* target_buttonset;
 
-    // default driver 설정 초기화
+    // Initialize the default driver settings
     a_input->report_period = 0;
     a_input->is_debug = FALSE;
 
-    // default buttonset 설정 초기화
+    // Initialize default buttonset settings
     target_buttonset = &a_input->buttonset_list[0];
     strcpy(target_buttonset->buttonset_name, "default");
     for (i = 0; i < DEFAULT_INPUT_BUTTON_COUNT; i++) {
@@ -174,7 +203,7 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
     target_buttonset->button_count = DEFAULT_INPUT_MOUSE_COUNT;
     a_input->input_buttonset_count = MAX_INPUT_DEFAULT_BUTTONSET_COUNT;
 
-    // 드라이버 설정
+    // driver settings
     if (am_driver_cfg != NULL) {
         char* debug_p;
 
@@ -189,7 +218,7 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
         }
     }
 
-    // buttonset 설정
+    // buttonset settings
     for (i = 0; i < MAX_INPUT_BUTTONSET_COUNT; i++) {
         if (am_buttonset_cfg[i] == NULL) continue;
 
@@ -213,7 +242,7 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
                     max_value = parse_number(&block_p, ",", 10, 0);
                     strsep(&section, ",");
 
-                    // 키 설정 추가
+                    // add key settings
                     if (__append_button(target_buttonset, key_code, min_value, max_value) < 0) {
                         break;
                     }
@@ -247,7 +276,7 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
         strcpy(szText, am_endpoints_cfg);
         pText = szText;
 
-        // endpoint 설정
+        // endpoint settings
         idx = 0;
         js_idx = mos_idx = kbd_idx = 0;
         while (pText != NULL && idx < MAX_INPUT_ENDPOINT_COUNT) {
@@ -289,7 +318,7 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
             buttonset_name = strsep(&ptr, ",");
             btncfg_item = __find_buttonset(a_input, buttonset_name, 0);
             if (btncfg_item == NULL) {
-                printk(KERN_NOTICE"unknown buttonset \"%s\"", buttonset_name);
+                am_log_warn("unknown buttonset \"%s\"", buttonset_name);
                 continue;
             }
 
@@ -301,7 +330,7 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
         a_input->input_endpoint_count = idx;
     }
 
-    // device들 설정
+    // device settings
     for (i = 0; i < MAX_INPUT_DEVICE_COUNT; i++) {
         input_device_type_desc_t* type_desc;
         input_device_data_t* device;
@@ -325,7 +354,7 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
             }
         }
         if (type_desc == NULL) {
-            printk(KERN_NOTICE"unknown device \"%s\"", typeid_p);
+            am_log_warn("unknown device \"%s\"", typeid_p);
             continue;
         }
 
@@ -365,7 +394,7 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
         if (type_desc->init_input_dev != NULL) {
             int err = type_desc->init_input_dev((void *)type_desc->device_desc_data, device, device_params_p, endpoint_params);
             if (err != 0) {
-                printk(KERN_ERR"invalid initialize parameter for %s", typeid_p);
+                am_log_err("invalid initialize parameter for %s", typeid_p);
                 continue;
             }
         }
@@ -373,31 +402,3 @@ void parsing_device_config_params(am_joyin_data_t* a_input)
         a_input->input_device_count++;
     }
 }
-
-/*
-
-buttonset1_cfg={0x102,-1,1},{0x103,0,1},{0x102,-1,1},{0x103,0,1},{0x102,0,1},{0x103,0,1},{0x102,0,1},{0x103,0,1},{0x102,0,1},{0x103,0,1}
-
-// endpoint 생략시 1개에 0번 키설정에 키 default (13) 개
-endpoints=default,0;0,12;1,default // endpoint1_buttonset_cfg=default, endpoint1_key_count=default(13), endpoint2_buttonset_cfg=default, endpoint2_key_count=12, endpoint3_key_cfg=buttonset1, endpoint3_key_count=default
-
-// device_type; endpoint_id, ...; config1=default1
-device1=gpio;;0,default1;1,default2
-
-// type=gpio, endpoint1_id=1
-device2=gpio;;1,custom,code,{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1};2,custom,index,{10,0,-1},{10,0,1},{10,1,1},{10,2,1},{10,3,1},{10,4,1}
-
-// type=gpio, endpoint1_id=1, endpoint2_id=2
-device3=gpio;1,custom,code,{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1},{10,0x103,1}
-
-// type=gpio, endpoint1_id=1, endpoint2_id=2
-device4=gpio;2,custom,index,{10,0,-1},{10,0,1},{10,2,1},{10,3,1},{10,4,1},{10,5,1}
-
-// type=74hc165, endpoint1_id=1
-device2=74hc165;1,2;16,2,13,1;default,default
-
-// type=74hc165, endpoint1_id=1, endpoint2_id=2
-device2=74hc165;21,19,18,24,1;0,default,12;1,default,12
-
-*/
-

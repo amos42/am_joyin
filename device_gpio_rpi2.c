@@ -8,6 +8,7 @@
 #include <linux/input.h>
 #include <linux/slab.h>
 #include "gpio_util.h"
+#include "log_util.h"
 #include "parse_util.h"
 
 

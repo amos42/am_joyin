@@ -230,16 +230,16 @@ static int am_test_init(void)
         goto err_free_dev;
     }
 
-    printk("test module loaded");
+    printk("test module loaded\n");
 
     // 4.096 / 32767 / 3.3 = 4.096 / (32767 * 3.3) = 4096 / (32767 * 3300) = 0 ~ 1
     v = __readADC_SingleEnded(0x48, 0);
     v2 = v * 4096 / 32767; // 4.096v
-    printk(">>>>>>>>>>>>>> %d (%d %%) %d.%dv", v, v2 * 100 / 3300, v2 / 1000, v2 % 1000);
+    printk(">>>>>>>>>>>>>> %d (%d %%) %d.%dv\n", v, v2 * 100 / 3300, v2 / 1000, v2 % 1000);
 
     v = __readADC_SingleEnded(0x48, 1);
     v2 = v * 4096 / 32767; // 4.096v
-    printk(">>>>>>>>>>>>>> %d (%d %%) %d.%dv", v, v2 * 100 / 3300, v2 / 1000, v2 % 1000);
+    printk(">>>>>>>>>>>>>> %d (%d %%) %d.%dv\n", v, v2 * 100 / 3300, v2 / 1000, v2 % 1000);
 
     return 0;
 
@@ -253,7 +253,7 @@ static void am_test_exit(void)
 {
     i2c_close();
     gpio_clean();
-    printk("test module unloaded");
+    printk("test module unloaded\n");
 }
 
 

@@ -1,0 +1,20 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${default}",
+                "/usr/src/linux-headers-5.10.63-v7+/include/**",
+                "/usr/src/linux-headers-5.10.63-v7+/arch/arm/include/**",
+                "/lib/modules/5.10.63-v7+/build/include/",
+                "/lib/modules/5.10.63-v7+/build/arch/arm/include/"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "gnu17",
+            "cppStandard": "gnu++14",
+            "intelliSenseMode": "linux-gcc-arm"
+        }
+    ],
+    "version": 4
+}

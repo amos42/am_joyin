@@ -62,7 +62,7 @@ static int am_test_init(void)
         goto err_free_dev;
     }
 
-    printk("test module loaded");
+    printk("test module loaded\n");
 
 
     spi_setClockDivider(0);
@@ -72,15 +72,15 @@ static int am_test_init(void)
 
     memset(vv2, 0, 3);
     spi_transfernb(vv, vv2, 3);
-    printk(">>>>>> 1 - %02x %02x %02x", vv2[0], vv2[1], vv2[2]);
+    printk(">>>>>> 1 - %02x %02x %02x\n", vv2[0], vv2[1], vv2[2]);
     v = (unsigned short)(vv2[1] & 0x3) << 8 | vv2[2];
-    printk(">>>>>>>>>>>>>> %d (%d %%)", v, v * 100 / 1023);
+    printk(">>>>>>>>>>>>>> %d (%d %%)\n", v, v * 100 / 1023);
 
     memset(vv2, 0, 3);
     spi_transfernb(vv1, vv2, 3);
-    printk(">>>>>> 2 - %02x %02x %02x", vv2[0], vv2[1], vv2[2]);
+    printk(">>>>>> 2 - %02x %02x %02x\n", vv2[0], vv2[1], vv2[2]);
     v = (unsigned short)(vv2[1] & 0x3) << 8 | vv2[2];
-    printk(">>>>>>>>>>>>>> %d (%d %%)", v, v * 100 / 1023);
+    printk(">>>>>>>>>>>>>> %d (%d %%)\n", v, v * 100 / 1023);
 
     spi_end();
 
@@ -96,7 +96,7 @@ static void am_test_exit(void)
 {
     spi_close();
     gpio_clean();
-    printk("test module unloaded");
+    printk("test module unloaded\n");
 }
 
 
