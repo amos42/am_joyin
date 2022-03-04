@@ -14,6 +14,7 @@
 #include <linux/kernel.h>
 #include <linux/of_platform.h>
 #include "bcm2835.h"
+#include "log_util.h"
 
 
 #define BCM2708_PERI_BASE (0x3F000000) // RPI 2
@@ -36,18 +37,18 @@ u32 bcm_peri_base_probe(void)
 
     dt_node = of_find_node_by_path(path);
     if (!dt_node) {
-        pr_err("failed to find device-tree node: %s\n", path);
+        am_log_err("failed to find device-tree node: %s", path);
         return 0;
     }
 
     if (of_property_read_u32_index(dt_node, "ranges", 1, &base_address)) {
-        pr_err("failed to read range index 1\n");
+        am_log_err("failed to read range index 1");
         return 0;
     }
 
     if (base_address == 0) {
         if (of_property_read_u32_index(dt_node, "ranges", 2, &base_address)) {
-            pr_err("failed to read range index 2\n");
+            am_log_err("failed to read range index 2");
             return 0;
         }
     }

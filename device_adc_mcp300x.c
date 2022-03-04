@@ -6,9 +6,7 @@
 
 #include <linux/kernel.h>
 #include <linux/input.h>
-#include <linux/slab.h>
 #include <linux/delay.h>
-#include <linux/uaccess.h>
 #include "indev_type.h"
 #include "bcm_peri.h"
 #include "gpio_util.h"
@@ -17,6 +15,7 @@
 #else
 #include <linux/spi/spi.h>
 #endif
+#include "log_util.h"
 #include "parse_util.h"
 
 
@@ -220,12 +219,12 @@ static int __mcp300x_spi_read(uint8_t adc_channel)
 static int __mcp300x_spi_read(struct spi_device *spi, uint8_t adc_channel)
 {
     unsigned char buf[3] = {0x01, (0x08 | adc_channel) << 4, 0};
-	struct spi_transfer	t = {
-        .tx_buf		= buf,
-        .rx_buf		= buf,
-        .len		= 3,
+    struct spi_transfer	t = {
+        .tx_buf    = buf,
+        .rx_buf    = buf,
+        .len       = 3,
     };
-	int r = spi_sync_transfer(spi, &t, 1);
+    int r = spi_sync_transfer(spi, &t, 1);
     return (r >= 0)? (int)(((unsigned short)buf[1] & 0x3) << 8 | buf[2]) : r;
 }
 #endif
@@ -291,13 +290,13 @@ static void start_input_device_for_mcp300x(input_device_data_t *device_data)
 
     struct spi_master* master = spi_busnum_to_master(spi_device_info.bus_num);
     if (IS_ERR_OR_NULL(master)) {
-        pr_err("SPI Master {%d} not found.\n", spi_device_info.bus_num);
+        am_log_err("spi master {%d} not found.", spi_device_info.bus_num);
         return;
     }
 
     user_data->spi = spi_new_device(master, &spi_device_info);
     if (IS_ERR_OR_NULL(user_data->spi)) {
-        pr_err("spi open device error {%d}.\n", user_data->device_cfg.spi_channel);
+        am_log_err("spi open device error {%d}.", user_data->device_cfg.spi_channel);
         return;
     }
 #endif

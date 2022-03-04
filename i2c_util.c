@@ -4,8 +4,11 @@
 
 #include <linux/kernel.h>
 #include <linux/delay.h>
+#include <linux/kconfig.h>  /// for CONFIG_HZ
+#include <linux/errno.h>
 #include <asm/io.h>
 
+#include "log_util.h"
 #include "i2c_util.h"
 #include "bcm_peri.h"
 #include "gpio_util.h"
@@ -61,7 +64,7 @@ int i2c_init(u32 peri_base_addr, int size)
 
     /* Set up i2c pointer for direct register access */
     if ((bsc1 = ioremap(peri_base_addr + BSC1_BASE, size)) == NULL) {
-        pr_err("io remap failed\n");
+        am_log_err("io remap failed.");
         bsc1_ref_count--;
         return -EBUSY;
     }
@@ -74,7 +77,6 @@ int i2c_init(u32 peri_base_addr, int size)
     return 0;
 }
 
-
 void i2c_close(void)
 {
     if (--bsc1_ref_count > 0) return;
@@ -84,7 +86,6 @@ void i2c_close(void)
         bsc1 = NULL;
     }
 }
-
 
 void wait_i2c_done(void)
 {

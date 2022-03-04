@@ -3,10 +3,14 @@
         "**/.tmp_versions": true,
         "**/*.ko": true,
         "**/*.ko.cmd": true,
+        "**/*.mod": true,
         "**/*.mod.c": true,
+        "**/*.mod.cmd": true,
+        "**/*.symvers.cmd": true,
+        "**/*.order.cmd": true,
         "**/*.o": true,
         "**/*.o.cmd": true,
-        "**/build/": true,
+        "build/**": true,
         "**/Module.symvers": true,
         "**/modules.order": true
     }

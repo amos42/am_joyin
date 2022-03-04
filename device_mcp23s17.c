@@ -6,9 +6,7 @@
 
 #include <linux/kernel.h>
 #include <linux/input.h>
-#include <linux/slab.h>
 #include <linux/delay.h>
-#include <linux/uaccess.h>
 #include "bcm_peri.h"
 #include "gpio_util.h"
 #if defined(USE_SPI_DIRECT)
@@ -16,6 +14,7 @@
 #else
 #include <linux/spi/spi.h>
 #endif
+#include "log_util.h"
 #include "parse_util.h"
 
 
@@ -283,12 +282,12 @@ static void __mcp23s17_spi_write(uint8_t cmd, uint8_t value)
 static uint8_t __mcp23s17_spi_read(struct spi_device *spi, uint8_t cmd)
 {
     unsigned char buf[3] = {0x41, cmd, 0};
-	struct spi_transfer	t = {
-        .tx_buf		= buf,
-        .rx_buf		= buf,
-        .len		= 3,
+    struct spi_transfer	t = {
+        .tx_buf    = buf,
+        .rx_buf    = buf,
+        .len       = 3,
     };
-	int r = spi_sync_transfer(spi, &t, 1);
+    int r = spi_sync_transfer(spi, &t, 1);
     return (r >= 0) ? buf[2] : 0xFF;
 }
 
@@ -307,28 +306,13 @@ static void start_input_device_for_mcp23s17(input_device_data_t *device_data)
 #if defined(USE_SPI_DIRECT)
     spi_init(bcm_peri_base_probe(), 0xB0);
     spi_setClockDivider(256);
-    //udelay(100);
 
     spi_begin();
     spi_chipSelect(user_data->device_cfg.spi_channel);
 
     __mcp23s17_spi_write(MCP23017_GPIOA_MODE, 0xFF);
-    //udelay(100);
-
-    // read one byte on GPIOA (for dummy)
-    //__mcp23s17_spi_read(MCP23017_GPIOA_READ);
-    //udelay(100);
-
     __mcp23s17_spi_write(MCP23017_GPIOA_PULLUPS_MODE, 0xFF);
-    //udelay(100);
-
     __mcp23s17_spi_write(MCP23017_GPIOB_MODE, 0xFF);
-    //udelay(100);
-
-    // read one byte on GPIOA (for dummy)
-    //__mcp23s17_spi_read(MCP23017_GPIOB_READ);
-    //udelay(100);
-
     __mcp23s17_spi_write(MCP23017_GPIOB_PULLUPS_MODE, 0xFF);
 
     spi_end();
@@ -343,13 +327,13 @@ static void start_input_device_for_mcp23s17(input_device_data_t *device_data)
 
     struct spi_master* master = spi_busnum_to_master(spi_device_info.bus_num);
     if (IS_ERR_OR_NULL(master)) {
-        pr_err("SPI Master {%d} not found.\n", spi_device_info.bus_num);
+        am_log_err("spi master {%d} not found.", spi_device_info.bus_num);
         return;
     }
 
     user_data->spi = spi_new_device(master, &spi_device_info);
     if (IS_ERR_OR_NULL(user_data->spi)) {
-        pr_err("spi open device error {%d}.\n", user_data->device_cfg.spi_channel);
+        am_log_err("spi open device error {%d}.", user_data->device_cfg.spi_channel);
         return;
     }
 

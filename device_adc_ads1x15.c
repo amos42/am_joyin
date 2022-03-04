@@ -6,9 +6,7 @@
 
 #include <linux/kernel.h>
 #include <linux/input.h>
-#include <linux/slab.h>
 #include <linux/delay.h>
-#include <linux/uaccess.h>
 #include "bcm_peri.h"
 #include "gpio_util.h"
 #if defined(USE_I2C_DIRECT)
@@ -16,6 +14,7 @@
 #else
 #include <linux/i2c.h>
 #endif
+#include "log_util.h"
 #include "parse_util.h"
 
 
@@ -361,12 +360,12 @@ static void start_input_device_for_ads1x15(input_device_data_t *device_data)
     };
     struct i2c_adapter* i2c_adap = i2c_get_adapter(1);
     if (i2c_adap == NULL) {
-        pr_err("i2c adapter open erro {%d}", 1);
+        am_log_err("i2c adapter open erro {%d}", 1);
         return;
     }
     user_data->i2c = i2c_new_client_device(i2c_adap, &i2c_board_info);
     if (IS_ERR_OR_NULL(user_data->i2c)) {
-        pr_err("i2c device open erro {%d}", user_data->device_cfg.i2c_addr);
+        am_log_err("i2c device open erro {%d}", user_data->device_cfg.i2c_addr);
         return;
     }
     i2c_put_adapter(i2c_adap);

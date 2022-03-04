@@ -13,6 +13,10 @@
 
 #include "indev_type.h"
 
+#if !defined(KBUILD_MODNAME)
+#define KBUILD_MODNAME  DEVICE_NAME
+#endif
+
 
 typedef struct tag_am_joyin_data {
     // 키체크 주기

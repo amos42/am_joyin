@@ -6,16 +6,13 @@
 #define __KERNEL__
 #endif
 
+
+#include "build_cfg.h"
+
 #ifndef MODULE
 #define MODULE
 #endif
 
-#define VENDOR_ID       (0xA042)
-#define PRODUCT_ID      (0x0001)
-#define PRODUCT_VERSION (0x0100)
-#define DEVICE_NAME     "Amos Joystick"
-
-#include "build_cfg.h"
 
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -40,32 +37,33 @@ MODULE_SOFTDEP("pre: i2c-dev");
 /*============================================================*/
 
 #include "am_joyin.h"
+#include "log_util.h"
 
-/** parameters (begin) **/
-#include "am_joyin_cfg.c"
-/** parameters (end) **/
-
-//#include "bcm_peri.h"
-#include "bcm_peri.c"
-
-//#include "gpio_util.h"
-#include "gpio_util.c"
-
+#include "bcm_peri.h"
+#include "gpio_util.h"
+#include "parse_util.h"
+#include "indev_type.h"
 #if defined(USE_I2C_DIRECT)
-//#include "i2c_util.h"
+#include "i2c_util.h"
+#endif
+#if defined(USE_SPI_DIRECT)
+#include "spi_util.h"
+#endif
+
+
+//==== 코드 포함 (begin) ====
+#include "log_util.c"
+#include "am_joyin_cfg.c"
+#include "bcm_peri.c"
+#include "gpio_util.c"
+#if defined(USE_I2C_DIRECT)
 #include "i2c_util.c"
 #endif
 #if defined(USE_SPI_DIRECT)
-//#include "spi_util.h"
 #include "spi_util.c"
 #endif
-
-//#include "parse_util.h"
 #include "parse_util.c"
-
-//#include "indev_type.h"
 #include "indev_type.c"
-
 #include "device_gpio_rpi2.c"
 #include "device_74hc165.c"
 #include "device_mcp23017.c"
@@ -74,6 +72,7 @@ MODULE_SOFTDEP("pre: i2c-dev");
 #include "device_adc_mcp300x.c"
 #include "device_adc_ads1x15.c"
 #include "device_rotary_am_spinin.c"
+//==== 코드 포함 (end) ====
 
 
 #if defined(USE_REPORT_TIMER)
@@ -175,7 +174,7 @@ static void am_timer(unsigned long private) {
 
         // 타이머 주기를 초과하는 횟수가 100회를 넘으면 타이머 중단
         if (++inp->missing_timer_count > 100) {
-            printk(KERN_ERR"Button check time is too late. Terminate the timer.");
+            am_log_err("button check time is too late. Terminate the timer.");
             return;
         }
     }
@@ -243,7 +242,7 @@ static void start_report_worker(void)
                 wake_up_process(a_input->report_task);
             }
 #endif
-            //printk("start report worker.\n");
+            am_log_debug("start report worker.");
         }
     }
 }
@@ -259,7 +258,7 @@ static void stop_report_worker(void)
             //sleep_on(a_input->report_task);
         }
 #endif
-        //printk("stop report worker.\n");
+        am_log_debug("stop report worker.");
     }
 }
 
@@ -284,7 +283,7 @@ static int __open_handler(struct input_dev *indev)
     input_endpoint_data_t *endpoint = input_get_drvdata(indev);
     int err;
 
-    //printk("amos joystick input endpoint %d open...", a_input->used);
+    am_log_debug("joystick input endpoint %d open...", a_input->used);
 
     err = mutex_lock_interruptible(&a_input->mutex);
     if (err)
@@ -296,7 +295,7 @@ static int __open_handler(struct input_dev *indev)
         }
 
         endpoint->is_opened = TRUE;
-        //printk("amos joystick input endpoint opend");
+        am_log_debug("joystick input endpoint opend");
     }
 
     mutex_unlock(&a_input->mutex);
@@ -309,7 +308,7 @@ static void __close_handler(struct input_dev *indev)
 {
     input_endpoint_data_t *endpoint = input_get_drvdata(indev);
 
-    //printk("amos joystick input endpoint %d close...", a_input->used);
+    am_log_debug("joystick input endpoint %d close...", a_input->used);
 
     mutex_lock(&a_input->mutex);
 
@@ -319,7 +318,7 @@ static void __close_handler(struct input_dev *indev)
         }
 
         endpoint->is_opened = FALSE;
-        //printk("amos joystick input endpoint closed");
+        am_log_debug("joystick input endpoint closed");
     }
 
     mutex_unlock(&a_input->mutex);
@@ -439,12 +438,12 @@ static void cleanup(void)
 
 
 
-static int am_joyin_init(void)
+static int __init am_joyin_init(void)
 {
     int i;
     int err;
 
-    printk("am_joyin init...\n");
+    am_log_info("am_joyin init...");
 
     // 커맨드 라인 파라미터 전처리
     prepocess_params();
@@ -482,13 +481,13 @@ static int am_joyin_init(void)
     a_input->timer_period = HZ / a_input->report_period;
 #endif
 
-    //printk("start register input dev...");
+    am_log_debug("start register input dev...");
 
     // 설정으로 지정한 모든 장치를 초기화 한다.
     for (i = 0; i < a_input->input_device_count; i++) {
         input_device_data_t *dev = &a_input->device_list[i];
 
-        printk(KERN_INFO"register input dev #%d : %s", i, dev->device_type_desc->device_type);
+        am_log_info("register input dev #%d : %s", i, dev->device_type_desc->device_type);
 
         dev->device_type_desc->start_input_dev(dev);
 
@@ -498,31 +497,31 @@ static int am_joyin_init(void)
         }
     }
 
-    //printk("end register input dev.");
+    am_log_debug("end register input dev.");
 
     // 한개라도 endpoint가 등록되어 있다면 정상 종료
     for (i = 0; i < a_input->input_endpoint_count; i++) {
         if (a_input->endpoint_list[i].indev != NULL) {
-            printk(KERN_INFO"success register input dev.\n");
+            am_log_info("success register input dev.");
             return 0;
         }
     }
 
     // 단 한개도 enpoint가 없다면 에러
-    printk(KERN_ERR"nothing input endpoint.");
+    am_log_err("nothing input endpoint.");
     err = -ENODEV;
 
 err_free_dev:
-    printk(KERN_ERR"fail register input dev.\n");
+    am_log_err("fail register input dev.");
     cleanup();
     return err;
 }
 
 
-static void am_joyin_exit(void)
+static void __exit am_joyin_exit(void)
 {
     cleanup();
-    printk(KERN_INFO"am_joyin exit.\n");
+    am_log_info("am_joyin exit.");
 }
 
 

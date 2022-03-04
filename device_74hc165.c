@@ -6,10 +6,9 @@
 
 #include <linux/kernel.h>
 #include <linux/input.h>
-#include <linux/slab.h>
 #include <linux/delay.h>
-#include <linux/uaccess.h>
 #include "gpio_util.h"
+#include "log_util.h"
 #include "parse_util.h"
 
 
