@@ -1,5 +1,5 @@
 /**
- * am_bcm_peri_base_probe - Find the peripherals address base for
+ * bcm_peri_base_probe - Find the peripherals address base for
  * the running Raspberry Pi model. It needs a kernel with runtime Device-Tree
  * overlay support.
  *
@@ -17,14 +17,17 @@
 #include "log_util.h"
 
 
-#define BCM2708_PERI_BASE (0x3F000000) // RPI 2
-#define BCM2709_PERI_BASE (0x20000000) // abobe RPI 2B v1.2
-#define BCM2711_PERI_BASE (0x7e215000) // abobe RPI 4
+#define BCM2708_PERI_BASE (0x3F000000) /// RPI 2
+#define BCM2709_PERI_BASE (0x20000000) /// abobe RPI 2B v1.2
+#define BCM2711_PERI_BASE (0x7e215000) /// abobe RPI 4
 
 
 static u32 peri_base = 0x00000000;
 
 
+/**
+ * @brief intialize
+ */
 u32 bcm_peri_base_probe(void)
 {
     char *path = "/soc";
@@ -58,8 +61,8 @@ u32 bcm_peri_base_probe(void)
     return peri_base;
 }
 
-/* Read with memory barriers from peripheral
- *
+/**
+ * @brief Read with memory barriers from peripheral
  */
 uint32_t bcm_peri_read(volatile uint32_t* paddr)
 {
@@ -70,7 +73,8 @@ uint32_t bcm_peri_read(volatile uint32_t* paddr)
     return ret;
 }
 
-/* read from peripheral without the read barrier
+/**
+ * @brief read from peripheral without the read barrier
  * This can only be used if more reads to THE SAME peripheral
  * will follow.  The sequence must terminate with memory barrier
  * before any read or write to another peripheral can occur.
@@ -81,9 +85,9 @@ uint32_t bcm_peri_read_nb(volatile uint32_t* paddr)
     return *paddr;
 }
 
-/* Write with memory barriers to peripheral
+/**
+ * @brief Write with memory barriers to peripheral
  */
-
 void bcm_peri_write(volatile uint32_t* paddr, uint32_t value)
 {
     __sync_synchronize();
@@ -91,13 +95,16 @@ void bcm_peri_write(volatile uint32_t* paddr, uint32_t value)
     __sync_synchronize();
 }
 
-/* write to peripheral without the write barrier */
+/**
+ * @brief write to peripheral without the write barrier 
+ */
 void bcm_peri_write_nb(volatile uint32_t* paddr, uint32_t value)
 {
     *paddr = value;
 }
 
-/* Set/clear only the bits in value covered by the mask
+/**
+ * @brief Set/clear only the bits in value covered by the mask
  * This is not atomic - can be interrupted.
  */
 void bcm_peri_set_bits(volatile uint32_t* paddr, uint32_t value, uint32_t mask)

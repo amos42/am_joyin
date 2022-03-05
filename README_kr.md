@@ -1,6 +1,6 @@
 # am_joyin
 
-Amos Joystick Input Driver for Raspbrri-pi Arcade (or another SBC)
+**Amos Joystick Input Driver for Raspbrri-pi Arcade (or another SBC)**
 
 ---
 
@@ -8,7 +8,7 @@ Amos Joystick Input Driver for Raspbrri-pi Arcade (or another SBC)
   <p align="center">
     <a href="README.md">English</a>
     ·
-    <a href="README-kr.md">한국어</a>
+    <a href="README_kr.md">한국어</a>
   </p>
 </p>
 
