@@ -662,7 +662,7 @@ Example of 1p setup
 sudo modprobe am_joyin device1="mcp23s17;0,13;0,default"
 ```
 
-Example of 2p setting (When the first board is set to 0x20, the second board is set to I2C address of 0x21)
+Example of 2p setting (When the first board is set to SPI 0, the second board is set to SPI 1)
 
 ```shell
 sudo modprobe am_joyin endpoints="default;default" \

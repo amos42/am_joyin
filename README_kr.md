@@ -663,7 +663,7 @@ SPI 인터페이스로 통신하기에, Raspberry Pi에선 일반적으로 2개�
 sudo modprobe am_joyin device1="mcp23s17;0,13;0,default"
 ```
 
-2p 설정의 예 (첫번째 보드는 0x20, 두번째 보드는 0x21의 I2C 주소로 설정해 놓았을 때)
+2p 설정의 예 (첫번째 보드는 SPI 0, 두번째 보드는 SPI 1 채널로 설정해 놓았을 때)
 
 ```shell
 sudo modprobe am_joyin endpoints="default;default" \
