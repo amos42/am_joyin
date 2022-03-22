@@ -1,6 +1,6 @@
 # am_joyin
 
-**Amos Joystick Input Driver for Raspbrri-pi Arcade (or another SBC)**
+**Amos Arcade Joystick Input Driver for Raspberry-pi (or another SBC)**
 
 ---
 
@@ -636,6 +636,39 @@ sudo modprobe am_joyin device1="mcp23017;0x20,13;0,default"
 sudo modprobe am_joyin endpoints="default;default" \
         device1="mcp23017;0x20;0,default" \
         device2="mcp23017;0x21;1,default"
+```
+
+---
+
+### MCP23S17 입력
+
+MCP23S17은 MCP23017과 흡사하다. 단, 인터페이스가 I2C가 아니라 SPI를 사용한다는 차이가 있다.
+
+SPI 인터페이스로 통신하기에, Raspberry Pi에선 일반적으로 2개까지만 연결할 수 있으며, 각각 SPI 채널 번호인 0과 1로 구분한다.
+
+* 디바이스 파라미터
+> 1. spi_channel - SPI 채널. default는 0
+> 2. io_count - 전체 IO 갯수
+
+* 엔드포인트 파라미터
+> 1. config type - 버튼 설정 타입
+>    - default : pin_count, button_start_index, io_skip_count
+>    - custom : io_skip_count, code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
+
+실제 사용 예
+
+1p 설정의 예
+
+```shell
+sudo modprobe am_joyin device1="mcp23s17;0,13;0,default"
+```
+
+2p 설정의 예 (첫번째 보드는 0x20, 두번째 보드는 0x21의 I2C 주소로 설정해 놓았을 때)
+
+```shell
+sudo modprobe am_joyin endpoints="default;default" \
+        device1="mcp23s17;0;0,default" \
+        device2="mcp23s17;1;1,default"
 ```
 
 ---

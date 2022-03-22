@@ -1,6 +1,6 @@
 # am_joyin
 
-**Amos Joystick Input Driver for Raspbrri-pi Arcade (or another SBC)**
+**Amos Arcade Joystick Input Driver for Raspberry-pi (or another SBC)**
 
 ---
 
@@ -532,7 +532,7 @@ sudo modprobe am_joyin device1="gpio;;0,custom,0,{4,0x1,-100},{17,0x1,100},{27,0
 
 ---
 
-### Enter 74HC165
+### 74HC165 input
 
 TI's 74HC165 is a chip commonly used to expand insufficient IO. It is a chip that implements shift register and operates as a serial interface.
 The biggest advantage of the 74HC165 is that the control method is very simple and it is easy to expand.
@@ -599,7 +599,7 @@ sudo modprobe am_joyin endpoints="default;default" device1="74hc165;16,20,21,32;
 
 ---
 
-### Enter MCP23017
+### MCP23017 input
 
 If you want to receive key input using I2C, you can use the MCP23017 chip. Since it is an I2C interface, it does not require a lot of wiring, and there is also expandability because multiple units can be bundled on the same wiring.
 Because 16-bit IO is possible, it can accommodate enough input for 1p.
@@ -639,7 +639,40 @@ sudo modprobe am_joyin endpoints="default;default" \
 
 ---
 
-### Enter Multiplexer(=MUX)
+### MCP23S17 input
+
+MCP23S17 is similar to MCP23017. However, the difference is that the interface uses SPI rather than I2C.
+
+Since it communicates with the SPI interface, in general, only two can be connected in Raspberry Pi, and they are separated by SPI channel numbers 0 and 1, respectively.
+
+* Device parameters
+> 1. spi_channel - SPI channel. default is 0
+> 2. io_count - total number of IOs
+
+* Endpoint parameters
+> 1. config type - button setting type
+> - default : pin_count, button_start_index, io_skip_count
+> - custom : io_skip_count, code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
+
+practical use case
+
+Example of 1p setup
+
+```shell
+sudo modprobe am_joyin device1="mcp23s17;0,13;0,default"
+```
+
+Example of 2p setting (When the first board is set to 0x20, the second board is set to I2C address of 0x21)
+
+```shell
+sudo modprobe am_joyin endpoints="default;default" \
+        device1="mcp23s17;0;0,default" \
+        device2="mcp23s17;1;1,default"
+```
+
+---
+
+### Multiplexer(=MUX) input
 
 There are various types of MUX chips depending on the number of input/output pins, and since they are manufactured by various companies, the range of choices is very wide. Since it is simply an implementation of MUX, the usage is almost the same. That is, 1 input/output pin, n address pins, and 2^n input/output pins are the core interfaces.
 
@@ -699,7 +732,7 @@ sudo modprobe am_joyin endpoints="default;default" \
 
 ---
 
-### MCP3008/MCP3004 ADC Input
+### MCP3008/MCP3004 ADC input
 
 For analog joystick input, ADC chip is required. Usually, one analog stick has two axes, so ADC must also have at least two channels.
 
@@ -768,7 +801,7 @@ If you test with jstest, you can see that two new axes have been added, and the 
 
 ---
 
-### ADS1115/ADS1015 ADC Input
+### ADS1115/ADS1015 ADC input
 
 ADS1115/ADS1015 are one of the chips that are often used as ADCs. It supports I2C interface and is a 4 channel ADC. The difference between the two chips is the difference in resolution and sampling rate. Either way, the performance is sufficient to be used as an analog joystick input for a game machine.
 
