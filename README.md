@@ -530,6 +530,15 @@ sudo modprobe am_joyin endpoints="default,12;default,12" \
 sudo modprobe am_joyin device1="gpio;;0,custom,0,{4,0x1,-100},{17,0x1,100},{27,0x0,-100},{22,0x0,100},{ 10,0x13b,1},{9,0x13a,1}"
 ```
 
+- Set key combinations
+
+It is also possible to combine key settings.
+12 of the default1 gpio settings are used, and the HotKey custom is described as follows when specifying GPIO11.
+
+```shell
+sudo modprobe am_joyin device1="gpio;;0,default1,12;0,custom,,{11,0x13C,1}"
+```
+
 ---
 
 ### 74HC165 input

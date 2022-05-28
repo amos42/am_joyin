@@ -528,7 +528,15 @@ sudo modprobe am_joyin endpoints="default,12;default,12" \
 - 커스텀 키 설정
 
 ```shell
-sudo modprobe am_joyin device1="gpio;;0,custom,0,{4,0x1,-100},{17,0x1,100},{27,0x0,-100},{22,0x0,100},{10,0x13b,1},{9,0x13a,1}"
+sudo modprobe am_joyin device1="gpio;;0,custom,keycode,{4,0x1,-100},{17,0x1,100},{27,0x0,-100},{22,0x0,100},{10,0x13b,1},{9,0x13a,1}"
+```
+
+- 키 조합 설정
+
+키 설정을 조합하는 것도 가능하다. 다음은 default1 gpio 설정 중 12개를 사용하고, hotkey는 custom을 GPIO11을 지정할 때는 다음과 같이 기술한다.
+
+```shell
+sudo modprobe am_joyin device1="gpio;;0,default1,12;0,custom,,{11,0x13C,1}"
 ```
 
 ---
