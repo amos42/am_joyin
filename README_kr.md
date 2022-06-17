@@ -144,8 +144,8 @@ sudo raspi-config
 #### wget 사용시
 
 ```shell
-wget https://github.com/amos42/am_joyin/releases/download/v0.3.2/am_joyin-0.3.2.deb
-sudo dpkg -i am_joyin-0.3.2.deb
+wget https://github.com/amos42/am_joyin/releases/download/v0.3.3/am_joyin-0.3.3.deb
+sudo dpkg -i am_joyin-0.3.3.deb
 ```
 
 #### git 사용시
@@ -160,8 +160,8 @@ git clone https://github.com/amos42/am_joyin.git
 
 ```shell
 cd am_joyin
-./utils/makepackage.sh 0.3.2 
-sudo dpkg -i build/am_joyin-0.3.2.deb
+./utils/makepackage.sh 0.3.3 
+sudo dpkg -i build/am_joyin-0.3.3.deb
 ```
 
 이 과정까지 거치면 드라이버 설치가 1차적으로 완료된다.
@@ -509,8 +509,8 @@ device1="74hc165;16,20,21,24;0,default,12;1,default,12"
 
 * 엔드포인트 파라미터
 > 1. config type - 버튼 설정 타입
->    - default : pin_count, button_start_index
->    - custom : code_mode (0: keycode, 1:index), {gpio1, button1, value1}, {gpio2, button2, value2}, ...
+>     - default (default1/default2/default3) : pin_count, button_start_index
+>     - custom : code_mode (0: keycode, 1:index), {gpio1, button1, value1}, {gpio2, button2, value2}, ...
 
 - 1인용 기본 키 설정
 
@@ -583,8 +583,8 @@ sudo modprobe am_joyin device1="gpio;;0,default1,12;0,custom,,{11,0x13C,1}"
 
 * 엔드포인트 파라미터
 > 1. config type - 버튼 설정 타입
->    - default : pin_count, button_start_index, io_skip_count
->    - custom : io_skip_count, code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
+>     - default : pin_count, button_start_index, io_skip_count
+>     - custom : io_skip_count, code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
 
 실제 사용 예
 
@@ -627,8 +627,8 @@ I2C 장치이기 때문에 액세스를 위해서는 주소를 알아야 한다.
 
 * 엔드포인트 파라미터
 > 1. config type - 버튼 설정 타입
->    - default : pin_count, button_start_index, io_skip_count
->    - custom : io_skip_count, code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
+>     - default : pin_count, button_start_index, io_skip_count
+>     - custom : io_skip_count, code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
 
 실제 사용 예
 
@@ -660,8 +660,8 @@ SPI 인터페이스로 통신하기에, Raspberry Pi에선 일반적으로 2개�
 
 * 엔드포인트 파라미터
 > 1. config type - 버튼 설정 타입
->    - default : pin_count, button_start_index, io_skip_count
->    - custom : io_skip_count, code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
+>     - default : pin_count, button_start_index, io_skip_count
+>     - custom : io_skip_count, code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
 
 실제 사용 예
 
@@ -706,8 +706,8 @@ MUX 모듈은 다음과 같은 형태로 주로 판매되고 있다.
 
 * 엔드포인트 파라미터
 > 1. config type - 버튼 설정 타입
->    - default : pin_count, button_start_index, io_skip_count
->    - custom : io_skip_count, code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
+>     - default : pin_count, button_start_index, io_skip_count
+>     - custom : io_skip_count, code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
 
 만약 2p 이상을 지원하게 하려면 16-bit MUX 2개를 사용하여 32비트로 만들고, 다음의 3가지 중 하나로 각 칩들을 차례로 액세스 하도록 하면 된다.
 
@@ -770,8 +770,8 @@ MCP3008의 Pinout은 다음과 같다.
 
 * 엔드포인트 파라미터
 > 1. config type - 버튼 설정 타입
->    - default : pin_count, button_start_index
->    - custom : code_mode (0: keycode, 1:index), {adc채널1, button1, min_value1, max_value1, adc_min_value1, adc_max_value1, adc_mid_value1}, ...
+>     - default : pin_count, button_start_index
+>     - custom : code_mode (0: keycode, 1:index), {adc채널1, button1, min_value1, max_value1, adc_min_value1, adc_max_value1, adc_mid_value1}, ...
 
 실제 사용 예
 
@@ -839,8 +839,8 @@ ADS1115/ADS1015는 Reference 전압을 입력 받는 핀이 따로 존재하지 
 
 * 엔드포인트 파라미터
 > 1. config type - 버튼 설정 타입
->    - default : pin_count, button_start_index
->    - custom : code_mode (0: keycode, 1:index), {adc채널1, button1, min_value1, max_value1, adc_min_value1, adc_max_value1, adc_mid_value1}, ...
+>     - default : pin_count, button_start_index
+>     - custom : code_mode (0: keycode, 1:index), {adc채널1, button1, min_value1, max_value1, adc_min_value1, adc_max_value1, adc_mid_value1}, ...
 
 실제 사용 예
 
@@ -923,8 +923,8 @@ Rotary Encoder의 A, B 핀은 보드의 GPIO 2번과 3번 핀에 각각 연결�
 
 * 엔드포인트 파라미터
 > 1. config type - 버튼 설정 타입
->    - default : pin_count, button_start_index, mouse_dpi (기본 1000dpi)
->    - custom : mouse_dpi, code_mode (0: keycode, 1:index), {button1, value1}, ...
+>     - default : pin_count, button_start_index, mouse_dpi (기본 1000dpi)
+>     - custom : mouse_dpi, code_mode (0: keycode, 1:index), {button1, value1}, ...
 
 실제 사용 예
 
