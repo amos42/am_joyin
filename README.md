@@ -144,8 +144,8 @@ Once the preliminary work has been completed, the installation work begins in ea
 #### When using wget
 
 ```shell
-wget https://github.com/amos42/am_joyin/releases/download/v0.3.2/am_joyin-0.3.2.deb
-sudo dpkg -i am_joyin-0.3.2.deb
+wget https://github.com/amos42/am_joyin/releases/download/v0.3.3/am_joyin-0.3.3.deb
+sudo dpkg -i am_joyin-0.3.3.deb
 ```
 
 #### When using git
@@ -160,8 +160,8 @@ git clone https://github.com/amos42/am_joyin.git
 
 ```shell
 cd am_joyin
-./utils/makepackage.sh 0.3.2
-sudo dpkg -i build/am_joyin-0.3.2.deb
+./utils/makepackage.sh 0.3.3
+sudo dpkg -i build/am_joyin-0.3.3.deb
 ```
 
 If you go through this process, the driver installation is primarily completed.
@@ -508,8 +508,8 @@ The default pinmap is compatible with mk_arcade_joystick_rpi.
 
 * Endpoint parameters
 > 1. config type - button setting type
-> - default : pin_count, button_start_index
-> - custom : code_mode (0: keycode, 1:index), {gpio1, button1, value1}, {gpio2, button2, value2}, ...
+>     - default (default1/default2/default3) : pin_count, button_start_index
+>     - custom : code_mode (0: keycode, 1:index), {gpio1, button1, value1}, {gpio2, button2, value2}, ...
 
 - Set the primary key for 1 person
 
@@ -583,8 +583,8 @@ They are LD, CK, DT in that order.
 
 * Endpoint parameters
 > 1. config type - button setting type
-> - default : pin_count, button_start_index, io_skip_count
-> - custom : io_skip_count, code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
+>     - default : pin_count, button_start_index, io_skip_count
+>     - custom : io_skip_count, code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
 
 practical use case
 
@@ -627,8 +627,8 @@ Since it is an I2C device, it needs to know the address to access it. In the cas
 
 * Endpoint parameters
 > 1. config type - button setting type
-> - default : pin_count, button_start_index, io_skip_count
-> - custom : io_skip_count, code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
+>     - default : pin_count, button_start_index, io_skip_count
+>     - custom : io_skip_count, code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
 
 practical use case
 
@@ -660,8 +660,8 @@ Since it communicates with the SPI interface, in general, only two can be connec
 
 * Endpoint parameters
 > 1. config type - button setting type
-> - default : pin_count, button_start_index, io_skip_count
-> - custom : io_skip_count, code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
+>     - default : pin_count, button_start_index, io_skip_count
+>     - custom : io_skip_count, code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
 
 practical use case
 
@@ -706,8 +706,8 @@ The GPIO numbers corresponding to these 5 pins must be passed as parameters resp
 
 * Endpoint parameters
 > 1. config type - button setting type
-> - default : pin_count, button_start_index, io_skip_count
-> - custom : io_skip_count, code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
+>     - default : pin_count, button_start_index, io_skip_count
+>     - custom : io_skip_count, code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
 
 If you want to support more than 2p, use two 16-bit MUXs to make it 32-bit, and one of the following three methods to access each chip in turn.
 
@@ -770,8 +770,8 @@ In order to wire the analog stick to the Raspberry Pi through the actual MCP3008
 
 * Endpoint parameters
 > 1. config type - button setting type
-> - default : pin_count, button_start_index
-> - custom : code_mode (0: keycode, 1:index), {adc channel1, button1, min_value1, max_value1, adc_min_value1, adc_max_value1, adc_mid_value1}, ...
+>     - default : pin_count, button_start_index
+>     - custom : code_mode (0: keycode, 1:index), {adc channel1, button1, min_value1, max_value1, adc_min_value1, adc_max_value1, adc_mid_value1}, ...
 
 practical use case
 
@@ -839,8 +839,8 @@ ADS1115/ADS1015 does not have a separate pin for receiving the reference voltage
 
 * Endpoint parameters
 > 1. config type - button setting type
-> - default : pin_count, button_start_index
-> - custom : code_mode (0: keycode, 1:index), {adc channel1, button1, min_value1, max_value1, adc_min_value1, adc_max_value1, adc_mid_value1}, ...
+>     - default : pin_count, button_start_index
+>     - custom : code_mode (0: keycode, 1:index), {adc channel1, button1, min_value1, max_value1, adc_min_value1, adc_max_value1, adc_mid_value1}, ...
 
 practical use case
 
@@ -923,8 +923,8 @@ When setting the driver, carefully set the P/R of the Rotary Encoder and the DPI
 
 * Endpoint parameters
 > 1. config type - button setting type
-> - default : pin_count, button_start_index, mouse_dpi (default 1000dpi)
-> - custom : mouse_dpi, code_mode (0: keycode, 1:index), {button1, value1}, ...
+>     - default : pin_count, button_start_index, mouse_dpi (default 1000dpi)
+>     - custom : mouse_dpi, code_mode (0: keycode, 1:index), {button1, value1}, ...
 
 practical use case
 

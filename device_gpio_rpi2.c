@@ -79,6 +79,25 @@ static const device_gpio_index_table_t default_input2_gpio_config = {
     0
 };
 
+static const device_gpio_index_table_t default_input3_gpio_config = {
+    {
+        {4,  ABS_Y,     -DEFAULT_INPUT_ABS_MAX_VALUE},
+        {14, ABS_Y,      DEFAULT_INPUT_ABS_MAX_VALUE},
+        {15,  ABS_X,     -DEFAULT_INPUT_ABS_MAX_VALUE},
+        {17, ABS_X,      DEFAULT_INPUT_ABS_MAX_VALUE},
+        {18, BTN_START,  1},
+        {27, BTN_SELECT, 1},
+        {22, BTN_A,      1},
+        {23, BTN_B,      1},
+        {24, BTN_X,      1},
+        {10, BTN_Y,      1},
+        {9,  BTN_TL,     1},
+        {25, BTN_TR,     1},
+        {11, BTN_MODE,   1},
+    },
+    INPUT_GPIO_DEFAULT_KEYCODE_TABLE_ITEM_COUNT,
+    0
+};
 
 // device 파라미터 파싱
 static int __parse_device_param_for_gpio(device_gpio_data_t* user_data, char* device_config_str)
@@ -142,6 +161,12 @@ static int __parse_endpoint_param_for_gpio(device_gpio_data_t* user_data, char* 
             button_start_index = parse_number(&pText, ",", 10, 0);
         } else if (strcmp(cfgtype_p, "default2") == 0){
             src = (device_gpio_index_table_t *)&default_input2_gpio_config;
+            code_mode = INPUT_CODE_TYPE_KEYCODE;
+
+            pin_count = parse_number(&pText, ",", 10, src->pin_count);
+            button_start_index = parse_number(&pText, ",", 10, 0);
+        } else if (strcmp(cfgtype_p, "default3") == 0){
+            src = (device_gpio_index_table_t *)&default_input3_gpio_config;
             code_mode = INPUT_CODE_TYPE_KEYCODE;
 
             pin_count = parse_number(&pText, ",", 10, src->pin_count);
