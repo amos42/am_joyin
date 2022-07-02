@@ -512,13 +512,15 @@ device1="74hc165;16,20,21,24;0,default,12;1,default,12"
 >     - default (default1/default2/default3) : pin_count, button_start_index
 >     - custom : code_mode (0: keycode, 1:index), {gpio1, button1, value1}, {gpio2, button2, value2}, ...
 
-- 1인용 기본 키 설정
+버튼의 순서는 기본적으로 ***up, down, left, right, start, select, a, b, x, y, l1, r1, hotkey***의 13개 입력순대로이다.
+
+- 1P 기본 키 설정
 
 ```shell
 sudo modprobe am_joyin device1="gpio;;0,default1,0,default"
 ```
 
-- 2인용 설정
+- 2P 설정
 
 ```shell
 sudo modprobe am_joyin endpoints="default,12;default,12" \
@@ -563,7 +565,7 @@ sudo modprobe am_joyin device1="gpio;;0,default1,12;0,custom,,{11,0x13C,1}"
 
 해당 보드의 회로도 및 gerber 파일은 다음의 링크를 통해 얻을 수 있다.
 
-> - DIP 버전 : https://github.com/amos42/pcbs/tree/master/joystick-input
+> - DIP 버전 : https://github.com/amos42/pcbs/tree/master/joystick-input_2p
 > - SMD 버전 : https://github.com/amos42/pcbs/tree/master/joystick-input_smd
 > - JST 커넥터 버전 : https://github.com/amos42/pcbs/tree/master/joystick-input_jst
 
@@ -586,21 +588,23 @@ sudo modprobe am_joyin device1="gpio;;0,default1,12;0,custom,,{11,0x13C,1}"
 >     - default : pin_count, button_start_index, io_skip_count
 >     - custom : io_skip_count, code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
 
+버튼의 순서는 기본적으로 ***up, down, left, right, start, select, a, b, x, y, l1, r1, hotkey***의 13개 입력순대로이다.
+
 실제 사용 예
 
-1p 사용의 예 (74HC165 2개 사용)
+1P 사용의 예 (74HC165 2개 사용)
 
 ```shell
 sudo modprobe am_joyin device1="74hc165;16,20,21;0,default,13"
 ```
 
-2p 사용의 예 (74HC165 3개를 썼을 경우)
+2P 사용의 예 (74HC165 3개를 썼을 경우)
 
 ```shell
 sudo modprobe am_joyin endpoints="default;default" device1="74hc165;16,20,21,24;0,default,12;1,default,12"
 ```
 
-2p 사용의 예 (74HC165 4개를 썼을 경우)
+2P 사용의 예 (74HC165 4개를 썼을 경우)
 
 ```shell
 sudo modprobe am_joyin endpoints="default;default" device1="74hc165;16,20,21,32;0,default;1,default"
@@ -611,7 +615,7 @@ sudo modprobe am_joyin endpoints="default;default" device1="74hc165;16,20,21,32;
 ### MCP23017 입력
 
 I2C를 이용해 키 입력을 받고자 한다면 MCP23017 칩을 사용하면 된다. I2C 인터페이스이기에 많은 배선을 필요로 하지 않고, 복수개를 같은 배선에 묶어서 사용할 수 있기 때문에 확장성도 있다.
-16-bit IO가 가능하기 때문에 1p용 입력을 충분히 수용할 수 있다.
+16-bit IO가 가능하기 때문에 1P용 입력을 충분히 수용할 수 있다.
 
 ![MCP23017 Board Board](images/mcp23017_circuit.png)
 
@@ -632,7 +636,7 @@ I2C 장치이기 때문에 액세스를 위해서는 주소를 알아야 한다.
 
 실제 사용 예
 
-1p 설정의 예
+1P 설정의 예
 
 ```shell
 sudo modprobe am_joyin device1="mcp23017;0x20,13;0,default"
@@ -665,7 +669,7 @@ SPI 인터페이스로 통신하기에, Raspberry Pi에선 일반적으로 2개�
 
 실제 사용 예
 
-1p 설정의 예
+1P 설정의 예
 
 ```shell
 sudo modprobe am_joyin device1="mcp23s17;0,13;0,default"
@@ -685,7 +689,7 @@ sudo modprobe am_joyin endpoints="default;default" \
 
 MUX 칩은 입출력 핀수에 따라 다양한 칩들이 존재하며, 다양한 회사에서 만들어 내고 있기 때문에 선택의 폭은 아주 넓다. 단순히 MUX를 구현한 것일 뿐이기 때문에 사용법도 모두 거의 대동소이하다. 즉, 입출력핀 1개와 주소핀 n개, 그리고 2^n 개의 입출력핀이 핵심 인터페이스이다.
 
-이 중 16-bit MUX를 구현한 TI사의 74HC4067 가장 구하기도 쉽고, 1p 게임기 제작에도 충분한 핀수를 지원한다.
+이 중 16-bit MUX를 구현한 TI사의 74HC4067 가장 구하기도 쉽고, 1P 게임기 제작에도 충분한 핀수를 지원한다.
 
 MUX 모듈은 다음과 같은 형태로 주로 판매되고 있다.
 
@@ -717,7 +721,7 @@ MUX 모듈은 다음과 같은 형태로 주로 판매되고 있다.
 
 실제 사용 예
 
-1p 설정의 예
+1P 설정의 예
 
 ```shell
 sudo modprobe am_joyin device1="mux;5,{26,19,13,6},,13;0,default"
@@ -746,7 +750,7 @@ sudo modprobe am_joyin endpoints="default;default" \
 아날로그 조이스틱 입력을 위해선 ADC 칩이 필요하다. 보통 아날로그 스틱 1개가 2개 축을 갖기에 ADC 역시 최소한 2개 channel을 가져야 한다.
 
 비교적 흔하게 구할 수 있는 ADC 칩으로는 MCP3008/MCP3004가 있는데, SPI 인터페이스를 지원하며 10-bit의 해상도를 갖는다. MCP3008과 MCP3004는 각각 8 channel과 4 channel의 아날로그 입력을 받을 수 있다는 차이만 있을 뿐, 나머지 스펙은 동일하다.
-섬세한 입력이 필요 없다면 조이스틱의 감도 수준은 10-bit의 해상도로도 충분하며, 8 channel을 지원하기에 1p에 2축 스틱 1개씩을 사용한다면 MCP3008 칩 1개로 최대 4p까지 지원이 가능하다.
+섬세한 입력이 필요 없다면 조이스틱의 감도 수준은 10-bit의 해상도로도 충분하며, 8 channel을 지원하기에 1P에 2축 스틱 1개씩을 사용한다면 MCP3008 칩 1개로 최대 4p까지 지원이 가능하다.
 
 MCP3008은 모듈 형태로 판매되는 경우가 별로 없어서 칩 패키지를 그대로 이용하게 된다. 때문에 DIP 타입의 칩을 구매해서 직접 결선해서 사용하면 된다. 이렇게 사용할 땐 전원 노이즈 대책에 신경을 써야 한다.
 
@@ -779,14 +783,14 @@ ADC의 경우엔 단독으로 사용되기보다는 보통은 다른 버튼 입�
 
 다음은 기존의 74HC165 입력에 추가적으로 MCP3008으로 아날로그 스틱을 더해 준 설정이다.
 
-1p 설정의 예 (기본 방향키를 아날로그로 변경)
+1P 설정의 예 (기본 방향키를 아날로그로 변경)
 
 ```shell
 sudo modprobe am_joyin device1="74hc165;16,20,21,16;0,default,13,4" \
         device2="mcp3008;;0,custom,keycode,{0,0x03,-100,100},{1,0x04,-100,100}"
 ```
 
-1p 설정의 예 (아날로그 축 Rx,Ry 추가)
+1P 설정의 예 (아날로그 축 Rx,Ry 추가)
 
 ```shell
 sudo modprobe am_joyin buttonset1="default,0,12;{0x03,-100,100},{0x04,-100,100}" \
@@ -848,14 +852,14 @@ ADC의 경우엔 단독으로 사용되기보다는 보통은 다른 버튼 입�
 
 다음은 기존의 74HC165 입력에 추가적으로 ADS1115로 아날로그 스틱을 더해 준 설정이다.
 
-1p 설정의 예 (기본 방향키를 아날로그로 변경)
+1P 설정의 예 (기본 방향키를 아날로그로 변경)
 
 ```shell
 sudo modprobe am_joyin device1="74hc165;16,20,21,16;0,default,13,4" \
         device2="ads1115;;0,custom,keycode,{0,0x03,-100,100},{1,0x04,-100,100}"
 ```
 
-1p 설정의 예 (아날로그 축 Rx,Ry 추가)
+1P 설정의 예 (아날로그 축 Rx,Ry 추가)
 
 ```shell
 sudo modprobe am_joyin buttonset1="default,0,12;{0x03,-100,100},{0x04,-100,100}" \
@@ -932,7 +936,7 @@ Rotary Encoder의 A, B 핀은 보드의 GPIO 2번과 3번 핀에 각각 연결�
 
 다음은 기존의 74HC165 입력에 추가적으로 am_spinin으로 스피너를 추가해 준 설정이다.
 
-1p 설정의 예 (마우스 x축을 기본으로 지정)
+1P 설정의 예 (마우스 x축을 기본으로 지정)
 
 ```shell
 sudo modprobe am_joyin endpoints="joystick;mouse" \
