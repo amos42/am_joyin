@@ -511,13 +511,15 @@ The default pinmap is compatible with mk_arcade_joystick_rpi.
 >     - default (default1/default2/default3) : pin_count, button_start_index
 >     - custom : code_mode (0: keycode, 1:index), {gpio1, button1, value1}, {gpio2, button2, value2}, ...
 
-- Set the primary key for 1 person
+The order of buttons is basically in the order of 13 inputs: ***up, down, left, right, start, select, a, b, x, y, l1, r1, hotkey***.
+
+- Set the primary key for 1P
 
 ```shell
 sudo modprobe am_joyin device1="gpio;;0,default1,0,default"
 ```
 
-- Set for 2 players
+- Set for 2P
 
 ```shell
 sudo modprobe am_joyin endpoints="default,12;default,12" \
@@ -563,7 +565,7 @@ This is how it was implemented with a PCB.
 
 The circuit diagram and gerber file of the board can be obtained through the following link.
 
-> - DIP version: https://github.com/amos42/pcbs/tree/master/joystick-input
+> - DIP version: https://github.com/amos42/pcbs/tree/master/joystick-input_2p
 > - SMD version: https://github.com/amos42/pcbs/tree/master/joystick-input_smd
 > - JST connector version: https://github.com/amos42/pcbs/tree/master/joystick-input_jst
 
@@ -586,9 +588,11 @@ They are LD, CK, DT in that order.
 >     - default : pin_count, button_start_index, io_skip_count
 >     - custom : io_skip_count, code_mode (0: keycode, 1:index), {button1, value1}, {button2, value2}, ...
 
+The order of buttons is basically in the order of 13 inputs: ***up, down, left, right, start, select, a, b, x, y, l1, r1, hotkey***.
+
 practical use case
 
-Example of using 1p (using 2 74HC165)
+Example of using 1P (using 2 74HC165)
 
 ```shell
 sudo modprobe am_joyin device1="74hc165;16,20,21;0,default,13"
@@ -611,7 +615,7 @@ sudo modprobe am_joyin endpoints="default;default" device1="74hc165;16,20,21,32;
 ### MCP23017 input
 
 If you want to receive key input using I2C, you can use the MCP23017 chip. Since it is an I2C interface, it does not require a lot of wiring, and there is also expandability because multiple units can be bundled on the same wiring.
-Because 16-bit IO is possible, it can accommodate enough input for 1p.
+Because 16-bit IO is possible, it can accommodate enough input for 1P.
 
 ![MCP23017 Board Board](images/mcp23017_circuit.png)
 
@@ -632,7 +636,7 @@ Since it is an I2C device, it needs to know the address to access it. In the cas
 
 practical use case
 
-Example of 1p setup
+Example of 1P setup
 
 ```shell
 sudo modprobe am_joyin device1="mcp23017;0x20,13;0,default"
@@ -665,7 +669,7 @@ Since it communicates with the SPI interface, in general, only two can be connec
 
 practical use case
 
-Example of 1p setup
+Example of 1P setup
 
 ```shell
 sudo modprobe am_joyin device1="mcp23s17;0,13;0,default"
@@ -685,7 +689,7 @@ sudo modprobe am_joyin endpoints="default;default" \
 
 There are various types of MUX chips depending on the number of input/output pins, and since they are manufactured by various companies, the range of choices is very wide. Since it is simply an implementation of MUX, the usage is almost the same. That is, 1 input/output pin, n address pins, and 2^n input/output pins are the core interfaces.
 
-Among them, TI's 74HC4067, which implements 16-bit MUX, is the easiest to obtain and supports a sufficient number of pins for making 1p game consoles.
+Among them, TI's 74HC4067, which implements 16-bit MUX, is the easiest to obtain and supports a sufficient number of pins for making 1P game consoles.
 
 MUX modules are mainly sold in the following forms.
 
@@ -717,7 +721,7 @@ If you want to support more than 2p, use two 16-bit MUXs to make it 32-bit, and 
 
 practical use case
 
-Example of 1p setup
+Example of 1P setup
 
 ```shell
 sudo modprobe am_joyin device1="mux;5,{26,19,13,6},,13;0,default"
@@ -746,7 +750,7 @@ sudo modprobe am_joyin endpoints="default;default" \
 For analog joystick input, ADC chip is required. Usually, one analog stick has two axes, so ADC must also have at least two channels.
 
 A relatively common ADC chip is MCP3008/MCP3004, which supports SPI interface and has 10-bit resolution. The only difference between MCP3008 and MCP3004 is that they can receive 8 channel and 4 channel analog input, respectively, and the rest of the specifications are the same.
-If delicate input is not required, the sensitivity level of the joystick is sufficient even with 10-bit resolution, and if one 2-axis stick is used per 1p to support 8 channels, up to 4p can be supported with one MCP3008 chip.
+If delicate input is not required, the sensitivity level of the joystick is sufficient even with 10-bit resolution, and if one 2-axis stick is used per 1P to support 8 channels, up to 4p can be supported with one MCP3008 chip.
 
 The MCP3008 is rarely sold in the form of a module, so the chip package is used as it is. Therefore, you can purchase a DIP type chip and connect it directly. When using this way, you need to pay attention to countermeasures against power noise.
 
@@ -779,14 +783,14 @@ In the case of ADC, rather than being used alone, it is usually set by adding an
 
 The following is a setting that adds an analog stick to the MCP3008 in addition to the existing 74HC165 input.
 
-Example of 1p setting (change the default arrow keys to analog)
+Example of 1P setting (change the default arrow keys to analog)
 
 ```shell
 sudo modprobe am_joyin device1="74hc165;16,20,21,16;0,default,13,4" \
         device2="mcp3008;;0,custom,keycode,{0,0x03,-100,100},{1,0x04,-100,100}"
 ```
 
-Example of 1p setup (add analog axes Rx,Ry)
+Example of 1P setup (add analog axes Rx,Ry)
 
 ```shell
 sudo modprobe am_joyin buttonset1="default,0,12;{0x03,-100,100},{0x04,-100,100}" \
@@ -848,14 +852,14 @@ In the case of ADC, rather than being used alone, it is usually set by adding an
 
 The following is a setting that adds an analog stick to the ADS1115 in addition to the existing 74HC165 input.
 
-Example of 1p setting (change the default arrow keys to analog)
+Example of 1P setting (change the default arrow keys to analog)
 
 ```shell
 sudo modprobe am_joyin device1="74hc165;16,20,21,16;0,default,13,4" \
         device2="ads1115;;0,custom,keycode,{0,0x03,-100,100},{1,0x04,-100,100}"
 ```
 
-Example of 1p setup (add analog axes Rx,Ry)
+Example of 1P setup (add analog axes Rx,Ry)
 
 ```shell
 sudo modprobe am_joyin buttonset1="default,0,12;{0x03,-100,100},{0x04,-100,100}" \
@@ -932,7 +936,7 @@ Rotary encoders are mainly used for the purpose of supporting spinners in arcade
 
 The following is a setting that adds a spinner as am_spinin to the existing 74HC165 input.
 
-Example of 1p setup (make mouse x-axis the default)
+Example of 1P setup (make mouse x-axis the default)
 
 ```shell
 sudo modprobe am_joyin endpoints="joystick;mouse" \
