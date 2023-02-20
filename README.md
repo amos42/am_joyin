@@ -101,19 +101,19 @@ Next, build an environment for driver building.
 
 **1. Package update**
 
-```sh
+```shell
 $ sudo apt update
 ```
 
 **2. Install development tools**
 
-```sh
+```shell
 $ sudo apt install -y --force-yes dkms cpp-4.7 gcc-4.7 git joystick
 ```
 
 **3. Install kernel headers**
 
-```sh
+```shell
 $ sudo apt install -y --force-yes raspberrypi-kernel-headers
 ```
 
@@ -130,7 +130,7 @@ i2c-dev
 
 Alternatively, you can use the raspi-config configuration utility.
 
-```sh
+```shell
 $ sudo raspi-config
 ```
 
@@ -145,7 +145,7 @@ Once the preliminary work has been completed, the installation work begins in ea
 
 #### When using wget
 
-```sh
+```shell
 $ wget https://github.com/amos42/am_joyin/releases/download/v0.3.3/am_joyin-0.3.3.deb
 $ sudo dpkg -i am_joyin-0.3.3.deb
 ```
@@ -154,13 +154,13 @@ $ sudo dpkg -i am_joyin-0.3.3.deb
 
 1. Get the driver source.
 
-```sh
+```shell
 $ git clone https://github.com/amos42/am_joyin.git
 ```
 
 2. After creating the deb package, install it.
 
-```sh
+```shell
 $ cd am_joyin
 $ ./utils/makepackage.sh 0.3.3
 $ sudo dpkg -i build/am_joyin-0.3.3.deb
@@ -170,7 +170,7 @@ If you go through this process, the driver installation is primarily completed.
 
 If you want to check whether the installation was successful, you can use the modprobe command.
 
-```sh
+```shell
 $ sudo modprobe am_joyin
 ```
 
@@ -187,7 +187,7 @@ To do this, add the am_joyin module to the module definition file.
 
 Open the driver module configuration file.
 
-```sh
+```shell
 $ sudo nano /etc/modules-load.d/modules.conf
 ```
 
@@ -219,7 +219,7 @@ To do this, the command to load the module must be written in the rc.local scrip
 First, check that the I2C driver is activated in advance.
 Then, include the am_joyin module in rc.local using the modprobe command.
 
-```sh
+```shell
 $ sudo nano /etc/rc.local
 ```
 
@@ -255,7 +255,7 @@ Next, proceed with driver settings.
 
 Open the configuration file with a text editor.
 
-```sh
+```shell
 $ sudo nano /etc/modprobe.d/am_joyin.conf
 ```
 
@@ -274,7 +274,7 @@ options am_joyin device1="gpio;;0,default1"
 
 After the installation is complete, reboot the system and check the operation of the button.
 
-```sh
+```shell
 $ sudo reboot
 ```
 
@@ -285,13 +285,13 @@ To test the operation, you can use the jstest utility.
 
 The installation method of the jstest utility is as follows.
 
-```sh
+```shell
 $ sudo apt install joystick
 ```
 
 If you want to test the first installed joystick device, enter as follows.
 
-```sh
+```shell
 $ jstest /dev/input/js0
 ```
 
@@ -324,7 +324,7 @@ Each parameter consists of one or more sections, and the sections are separated 
 
 That is, the basic form is described in the following form.
 
-```sh
+```shell
 parameter1="section1;section2;..." parameter2="section1;section2;..."
 ```
 
@@ -341,7 +341,7 @@ The value can be one of the following:
 
 The following is an example that actually describes this.
 
-```sh
+```shell
 param1="text1;default,10;test,1,{1,a},{2,b}" param2="text1;;test,,{2,b,0},{3,,0}"
 ```
 
@@ -390,13 +390,13 @@ Basically, two buttonsets are built-in: "default" and "default_abs".
 
 practical use case
 
-```sh
+```shell
 buttonset1_cfg="{0x01,-100,100},{0x00,-100,100},{0x13B,0,1},{0x13A,0,1},{0x130,0,1},{0x103,0,1},{ 0x102,0,1},{0x103,0,1},{0x102,0,1},{0x103,0,1}"
 ```
 
 Examples of inheriting and using previously declared ones
 
-```sh
+```shell
 buttonset1_cfg="default,0,6;{0x01,0,32767},{0x103,0,1},{0x102,0,1},{0x103,0,1}"
 ```
 
@@ -404,7 +404,7 @@ In this case, 6 buttons in front of the "default" buttonset and additional user-
 
 In addition to the default provided by default, the previously declared buttonset is also available, and it is also possible to include a plurality of them.
 
-```sh
+```shell
 buttonset2_cfg="default,0,6;buttonset1,0,2;{0x102,0,1},{0x103,0,1}"
 ```
 
@@ -420,7 +420,7 @@ In this case, 6 buttons in front of the "default" buttonset and additional user-
 
 practical use case
 
-```sh
+```shell
 endpoints="default,,default,default;joystick,ext_joystick,1,11;mouse,,,4"
 ```
 
@@ -457,7 +457,7 @@ default format
 
 For example, suppose you have specified:
 
-```sh
+```shell
 device1="74hc165;16,20,21,24;0,default,12;1,default,12"
 ```
 
@@ -517,20 +517,20 @@ The order of buttons is basically in the order of 13 inputs: ***up, down, left, 
 
 - Set the primary key for 1P
 
-```sh
+```shell
 $ sudo modprobe am_joyin device1="gpio;;0,default1,0,default"
 ```
 
 - Set for 2P
 
-```sh
+```shell
 $ sudo modprobe am_joyin endpoints="default,12;default,12" \
       device1="gpio;;0,default1,12;1,default2,12"
 ```
 
 - Custom key settings
 
-```sh
+```shell
 $ sudo modprobe am_joyin device1="gpio;;0,custom,0,{4,0x1,-100},{17,0x1,100},{27,0x0,-100},{22,0x0,100},{ 10,0x13b,1},{9,0x13a,1}"
 ```
 
@@ -539,7 +539,7 @@ $ sudo modprobe am_joyin device1="gpio;;0,custom,0,{4,0x1,-100},{17,0x1,100},{27
 It is also possible to combine key settings.
 12 of the default1 gpio settings are used, and the HotKey custom is described as follows when specifying GPIO11.
 
-```sh
+```shell
 $ sudo modprobe am_joyin device1="gpio;;0,default1,12;0,custom,,{11,0x13C,1}"
 ```
 
@@ -596,19 +596,19 @@ practical use case
 
 Example of using 1P (using 2 74HC165)
 
-```sh
+```shell
 $ sudo modprobe am_joyin device1="74hc165;16,20,21;0,default,13"
 ```
 
 Example of using 2p (when 3 74HC165s are used)
 
-```sh
+```shell
 $ sudo modprobe am_joyin endpoints="default;default" device1="74hc165;16,20,21,24;0,default,12;1,default,12"
 ```
 
 Example of using 2p (when 4 74HC165s are used)
 
-```sh
+```shell
 $ sudo modprobe am_joyin endpoints="default;default" device1="74hc165;16,20,21,32;0,default;1,default"
 ```
 
@@ -640,13 +640,13 @@ practical use case
 
 Example of 1P setup
 
-```sh
+```shell
 $ sudo modprobe am_joyin device1="mcp23017;0x20,13;0,default"
 ```
 
 Example of 2p setting (When the first board is set to 0x20, the second board is set to I2C address of 0x21)
 
-```sh
+```shell
 $ sudo modprobe am_joyin endpoints="default;default" \
         device1="mcp23017;0x20;0,default" \
         device2="mcp23017;0x21;1,default"
@@ -673,13 +673,13 @@ practical use case
 
 Example of 1P setup
 
-```sh
+```shell
 $ sudo modprobe am_joyin device1="mcp23s17;0,13;0,default"
 ```
 
 Example of 2p setting (When the first board is set to SPI 0, the second board is set to SPI 1)
 
-```sh
+```shell
 $ sudo modprobe am_joyin endpoints="default;default" \
         device1="mcp23s17;0;0,default" \
         device2="mcp23s17;1;1,default"
@@ -725,13 +725,13 @@ practical use case
 
 Example of 1P setup
 
-```sh
+```shell
 $ sudo modprobe am_joyin device1="mux;5,{26,19,13,6},,13;0,default"
 ```
 
 Example of 2p setting (when address pin and data pin are shared, and Enable pin of each MUX is connected to GPIO 20 and GPIO 21, respectively)
 
-```sh
+```shell
 $ sudo modprobe am_joyin endpoints="default;default" \
         device1="mux;5,{26,19,13,6},20;0,default" \
         device2="mux;5,{26,19,13,6},21;1,default"
@@ -739,7 +739,7 @@ $ sudo modprobe am_joyin endpoints="default;default" \
 
 Example of 2p setup (if you share address pin and write data pin differently)
 
-```sh
+```shell
 $ sudo modprobe am_joyin endpoints="default;default" \
         device1="mux;5,{26,19,13,6};0,default" \
         device2="mux;16,{26,19,13,6};1,default"
@@ -787,14 +787,14 @@ The following is a setting that adds an analog stick to the MCP3008 in addition 
 
 Example of 1P setting (change the default arrow keys to analog)
 
-```sh
+```shell
 $ sudo modprobe am_joyin device1="74hc165;16,20,21,16;0,default,13,4" \
         device2="mcp3008;;0,custom,keycode,{0,0x03,-100,100},{1,0x04,-100,100}"
 ```
 
 Example of 1P setup (add analog axes Rx,Ry)
 
-```sh
+```shell
 $ sudo modprobe am_joyin buttonset1="default,0,12;{0x03,-100,100},{0x04,-100,100}" \
         endpoints="default,buttonset1" \
         device1="74hc165;16,20,21,16;0,default" \
@@ -803,7 +803,7 @@ $ sudo modprobe am_joyin buttonset1="default,0,12;{0x03,-100,100},{0x04,-100,100
 
 Example of 2p setup (add analog axes Rx,Ry)
 
-```sh
+```shell
 $ sudo modprobe am_joyin buttonset1="default,0,11;{0x03,-100,100},{0x04,-100,100}" \
         endpoints="default,buttonset1;default,buttonset1" \
         device1="74hc165;16,20,21,32;0,default;1,default" \
@@ -856,14 +856,14 @@ The following is a setting that adds an analog stick to the ADS1115 in addition 
 
 Example of 1P setting (change the default arrow keys to analog)
 
-```sh
+```shell
 $ sudo modprobe am_joyin device1="74hc165;16,20,21,16;0,default,13,4" \
         device2="ads1115;;0,custom,keycode,{0,0x03,-100,100},{1,0x04,-100,100}"
 ```
 
 Example of 1P setup (add analog axes Rx,Ry)
 
-```sh
+```shell
 $ sudo modprobe am_joyin buttonset1="default,0,12;{0x03,-100,100},{0x04,-100,100}" \
         endpoints="default,buttonset1" \
         device1="74hc165;16,20,21,16;0,default" \
@@ -872,7 +872,7 @@ $ sudo modprobe am_joyin buttonset1="default,0,12;{0x03,-100,100},{0x04,-100,100
 
 Example of 2p setup (add analog axes Rx,Ry)
 
-```sh
+```shell
 $ sudo modprobe am_joyin buttonset1="default,0,11;{0x03,-100,100},{0x04,-100,100}" \
         endpoints="default,buttonset1;default,buttonset1" \
         device1="74hc165;16,20,21,32;0,default;1,default" \
@@ -940,7 +940,7 @@ The following is a setting that adds a spinner as am_spinin to the existing 74HC
 
 Example of 1P setup (make mouse x-axis the default)
 
-```sh
+```shell
 $ sudo modprobe am_joyin endpoints="joystick;mouse" \
         device1="74hc165;16,20,21;0,default,13" \
         device2="am_spinin;i2c,0x34,400;1,,1"
@@ -948,7 +948,7 @@ $ sudo modprobe am_joyin endpoints="joystick;mouse" \
 
 Example of 2p setup
 
-```sh
+```shell
 $ sudo modprobe am_joyin endpoints="joystick;joystick;mouse;mouse" \
         device1="74hc165;24,20,21;0,default,12;1,default,12" \
         device2="am_spinin;i2c,0x34,400;2,,1" \
