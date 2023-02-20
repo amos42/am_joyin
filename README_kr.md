@@ -1,5 +1,7 @@
 # am_joyin
 
+![am_joyin](images/am_joyin.jpg)
+
 **Amos Arcade Joystick Input Driver for Raspberry-pi (or another SBC)**
 
 ---
@@ -93,26 +95,26 @@ am_joyin은 라즈베리파이를 이용하여 아케이드 게임기를 제작�
 > 2. 라즈베리파이에 ssh로 접속한다.
 > 3. 만약 mk_arcade_joystick_rpi 드라이버가 설치되어 있다면 제거 :
 >    * retropie 설정 메뉴에서 retropie-setup으로 들어가, 드라이버 항목에서 mk_arcade_joystick_rpi 를 제거한다.
->    * shell에서 sudo ~/RetroPie-Setup/retropie_setup.sh 를 실행하여, 드라이버 항목에서 mk_arcade_joystick_rpi 를 제거한다.
+>    * shell에서 $ sudo ~/RetroPie-Setup/retropie_setup.sh 를 실행하여, 드라이버 항목에서 mk_arcade_joystick_rpi 를 제거한다.
 
 다음으로는 드라이버 빌드를 위한 환경을 구축한다.
 
 **1. 패키지 업데이트**
 
 ```shell
-sudo apt update
+$ sudo apt update
 ```
 
 **2. 개발툴 설치**
 
 ```shell
-sudo apt install -y --force-yes dkms cpp-4.7 gcc-4.7 git joystick
+$ sudo apt install -y --force-yes dkms cpp-4.7 gcc-4.7 git joystick
 ```
 
 **3. 커널 헤더 설치**
 
 ```shell
-sudo apt install -y --force-yes raspberrypi-kernel-headers
+$ sudo apt install -y --force-yes raspberrypi-kernel-headers
 ```
 
 **4. I2C 드라이버 활성화**
@@ -128,8 +130,8 @@ i2c-dev
 
 또다른 방법으로는 raspi-config 설정 유틸리티를 이용할 수도 있다.
 
-```bash
-sudo raspi-config
+```shell
+$ sudo raspi-config
 ```
 
 ![raspi-config i2c 설정](images/i2c-menu.png)
@@ -144,8 +146,8 @@ sudo raspi-config
 #### wget 사용시
 
 ```shell
-wget https://github.com/amos42/am_joyin/releases/download/v0.3.3/am_joyin-0.3.3.deb
-sudo dpkg -i am_joyin-0.3.3.deb
+$ wget https://github.com/amos42/am_joyin/releases/download/v0.3.3/am_joyin-0.3.3.deb
+$ sudo dpkg -i am_joyin-0.3.3.deb
 ```
 
 #### git 사용시
@@ -153,15 +155,15 @@ sudo dpkg -i am_joyin-0.3.3.deb
 1. 드라이버 소스를 받는다.
 
 ```shell
-git clone https://github.com/amos42/am_joyin.git
+$ git clone https://github.com/amos42/am_joyin.git
 ```
 
 2. deb 패키지를 생성 후 설치한다.
 
 ```shell
-cd am_joyin
-./utils/makepackage.sh 0.3.3 
-sudo dpkg -i build/am_joyin-0.3.3.deb
+$ cd am_joyin
+$ ./utils/makepackage.sh 0.3.3 
+$ sudo dpkg -i build/am_joyin-0.3.3.deb
 ```
 
 이 과정까지 거치면 드라이버 설치가 1차적으로 완료된다.
@@ -169,7 +171,7 @@ sudo dpkg -i build/am_joyin-0.3.3.deb
 설치가 정상적으로 되었는지를 확인하고 싶다면 modprobe 명령을 사용하면 된다.
 
 ```shell
-sudo modprobe am_joyin
+$ sudo modprobe am_joyin
 ```
 
 만약 에러 메시지가 발생하지 않는다면 정상적으로 설치가 완료 된 것이다.
@@ -186,7 +188,7 @@ sudo modprobe am_joyin
 드라이버 모듈 설정 파일을 연다.
 
 ```shell
-sudo nano /etc/modules-load.d/modules.conf
+$ sudo nano /etc/modules-load.d/modules.conf
 ```
 
 마지막 라인에 다음 항목을 추가한다.
@@ -217,8 +219,8 @@ am_joyin
 먼저 I2C 장치가 활성화 되었는가를 확인한다.
 그 다음에 rc.local에 modprobe 명령을 이용해 am_joyin 모듈을 포함시킨다.
 
-```bash
-sudo nano /etc/rc.local
+```shell
+$ sudo nano /etc/rc.local
 ```
 
 맨 마지막 줄의 exit 명령 전에 다음의 내용을 삽입한다.
@@ -254,7 +256,7 @@ exit 0
 텍스트 에디터로 설정 파일을 연다.
 
 ```shell
-sudo nano /etc/modprobe.d/am_joyin.conf
+$ sudo nano /etc/modprobe.d/am_joyin.conf
 ```
 
 GPIO를 이용한 1P 입력 장치를 적용하고 싶다면 다음과 같이 입력하고 ctrl-x를 눌러 저장하고 종료한다.
@@ -273,7 +275,7 @@ options am_joyin device1="gpio;;0,default1"
 설치 작업이 완료되었다면 시스템을 재부팅하여 버튼의 동작을 확인하면 된다.
 
 ```shell
-sudo reboot
+$ sudo reboot
 ```
 
 
@@ -284,13 +286,13 @@ sudo reboot
 jstest 유틸리티의 설치 방법은 다음과 같다.
 
 ```shell
-sudo apt install joystick
+$ sudo apt install joystick
 ```
 
 만약 첫번째 설치 된 조이스틱 장치를 테스트 해 보고 싶다면 다음과 같이 입력한다.
 
 ```shell
-jstest /dev/input/js0
+$ jstest /dev/input/js0
 ```
 
 정상적으로 실행되면 콘솔 상에 현재 버튼 상태가 나타난다. 버튼을 누르거나 뗄 때마다 실시간으로 상태가 변경됨을 확인할 수 있다.
@@ -304,7 +306,7 @@ jstest /dev/input/js0
 
 > 1. /etc/modprobe.d/am_joyin.conf 파일 삭제
 > 2. /etc/modules-load.d/modules.conf 혹은 /etc/rc.local 목록에서 am_joyin 제거
-> 3. sudo dpkg -r am-joyin-dkms 명령으로 드라이버 패키지 삭제
+> 3. $ sudo dpkg -r am-joyin-dkms 명령으로 드라이버 패키지 삭제
 
 
 ---
@@ -517,20 +519,20 @@ device1="74hc165;16,20,21,24;0,default,12;1,default,12"
 - 1P 기본 키 설정
 
 ```shell
-sudo modprobe am_joyin device1="gpio;;0,default1,0,default"
+$ sudo modprobe am_joyin device1="gpio;;0,default1,0,default"
 ```
 
 - 2P 설정
 
 ```shell
-sudo modprobe am_joyin endpoints="default,12;default,12" \
+$ sudo modprobe am_joyin endpoints="default,12;default,12" \
       device1="gpio;;0,default1,12;1,default2,12"
 ```
 
 - 커스텀 키 설정
 
 ```shell
-sudo modprobe am_joyin device1="gpio;;0,custom,keycode,{4,0x1,-100},{17,0x1,100},{27,0x0,-100},{22,0x0,100},{10,0x13b,1},{9,0x13a,1}"
+$ sudo modprobe am_joyin device1="gpio;;0,custom,keycode,{4,0x1,-100},{17,0x1,100},{27,0x0,-100},{22,0x0,100},{10,0x13b,1},{9,0x13a,1}"
 ```
 
 - 키 조합 설정
@@ -538,7 +540,7 @@ sudo modprobe am_joyin device1="gpio;;0,custom,keycode,{4,0x1,-100},{17,0x1,100}
 키 설정을 조합하는 것도 가능하다. 다음은 default1 gpio 설정 중 12개를 사용하고, hotkey는 custom을 GPIO11을 지정할 때는 다음과 같이 기술한다.
 
 ```shell
-sudo modprobe am_joyin device1="gpio;;0,default1,12;0,custom,,{11,0x13C,1}"
+$ sudo modprobe am_joyin device1="gpio;;0,default1,12;0,custom,,{11,0x13C,1}"
 ```
 
 ---
@@ -595,19 +597,19 @@ sudo modprobe am_joyin device1="gpio;;0,default1,12;0,custom,,{11,0x13C,1}"
 1P 사용의 예 (74HC165 2개 사용)
 
 ```shell
-sudo modprobe am_joyin device1="74hc165;16,20,21;0,default,13"
+$ sudo modprobe am_joyin device1="74hc165;16,20,21;0,default,13"
 ```
 
 2P 사용의 예 (74HC165 3개를 썼을 경우)
 
 ```shell
-sudo modprobe am_joyin endpoints="default;default" device1="74hc165;16,20,21,24;0,default,12;1,default,12"
+$ sudo modprobe am_joyin endpoints="default;default" device1="74hc165;16,20,21,24;0,default,12;1,default,12"
 ```
 
 2P 사용의 예 (74HC165 4개를 썼을 경우)
 
 ```shell
-sudo modprobe am_joyin endpoints="default;default" device1="74hc165;16,20,21,32;0,default;1,default"
+$ sudo modprobe am_joyin endpoints="default;default" device1="74hc165;16,20,21,32;0,default;1,default"
 ```
 
 ---
@@ -639,13 +641,13 @@ I2C 장치이기 때문에 액세스를 위해서는 주소를 알아야 한다.
 1P 설정의 예
 
 ```shell
-sudo modprobe am_joyin device1="mcp23017;0x20,13;0,default"
+$ sudo modprobe am_joyin device1="mcp23017;0x20,13;0,default"
 ```
 
 2p 설정의 예 (첫번째 보드는 0x20, 두번째 보드는 0x21의 I2C 주소로 설정해 놓았을 때)
 
 ```shell
-sudo modprobe am_joyin endpoints="default;default" \
+$ sudo modprobe am_joyin endpoints="default;default" \
         device1="mcp23017;0x20;0,default" \
         device2="mcp23017;0x21;1,default"
 ```
@@ -672,13 +674,13 @@ SPI 인터페이스로 통신하기에, Raspberry Pi에선 일반적으로 2개�
 1P 설정의 예
 
 ```shell
-sudo modprobe am_joyin device1="mcp23s17;0,13;0,default"
+$ sudo modprobe am_joyin device1="mcp23s17;0,13;0,default"
 ```
 
 2p 설정의 예 (첫번째 보드는 SPI 0, 두번째 보드는 SPI 1 채널로 설정해 놓았을 때)
 
 ```shell
-sudo modprobe am_joyin endpoints="default;default" \
+$ sudo modprobe am_joyin endpoints="default;default" \
         device1="mcp23s17;0;0,default" \
         device2="mcp23s17;1;1,default"
 ```
@@ -724,13 +726,13 @@ MUX 모듈은 다음과 같은 형태로 주로 판매되고 있다.
 1P 설정의 예
 
 ```shell
-sudo modprobe am_joyin device1="mux;5,{26,19,13,6},,13;0,default"
+$ sudo modprobe am_joyin device1="mux;5,{26,19,13,6},,13;0,default"
 ```
 
 2p 설정의 예 (주소핀과 데이터핀을 공유하고, 각 MUX의 Enable 핀이 GPIO 20, GPIO 21에 각각 연결 된 경우)
 
 ```shell
-sudo modprobe am_joyin endpoints="default;default" \
+$ sudo modprobe am_joyin endpoints="default;default" \
         device1="mux;5,{26,19,13,6},20;0,default" \
         device2="mux;5,{26,19,13,6},21;1,default"
 ```
@@ -738,7 +740,7 @@ sudo modprobe am_joyin endpoints="default;default" \
 2p 설정의 예 (주소핀을 공유하고 데이터 핀을 달리 쓰는 경우)
 
 ```shell
-sudo modprobe am_joyin endpoints="default;default" \
+$ sudo modprobe am_joyin endpoints="default;default" \
         device1="mux;5,{26,19,13,6};0,default" \
         device2="mux;16,{26,19,13,6};1,default"
 ```
@@ -786,14 +788,14 @@ ADC의 경우엔 단독으로 사용되기보다는 보통은 다른 버튼 입�
 1P 설정의 예 (기본 방향키를 아날로그로 변경)
 
 ```shell
-sudo modprobe am_joyin device1="74hc165;16,20,21,16;0,default,13,4" \
+$ sudo modprobe am_joyin device1="74hc165;16,20,21,16;0,default,13,4" \
         device2="mcp3008;;0,custom,keycode,{0,0x03,-100,100},{1,0x04,-100,100}"
 ```
 
 1P 설정의 예 (아날로그 축 Rx,Ry 추가)
 
 ```shell
-sudo modprobe am_joyin buttonset1="default,0,12;{0x03,-100,100},{0x04,-100,100}" \
+$ sudo modprobe am_joyin buttonset1="default,0,12;{0x03,-100,100},{0x04,-100,100}" \
         endpoints="default,buttonset1" \
         device1="74hc165;16,20,21,16;0,default" \
         device2="mcp3008;;0,custom,keycode,{0,0x03,-100,100},{1,0x04,-100,100}"
@@ -802,7 +804,7 @@ sudo modprobe am_joyin buttonset1="default,0,12;{0x03,-100,100},{0x04,-100,100}"
 2p 설정의 예 (아날로그 축 Rx,Ry 추가)
 
 ```shell
-sudo modprobe am_joyin buttonset1="default,0,11;{0x03,-100,100},{0x04,-100,100}" \
+$ sudo modprobe am_joyin buttonset1="default,0,11;{0x03,-100,100},{0x04,-100,100}" \
         endpoints="default,buttonset1;default,buttonset1" \
         device1="74hc165;16,20,21,32;0,default;1,default" \
         device2="mcp3008;;0,custom,,{0,0x03,-100,100},{1,0x04,-100,100};1,custom,,{2,0x03,-100,100},{3,0x04,-100,100}"
@@ -855,14 +857,14 @@ ADC의 경우엔 단독으로 사용되기보다는 보통은 다른 버튼 입�
 1P 설정의 예 (기본 방향키를 아날로그로 변경)
 
 ```shell
-sudo modprobe am_joyin device1="74hc165;16,20,21,16;0,default,13,4" \
+$ sudo modprobe am_joyin device1="74hc165;16,20,21,16;0,default,13,4" \
         device2="ads1115;;0,custom,keycode,{0,0x03,-100,100},{1,0x04,-100,100}"
 ```
 
 1P 설정의 예 (아날로그 축 Rx,Ry 추가)
 
 ```shell
-sudo modprobe am_joyin buttonset1="default,0,12;{0x03,-100,100},{0x04,-100,100}" \
+$ sudo modprobe am_joyin buttonset1="default,0,12;{0x03,-100,100},{0x04,-100,100}" \
         endpoints="default,buttonset1" \
         device1="74hc165;16,20,21,16;0,default" \
         device2="ads1115;;0,custom,keycode,{0,0x03,-100,100},{1,0x04,-100,100}"
@@ -871,7 +873,7 @@ sudo modprobe am_joyin buttonset1="default,0,12;{0x03,-100,100},{0x04,-100,100}"
 2p 설정의 예 (아날로그 축 Rx,Ry 추가)
 
 ```shell
-sudo modprobe am_joyin buttonset1="default,0,11;{0x03,-100,100},{0x04,-100,100}" \
+$ sudo modprobe am_joyin buttonset1="default,0,11;{0x03,-100,100},{0x04,-100,100}" \
         endpoints="default,buttonset1;default,buttonset1" \
         device1="74hc165;16,20,21,32;0,default;1,default" \
         device2="ads1115;;0,custom,,{0,0x03,-100,100},{1,0x04,-100,100};1,custom,,{2,0x03,-100,100},{3,0x04,-100,100}"
@@ -939,7 +941,7 @@ Rotary Encoder의 A, B 핀은 보드의 GPIO 2번과 3번 핀에 각각 연결�
 1P 설정의 예 (마우스 x축을 기본으로 지정)
 
 ```shell
-sudo modprobe am_joyin endpoints="joystick;mouse" \
+$ sudo modprobe am_joyin endpoints="joystick;mouse" \
         device1="74hc165;16,20,21;0,default,13" \
         device2="am_spinin;i2c,0x34,400;1,,1"
 ```
@@ -947,7 +949,7 @@ sudo modprobe am_joyin endpoints="joystick;mouse" \
 2p 설정의 예
 
 ```shell
-sudo modprobe am_joyin endpoints="joystick;joystick;mouse;mouse" \
+$ sudo modprobe am_joyin endpoints="joystick;joystick;mouse;mouse" \
         device1="74hc165;24,20,21;0,default,12;1,default,12" \
         device2="am_spinin;i2c,0x34,400;2,,1" \
         device3="am_spinin;i2c,0x35,400;3,,1"

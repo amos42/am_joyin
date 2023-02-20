@@ -1,5 +1,7 @@
 # am_joyin
 
+![am_joyin](images/am_joyin.jpg)
+
 **Amos Arcade Joystick Input Driver for Raspberry-pi (or another SBC)**
 
 ---
@@ -93,26 +95,26 @@ First, you need to do two things as a pre-work.
 > 2. Connect to the Raspberry Pi via ssh.
 > 3. Remove the mk_arcade_joystick_rpi driver if installed:
 > * Enter retropie-setup in the retropie setup menu and remove mk_arcade_joystick_rpi from the driver item.
-> * Execute sudo ~/RetroPie-Setup/retropie_setup.sh in the shell, and remove mk_arcade_joystick_rpi from the driver list.
+> * Execute $ sudo ~/RetroPie-Setup/retropie_setup.sh in the shell, and remove mk_arcade_joystick_rpi from the driver list.
 
 Next, build an environment for driver building.
 
 **1. Package update**
 
 ```shell
-sudo apt update
+$ sudo apt update
 ```
 
 **2. Install development tools**
 
 ```shell
-sudo apt install -y --force-yes dkms cpp-4.7 gcc-4.7 git joystick
+$ sudo apt install -y --force-yes dkms cpp-4.7 gcc-4.7 git joystick
 ```
 
 **3. Install kernel headers**
 
 ```shell
-sudo apt install -y --force-yes raspberrypi-kernel-headers
+$ sudo apt install -y --force-yes raspberrypi-kernel-headers
 ```
 
 **4. Enable I2C driver**
@@ -128,8 +130,8 @@ i2c-dev
 
 Alternatively, you can use the raspi-config configuration utility.
 
-```bash
-sudo raspi-config
+```shell
+$ sudo raspi-config
 ```
 
 ![raspi-config i2c settings](images/i2c-menu.png)
@@ -144,8 +146,8 @@ Once the preliminary work has been completed, the installation work begins in ea
 #### When using wget
 
 ```shell
-wget https://github.com/amos42/am_joyin/releases/download/v0.3.3/am_joyin-0.3.3.deb
-sudo dpkg -i am_joyin-0.3.3.deb
+$ wget https://github.com/amos42/am_joyin/releases/download/v0.3.3/am_joyin-0.3.3.deb
+$ sudo dpkg -i am_joyin-0.3.3.deb
 ```
 
 #### When using git
@@ -153,15 +155,15 @@ sudo dpkg -i am_joyin-0.3.3.deb
 1. Get the driver source.
 
 ```shell
-git clone https://github.com/amos42/am_joyin.git
+$ git clone https://github.com/amos42/am_joyin.git
 ```
 
 2. After creating the deb package, install it.
 
 ```shell
-cd am_joyin
-./utils/makepackage.sh 0.3.3
-sudo dpkg -i build/am_joyin-0.3.3.deb
+$ cd am_joyin
+$ ./utils/makepackage.sh 0.3.3
+$ sudo dpkg -i build/am_joyin-0.3.3.deb
 ```
 
 If you go through this process, the driver installation is primarily completed.
@@ -169,7 +171,7 @@ If you go through this process, the driver installation is primarily completed.
 If you want to check whether the installation was successful, you can use the modprobe command.
 
 ```shell
-sudo modprobe am_joyin
+$ sudo modprobe am_joyin
 ```
 
 If no error message occurs, the installation has been completed normally.
@@ -186,7 +188,7 @@ To do this, add the am_joyin module to the module definition file.
 Open the driver module configuration file.
 
 ```shell
-sudo nano /etc/modules-load.d/modules.conf
+$ sudo nano /etc/modules-load.d/modules.conf
 ```
 
 Add the following to the last line:
@@ -217,8 +219,8 @@ To do this, the command to load the module must be written in the rc.local scrip
 First, check that the I2C driver is activated in advance.
 Then, include the am_joyin module in rc.local using the modprobe command.
 
-```bash
-sudo nano /etc/rc.local
+```shell
+$ sudo nano /etc/rc.local
 ```
 
 Insert the following content before the exit command on the last line.
@@ -254,7 +256,7 @@ Next, proceed with driver settings.
 Open the configuration file with a text editor.
 
 ```shell
-sudo nano /etc/modprobe.d/am_joyin.conf
+$ sudo nano /etc/modprobe.d/am_joyin.conf
 ```
 
 If you want to apply 1P input device using GPIO, enter the following and press ctrl-x to save and exit.
@@ -273,7 +275,7 @@ options am_joyin device1="gpio;;0,default1"
 After the installation is complete, reboot the system and check the operation of the button.
 
 ```shell
-sudo reboot
+$ sudo reboot
 ```
 
 
@@ -284,13 +286,13 @@ To test the operation, you can use the jstest utility.
 The installation method of the jstest utility is as follows.
 
 ```shell
-sudo apt install joystick
+$ sudo apt install joystick
 ```
 
 If you want to test the first installed joystick device, enter as follows.
 
 ```shell
-jstest /dev/input/js0
+$ jstest /dev/input/js0
 ```
 
 If executed normally, the current button status is displayed on the console. Each time you press or release the button, you can see that the state changes in real time.
@@ -304,7 +306,7 @@ If you do not want to use am_joyin anymore and want to uninstall the driver, pro
 
 > 1. Delete the /etc/modprobe.d/am_joyin.conf file
 > 2. Remove am_joyin from /etc/modules-load.d/modules.conf or /etc/rc.local list
-> 3. Delete the driver package with the command sudo dpkg -r am-joyin-dkms
+> 3. Delete the driver package with the command $ sudo dpkg -r am-joyin-dkms
 
 ---
 
@@ -516,20 +518,20 @@ The order of buttons is basically in the order of 13 inputs: ***up, down, left, 
 - Set the primary key for 1P
 
 ```shell
-sudo modprobe am_joyin device1="gpio;;0,default1,0,default"
+$ sudo modprobe am_joyin device1="gpio;;0,default1,0,default"
 ```
 
 - Set for 2P
 
 ```shell
-sudo modprobe am_joyin endpoints="default,12;default,12" \
+$ sudo modprobe am_joyin endpoints="default,12;default,12" \
       device1="gpio;;0,default1,12;1,default2,12"
 ```
 
 - Custom key settings
 
 ```shell
-sudo modprobe am_joyin device1="gpio;;0,custom,0,{4,0x1,-100},{17,0x1,100},{27,0x0,-100},{22,0x0,100},{ 10,0x13b,1},{9,0x13a,1}"
+$ sudo modprobe am_joyin device1="gpio;;0,custom,0,{4,0x1,-100},{17,0x1,100},{27,0x0,-100},{22,0x0,100},{ 10,0x13b,1},{9,0x13a,1}"
 ```
 
 - Set key combinations
@@ -538,7 +540,7 @@ It is also possible to combine key settings.
 12 of the default1 gpio settings are used, and the HotKey custom is described as follows when specifying GPIO11.
 
 ```shell
-sudo modprobe am_joyin device1="gpio;;0,default1,12;0,custom,,{11,0x13C,1}"
+$ sudo modprobe am_joyin device1="gpio;;0,default1,12;0,custom,,{11,0x13C,1}"
 ```
 
 ---
@@ -595,19 +597,19 @@ practical use case
 Example of using 1P (using 2 74HC165)
 
 ```shell
-sudo modprobe am_joyin device1="74hc165;16,20,21;0,default,13"
+$ sudo modprobe am_joyin device1="74hc165;16,20,21;0,default,13"
 ```
 
 Example of using 2p (when 3 74HC165s are used)
 
 ```shell
-sudo modprobe am_joyin endpoints="default;default" device1="74hc165;16,20,21,24;0,default,12;1,default,12"
+$ sudo modprobe am_joyin endpoints="default;default" device1="74hc165;16,20,21,24;0,default,12;1,default,12"
 ```
 
 Example of using 2p (when 4 74HC165s are used)
 
 ```shell
-sudo modprobe am_joyin endpoints="default;default" device1="74hc165;16,20,21,32;0,default;1,default"
+$ sudo modprobe am_joyin endpoints="default;default" device1="74hc165;16,20,21,32;0,default;1,default"
 ```
 
 ---
@@ -639,13 +641,13 @@ practical use case
 Example of 1P setup
 
 ```shell
-sudo modprobe am_joyin device1="mcp23017;0x20,13;0,default"
+$ sudo modprobe am_joyin device1="mcp23017;0x20,13;0,default"
 ```
 
 Example of 2p setting (When the first board is set to 0x20, the second board is set to I2C address of 0x21)
 
 ```shell
-sudo modprobe am_joyin endpoints="default;default" \
+$ sudo modprobe am_joyin endpoints="default;default" \
         device1="mcp23017;0x20;0,default" \
         device2="mcp23017;0x21;1,default"
 ```
@@ -672,13 +674,13 @@ practical use case
 Example of 1P setup
 
 ```shell
-sudo modprobe am_joyin device1="mcp23s17;0,13;0,default"
+$ sudo modprobe am_joyin device1="mcp23s17;0,13;0,default"
 ```
 
 Example of 2p setting (When the first board is set to SPI 0, the second board is set to SPI 1)
 
 ```shell
-sudo modprobe am_joyin endpoints="default;default" \
+$ sudo modprobe am_joyin endpoints="default;default" \
         device1="mcp23s17;0;0,default" \
         device2="mcp23s17;1;1,default"
 ```
@@ -724,13 +726,13 @@ practical use case
 Example of 1P setup
 
 ```shell
-sudo modprobe am_joyin device1="mux;5,{26,19,13,6},,13;0,default"
+$ sudo modprobe am_joyin device1="mux;5,{26,19,13,6},,13;0,default"
 ```
 
 Example of 2p setting (when address pin and data pin are shared, and Enable pin of each MUX is connected to GPIO 20 and GPIO 21, respectively)
 
 ```shell
-sudo modprobe am_joyin endpoints="default;default" \
+$ sudo modprobe am_joyin endpoints="default;default" \
         device1="mux;5,{26,19,13,6},20;0,default" \
         device2="mux;5,{26,19,13,6},21;1,default"
 ```
@@ -738,7 +740,7 @@ sudo modprobe am_joyin endpoints="default;default" \
 Example of 2p setup (if you share address pin and write data pin differently)
 
 ```shell
-sudo modprobe am_joyin endpoints="default;default" \
+$ sudo modprobe am_joyin endpoints="default;default" \
         device1="mux;5,{26,19,13,6};0,default" \
         device2="mux;16,{26,19,13,6};1,default"
 ```
@@ -786,14 +788,14 @@ The following is a setting that adds an analog stick to the MCP3008 in addition 
 Example of 1P setting (change the default arrow keys to analog)
 
 ```shell
-sudo modprobe am_joyin device1="74hc165;16,20,21,16;0,default,13,4" \
+$ sudo modprobe am_joyin device1="74hc165;16,20,21,16;0,default,13,4" \
         device2="mcp3008;;0,custom,keycode,{0,0x03,-100,100},{1,0x04,-100,100}"
 ```
 
 Example of 1P setup (add analog axes Rx,Ry)
 
 ```shell
-sudo modprobe am_joyin buttonset1="default,0,12;{0x03,-100,100},{0x04,-100,100}" \
+$ sudo modprobe am_joyin buttonset1="default,0,12;{0x03,-100,100},{0x04,-100,100}" \
         endpoints="default,buttonset1" \
         device1="74hc165;16,20,21,16;0,default" \
         device2="mcp3008;;0,custom,keycode,{0,0x03,-100,100},{1,0x04,-100,100}"
@@ -802,7 +804,7 @@ sudo modprobe am_joyin buttonset1="default,0,12;{0x03,-100,100},{0x04,-100,100}"
 Example of 2p setup (add analog axes Rx,Ry)
 
 ```shell
-sudo modprobe am_joyin buttonset1="default,0,11;{0x03,-100,100},{0x04,-100,100}" \
+$ sudo modprobe am_joyin buttonset1="default,0,11;{0x03,-100,100},{0x04,-100,100}" \
         endpoints="default,buttonset1;default,buttonset1" \
         device1="74hc165;16,20,21,32;0,default;1,default" \
         device2="mcp3008;;0,custom,,{0,0x03,-100,100},{1,0x04,-100,100};1,custom,,{2,0x03,-100,100},{3,0x04,-100,100 }"
@@ -855,14 +857,14 @@ The following is a setting that adds an analog stick to the ADS1115 in addition 
 Example of 1P setting (change the default arrow keys to analog)
 
 ```shell
-sudo modprobe am_joyin device1="74hc165;16,20,21,16;0,default,13,4" \
+$ sudo modprobe am_joyin device1="74hc165;16,20,21,16;0,default,13,4" \
         device2="ads1115;;0,custom,keycode,{0,0x03,-100,100},{1,0x04,-100,100}"
 ```
 
 Example of 1P setup (add analog axes Rx,Ry)
 
 ```shell
-sudo modprobe am_joyin buttonset1="default,0,12;{0x03,-100,100},{0x04,-100,100}" \
+$ sudo modprobe am_joyin buttonset1="default,0,12;{0x03,-100,100},{0x04,-100,100}" \
         endpoints="default,buttonset1" \
         device1="74hc165;16,20,21,16;0,default" \
         device2="ads1115;;0,custom,keycode,{0,0x03,-100,100},{1,0x04,-100,100}"
@@ -871,7 +873,7 @@ sudo modprobe am_joyin buttonset1="default,0,12;{0x03,-100,100},{0x04,-100,100}"
 Example of 2p setup (add analog axes Rx,Ry)
 
 ```shell
-sudo modprobe am_joyin buttonset1="default,0,11;{0x03,-100,100},{0x04,-100,100}" \
+$ sudo modprobe am_joyin buttonset1="default,0,11;{0x03,-100,100},{0x04,-100,100}" \
         endpoints="default,buttonset1;default,buttonset1" \
         device1="74hc165;16,20,21,32;0,default;1,default" \
         device2="ads1115;;0,custom,,{0,0x03,-100,100},{1,0x04,-100,100};1,custom,,{2,0x03,-100,100},{3,0x04,-100,100 }"
@@ -939,7 +941,7 @@ The following is a setting that adds a spinner as am_spinin to the existing 74HC
 Example of 1P setup (make mouse x-axis the default)
 
 ```shell
-sudo modprobe am_joyin endpoints="joystick;mouse" \
+$ sudo modprobe am_joyin endpoints="joystick;mouse" \
         device1="74hc165;16,20,21;0,default,13" \
         device2="am_spinin;i2c,0x34,400;1,,1"
 ```
@@ -947,7 +949,7 @@ sudo modprobe am_joyin endpoints="joystick;mouse" \
 Example of 2p setup
 
 ```shell
-sudo modprobe am_joyin endpoints="joystick;joystick;mouse;mouse" \
+$ sudo modprobe am_joyin endpoints="joystick;joystick;mouse;mouse" \
         device1="74hc165;24,20,21;0,default,12;1,default,12" \
         device2="am_spinin;i2c,0x34,400;2,,1" \
         device3="am_spinin;i2c,0x35,400;3,,1"
