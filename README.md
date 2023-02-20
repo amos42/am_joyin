@@ -107,7 +107,7 @@ $ sudo apt update
 
 **2. Install development tools**
 
-```sh
+```bash
 $ sudo apt install -y --force-yes dkms cpp-4.7 gcc-4.7 git joystick
 ```
 
