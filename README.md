@@ -113,7 +113,7 @@ $ sudo apt install -y --force-yes dkms cpp-4.7 gcc-4.7 git joystick
 
 **3. Install kernel headers**
 
-```sh
+```powershell
 $ sudo apt install -y --force-yes raspberrypi-kernel-headers
 ```
 
