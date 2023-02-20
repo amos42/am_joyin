@@ -107,13 +107,13 @@ $ sudo apt update
 
 **2. Install development tools**
 
-```console
+```sh
 $ sudo apt install -y --force-yes dkms cpp-4.7 gcc-4.7 git joystick
 ```
 
 **3. Install kernel headers**
 
-```powershell
+```sh
 $ sudo apt install -y --force-yes raspberrypi-kernel-headers
 ```
 
