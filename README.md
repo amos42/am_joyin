@@ -97,7 +97,7 @@ First, you need to do two things as a pre-work.
 > * Enter retropie-setup in the retropie setup menu and remove mk_arcade_joystick_rpi from the driver item.
 > * Execute $ sudo ~/RetroPie-Setup/retropie_setup.sh in the shell, and remove mk_arcade_joystick_rpi from the driver list.
 
-Next, build an environment for driver building.
+Next, build an environment for driver building.(If mk_arcade_joystick_rpi can be installed, you can skip this step.)
 
 **1. Package update**
 
