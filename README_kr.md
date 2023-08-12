@@ -97,7 +97,7 @@ am_joyin은 라즈베리파이를 이용하여 아케이드 게임기를 제작�
 >    * retropie 설정 메뉴에서 retropie-setup으로 들어가, 드라이버 항목에서 mk_arcade_joystick_rpi 를 제거한다.
 >    * shell에서 $ sudo ~/RetroPie-Setup/retropie_setup.sh 를 실행하여, 드라이버 항목에서 mk_arcade_joystick_rpi 를 제거한다.
 
-다음으로는 드라이버 빌드를 위한 환경을 구축한다.
+다음으로는 드라이버 빌드를 위한 환경을 구축한다. (만약 mk_arcade_joystick_rpi 설치가 가능한 상태라면 이 과정은 생략해도 된다.)
 
 **1. 패키지 업데이트**
 
