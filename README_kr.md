@@ -567,9 +567,7 @@ $ sudo modprobe am_joyin device1="gpio;;0,default1,12;0,custom,,{11,0x13C,1}"
 
 해당 보드의 회로도 및 gerber 파일은 다음의 링크를 통해 얻을 수 있다.
 
-> - DIP 버전 : https://github.com/amos42/pcbs/tree/master/joystick-input_2p
-> - SMD 버전 : https://github.com/amos42/pcbs/tree/master/joystick-input_smd
-> - JST 커넥터 버전 : https://github.com/amos42/pcbs/tree/master/joystick-input_jst
+> https://github.com/amos42/pcb_joystick_input
 
 74HC165 장치를 사용하기 위해서는 기본적으로 VCC, GND 및 Load, Clock, Data (=Q8) 핀을 라즈베리파이의 전원 및 GPIO 핀에 연결한다.
 
