@@ -567,9 +567,7 @@ This is how it was implemented with a PCB.
 
 The circuit diagram and gerber file of the board can be obtained through the following link.
 
-> - DIP version: https://github.com/amos42/pcbs/tree/master/joystick-input_2p
-> - SMD version: https://github.com/amos42/pcbs/tree/master/joystick-input_smd
-> - JST connector version: https://github.com/amos42/pcbs/tree/master/joystick-input_jst
+> https://github.com/amos42/pcb_joystick_input
 
 To use the 74HC165 device, basically connect the VCC, GND and Load, Clock, Data (=Q8) pins to the power and GPIO pins of the Raspberry Pi.
 
